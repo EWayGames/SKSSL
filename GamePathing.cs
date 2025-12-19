@@ -11,7 +11,7 @@ public static class GamePathing
     public static readonly string PROJECT_DIRECTORY = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "..", "..", ".."));
     public static readonly string FOLDER_GAME = Path.Combine(GAME_ENVIRONMENT, "game");
     public static readonly string FOLDER_MODS = Path.Combine(GAME_ENVIRONMENT, "mods");
-    public static readonly string FOLDER_LOCALE = Path.Combine(GAME_ENVIRONMENT, "localization");
+    public static readonly string FOLDER_LOCALE = Path.Combine("localization");
 
     /// <returns>Dedicated path to game files.</returns>
     public static string GPath(params string[] path)
