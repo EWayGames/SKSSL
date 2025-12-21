@@ -3,13 +3,12 @@ using Gum.Wireframe;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGameGum;
-using SKSSL.Scenes;
 
-namespace KBSL.Types;
+namespace SKSSL.Scenes;
 
-public abstract class BaseGame : Game
+public abstract class SSLGame : Game
 {
-    public readonly BaseSceneManager SceneManager;
+    public readonly SceneManager SceneManager;
 
     private readonly GraphicsDeviceManager _graphicsManager;
     private readonly SpriteBatch _spriteBatch;
@@ -25,10 +24,10 @@ public abstract class BaseGame : Game
     /// </summary>
     public static string GumFile = "CHANGE_ME"; // Example: 
 
-    protected BaseGame(string title, string gumFile = "")
+    protected SSLGame(string title, string gumFile = "")
     {
         Title = title;
-        SceneManager = new BaseSceneManager(this);
+        SceneManager = new SceneManager(this);
         _graphicsManager = HandleGraphicsDesignManager(new GraphicsDeviceManager(this));
         Window.AllowUserResizing = true;
         Window.ClientSizeChanged += HandleClientSizeChanged;

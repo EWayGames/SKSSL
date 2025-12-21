@@ -46,8 +46,3 @@ public record BaseComponent : BaseLocalizedYamlEntry, IUpdatableComponent
     public virtual bool Equals(BaseComponent? other) => other != null && string.Equals(Id, other.Id, StringComparison.Ordinal);
     public bool Equals(string otherId) => string.Equals(Id, otherId, StringComparison.Ordinal);
 }
-
-public class Stat
-{
-    public string Id { get; set; }
-}

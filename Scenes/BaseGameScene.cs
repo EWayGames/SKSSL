@@ -7,7 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace SKSSL.Scenes;
 
-public abstract class BaseGameScene
+public abstract class BaseScene
 {
     protected Game _game;
     internal SpriteBatch _spriteBatch;
@@ -38,7 +38,7 @@ public abstract class BaseGameScene
 
     public void UnloadContent()
     {
-        BaseSceneManager.ClearScreens();
+        SceneManager.ClearScreens();
         UniqueUnloadContent();
     }
     protected abstract void UniqueUnloadContent();

@@ -9,17 +9,36 @@ using MonoGameGum;
 
 namespace SKSSL.Scenes;
 
-public class BaseSceneManager
+public class SceneManager
 {
+    public static SSLGame Game { get; private set; }
+    public static SceneManager GameSceneManager => Game.SceneManager;
+    public static string Title => Game.Title;
+    public static float AspectRatio => Game.GraphicsDevice.Viewport.AspectRatio;
+    public static bool IsNetworkSupported => Game.IsNetworkSupported;
+
     protected SpriteBatch _spriteBatch;
     protected GraphicsDeviceManager _graphicsManager;
     protected GumProjectSave? _gumProjectSave;
+    protected BaseScene _currentScene;
     
-    protected BaseGameScene _currentScene;
-    protected readonly Game _game;
+    public SceneManager(SSLGame game) => Game = game;
+    
+    public static void Exit()
+    {
+        SSLGame game = Game;
+        game.Quit();
+        game.Exit();
+    }
+    public static void ResetGame() => Game.ResetGame();
 
-    public BaseSceneManager(Game game) => _game = game;
-
+    public static void Run<T>() where T : SSLGame, new()
+    {
+        using T type = new();
+        Game = type;
+        type.Run();
+    }
+    
     /// <summary>
     /// Checks if "GumService.Default.Root.Children" is not Null, and if not, clears them.
     /// </summary>
@@ -52,13 +71,13 @@ public class BaseSceneManager
             .AddToRoot();
     }
 
-    protected void SwitchScene(BaseGameScene newScene)
+    protected void SwitchScene(BaseScene newScene)
     {
         MediaPlayer.Stop(); // Stop The Music
         _currentScene?.UnloadContent(); // UniqueUnloadContent the current scene
 
         _currentScene = newScene; // Switch to the new scene
-        _currentScene.Initialize(_game, _graphicsManager, _spriteBatch, _gumProjectSave); // Initialize the Scene
+        _currentScene.Initialize(Game, _graphicsManager, _spriteBatch, _gumProjectSave); // Initialize the Scene
 
         _currentScene.LoadContent(); // Load the new scene content
     }

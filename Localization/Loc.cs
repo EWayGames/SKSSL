@@ -17,6 +17,10 @@ public static class Loc
     public static string CurrentLanguage = defaultLanguage; // TODO: Load this from settings
     public static readonly string SystemCulture;
 
+    /// <summary>
+    /// The localization entries as stored in the game's per-language-culture folder.
+    /// Consists of a list of values and (=) keys.
+    /// </summary>
     internal static ConcurrentDictionary<string, string> Localizations { get; }
 
     static Loc()
@@ -78,43 +82,62 @@ public static class Loc
 
     /// <summary>
     /// Clears and initializes localization depending on the current assigned language culture.
+    /// Localization folder path is optional, which is assigned the default path or vice versa depending on nullability.
     /// </summary>
-    /// <param name="localizationFolder">Directory Path of the localization folder, which contains sub-folders based on language culture.</param>
-    public static void Initialize(string localizationFolder)
+    /// <param name="localePath">Directory Path of the localization folder, which contains sub-folders based on language culture.</param>
+    public static void Initialize(string? localePath = null)
     {
         Localizations.Clear();
 
+        // Cautious handling that permits lazy initialization.
+        switch (localePath)
+        {
+            // If null, then use default localization.
+            case null:
+                localePath = GamePathing.FOLDER_LOCALIZATION;
+                break;
+            // Override default localization folder in case a new one was provided. 
+            default:
+                GamePathing.FOLDER_LOCALIZATION = localePath;
+                break;
+        }
+
+        // Get user's current language culture.
         string language = CultureInfo.CurrentCulture.Name; // e.g., "en-US", "de-DE"
 
         // Attempt to use requested language folder
-        string folder = Path.Combine(localizationFolder, language);
+        string languageFolder = Path.Combine(localePath, language);
 
         // Fall back to default if missing
-        if (!Directory.Exists(folder))
+        if (!Directory.Exists(languageFolder))
         {
             Debug.WriteLine(
                 $"Localization folder for \"{language}\" does not exist! Using default \"{defaultLanguage}\" instead.",
                 nameof(Loc));
-            folder = Path.Combine(localizationFolder, defaultLanguage);
+            languageFolder = Path.Combine(localePath, defaultLanguage);
         }
 
-        var files = Directory.GetFiles(folder, "*.ftl*", SearchOption.AllDirectories);
+        var files = Directory.GetFiles(languageFolder, "*.ftl*", SearchOption.AllDirectories);
         Parallel.ForEach(files, file =>
         {
             string[] contents = File.ReadAllLines(file);
             foreach (string line in contents)
             {
+                // Skip empty lines
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
 
+                // If the line begins with #, or there is no '=', then there's a problem!
                 int index = line.IndexOf('=');
                 if (index == -1 || line[0].Equals('#'))
                 {
                     if (!line[0].Equals('#'))
-                        DustLogger.Log( $"Invalid localization in file \"{file}\": {line}", 3);
+                        DustLogger.Log($"Invalid localization in file \"{file}\": {line}", 3);
                     continue;
                 }
 
+                // Get left (key) and right (value) hand sides, and
+                //  add to localizations folder. Get() handles the rest.
                 string key = index >= 0 ? line[..index].Trim() : line;
                 string value = index >= 0 ? line[(index + 1)..].Trim() : key;
                 Localizations[key] = value;
