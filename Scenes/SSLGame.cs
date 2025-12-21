@@ -10,8 +10,8 @@ public abstract class SSLGame : Game
 {
     public readonly SceneManager SceneManager;
 
-    private readonly GraphicsDeviceManager _graphicsManager;
-    private readonly SpriteBatch _spriteBatch;
+    internal readonly GraphicsDeviceManager _graphicsManager;
+    internal readonly SpriteBatch _spriteBatch;
 
     private static GumService Gum => GumService.Default;
     private readonly InteractiveGue currentScreenGue = new();
@@ -36,7 +36,10 @@ public abstract class SSLGame : Game
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         Content.RootDirectory = "Content";
 
-        GumFile = gumFile;
+        if (string.IsNullOrEmpty(gumFile))
+            DustLogger.Log($"Provided gum project file is empty! {title}, {nameof(SSLGame)}", 3);
+        else
+            GumFile = gumFile;
     }
 
     public bool IsNetworkSupported { get; set; }
@@ -72,13 +75,21 @@ public abstract class SSLGame : Game
         base.Initialize();
     }
 
-    public void Quit()
-    {
-        throw new NotImplementedException();
-    }
+    public void Quit() => throw new NotImplementedException();
 
-    public void ResetGame()
+    public void ResetGame() => throw new NotImplementedException();
+
+    protected override void Draw(GameTime gameTime)
     {
-        throw new NotImplementedException();
+        SceneManager.Draw(gameTime);
+        Gum.Draw();
+        base.Draw(gameTime);
+    }
+    
+    protected override void Update(GameTime gameTime)
+    {
+        SceneManager.Update(gameTime);
+        Gum.Update(gameTime);
+        base.Update(gameTime);
     }
 }

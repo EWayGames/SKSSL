@@ -9,21 +9,13 @@ using MonoGameGum;
 
 namespace SKSSL.Scenes;
 
-public class SceneManager
+public static class GameManager
 {
     public static SSLGame Game { get; private set; }
-    public static SceneManager GameSceneManager => Game.SceneManager;
     public static string Title => Game.Title;
     public static float AspectRatio => Game.GraphicsDevice.Viewport.AspectRatio;
     public static bool IsNetworkSupported => Game.IsNetworkSupported;
 
-    protected SpriteBatch _spriteBatch;
-    protected GraphicsDeviceManager _graphicsManager;
-    protected GumProjectSave? _gumProjectSave;
-    protected BaseScene _currentScene;
-    
-    public SceneManager(SSLGame game) => Game = game;
-    
     public static void Exit()
     {
         SSLGame game = Game;
@@ -38,7 +30,23 @@ public class SceneManager
         Game = type;
         type.Run();
     }
-    
+}
+
+public class SceneManager
+{
+    protected SpriteBatch _spriteBatch;
+    protected GraphicsDeviceManager _graphicsManager;
+    protected GumProjectSave? _gumProjectSave;
+    protected BaseScene _currentScene;
+    public static SSLGame Game { get; private set; } = null!;
+
+    public SceneManager(SSLGame game)
+    {
+        Game = game;
+        _spriteBatch = game._spriteBatch;
+        _graphicsManager = game._graphicsManager;
+    }
+
     /// <summary>
     /// Checks if "GumService.Default.Root.Children" is not Null, and if not, clears them.
     /// </summary>
@@ -71,7 +79,7 @@ public class SceneManager
             .AddToRoot();
     }
 
-    protected void SwitchScene(BaseScene newScene)
+    public void SwitchScene(BaseScene newScene)
     {
         MediaPlayer.Stop(); // Stop The Music
         _currentScene?.UnloadContent(); // UniqueUnloadContent the current scene
@@ -82,13 +90,6 @@ public class SceneManager
         _currentScene.LoadContent(); // Load the new scene content
     }
 
-    protected void Draw(GameTime gameTime, GraphicsDevice graphicsDevice, SpriteBatch spriteBatch)
-    {
-        _currentScene?.Draw(gameTime, graphicsDevice, spriteBatch);
-    }
-
-    protected void Update(GameTime gameTime)
-    {
-        _currentScene?.Update(gameTime);
-    }
+    public void Draw(GameTime gameTime) => _currentScene?.Draw(gameTime);
+    public void Update(GameTime gameTime) => _currentScene?.Update(gameTime);
 }

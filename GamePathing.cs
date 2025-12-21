@@ -7,11 +7,15 @@ namespace SKSSL;
 public static class GamePathing
 {
     private static readonly Dictionary<string, string> GAME_PATHS = new();
-    public static readonly string GAME_ENVIRONMENT = AppContext.BaseDirectory;
+    public static readonly string GAME_ENVIRONMENT_FOLDER = AppContext.BaseDirectory;
     public static readonly string PROJECT_DIRECTORY = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "..", "..", ".."));
-    public static readonly string FOLDER_GAME = Path.Combine(GAME_ENVIRONMENT, "game");
-    public static readonly string FOLDER_MODS = Path.Combine(GAME_ENVIRONMENT, "mods");
-    public static readonly string FOLDER_LOCALE = Path.Combine("localization");
+    public static readonly string FOLDER_GAME = Path.Combine(GAME_ENVIRONMENT_FOLDER, "game");
+    public static readonly string FOLDER_MODS = Path.Combine(GAME_ENVIRONMENT_FOLDER, "mods");
+    /// <summary>
+    /// Default Localization path.
+    /// <example>GameName/game/localization/en-US/...</example>
+    /// </summary>
+    public static string FOLDER_LOCALIZATION = Path.Combine(FOLDER_GAME, "localization");
 
     /// <returns>Dedicated path to game files.</returns>
     public static string GPath(params string[] path)
@@ -52,6 +56,7 @@ public static class GamePathing
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public static void Initialize(params (string id, string path)[] paths)
     {
+        // Loop over every tuple and add the provided path to GAME_PATHS. Invalid paths are the programmer's problem.
         foreach ((string id, string path) path in paths) GAME_PATHS[path.id] = path.path;
     }
 }

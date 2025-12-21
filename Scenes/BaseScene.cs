@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using Gum.DataTypes;
 using Gum.Forms.Controls;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+// ReSharper disable CollectionNeverQueried.Global
+// ReSharper disable VirtualMemberNeverOverridden.Global
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
 namespace SKSSL.Scenes;
@@ -10,12 +13,12 @@ namespace SKSSL.Scenes;
 public abstract class BaseScene
 {
     protected Game _game;
-    internal SpriteBatch _spriteBatch;
+    protected SpriteBatch _spriteBatch;
     protected GraphicsDeviceManager _graphicsManager;
     internal GumProjectSave? _gumProjectSave;
 
     protected readonly List<FrameworkElement> _Menus = [];
-    
+
     public void Initialize(
         Game game,
         GraphicsDeviceManager graphicsManager,
@@ -30,6 +33,7 @@ public abstract class BaseScene
 
     protected abstract void LoadScreens();
     protected abstract void UniqueLoadContent();
+
     public virtual void LoadContent()
     {
         LoadScreens();
@@ -41,12 +45,14 @@ public abstract class BaseScene
         SceneManager.ClearScreens();
         UniqueUnloadContent();
     }
+
     protected abstract void UniqueUnloadContent();
 
-    public virtual void Update(GameTime gameTime) { }
-
-    public virtual void Draw(GameTime gameTime, GraphicsDevice graphicsDevice, SpriteBatch spriteBatch)
+    public virtual void Update(GameTime gameTime)
     {
-        
+    }
+
+    public virtual void Draw(GameTime gameTime)
+    {
     }
 }
