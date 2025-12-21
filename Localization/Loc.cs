@@ -13,7 +13,8 @@ namespace SKSSL.Localization;
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 public static class Loc
 {
-    public static string CurrentLanguage = "en-US"; // TODO: Load this from settings
+    const string defaultLanguage = "en-US";
+    public static string CurrentLanguage = defaultLanguage; // TODO: Load this from settings
     public static readonly string SystemCulture;
 
     internal static ConcurrentDictionary<string, string> Localizations { get; }
@@ -31,7 +32,9 @@ public static class Loc
                 Thread.CurrentThread.CurrentUICulture = new CultureInfo(SystemCulture);
                 CurrentLanguage = SystemCulture;
                 break;
-            // English is the default if the culture isn't found, as well as being an option.
+            default: // English is the default if the culture isn't found, as well as being an option.
+                CurrentLanguage = defaultLanguage;
+                break;
         }
     }
 
