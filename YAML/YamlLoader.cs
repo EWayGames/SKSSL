@@ -1,6 +1,7 @@
 using System.Reflection;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+// ReSharper disable UnusedType.Global
 
 namespace SKSSL.YAML;
 
@@ -21,6 +22,12 @@ public static class YamlLoader
     
     /// <summary>
     /// Loads YAML files from a folder or a single file and returns a list of deserialized objects.
+    /// <code>
+    /// #(In YAML)
+    /// - entry
+    /// - entry
+    /// - ...
+    /// </code>
     /// </summary>
     public static IEnumerable<T> Load<T>(string folderOrFile, Action<T>? postProcess = null)
     {
@@ -42,6 +49,13 @@ public static class YamlLoader
 
     /// <summary>
     /// Loads YAML into a dictionary keyed by a provided ID selector.
+    /// <code>
+    /// #(In YAML)
+    /// list_name:
+    ///   - entry
+    ///   - entry
+    ///   - ...
+    /// </code>
     /// </summary>
     public static Dictionary<TKey, TValue> LoadDictionary<TKey, TValue>(
         string folderOrFile,
@@ -60,6 +74,17 @@ public static class YamlLoader
     /// <summary>
     /// Handles the dynamic loading of Type1 and Type2 types, which the latter may reference back to Type1.
     /// Both instances must begin with the "type" keyword, annotated by "typeAnnoX".
+    /// <code>
+    /// #(In YAML)
+    /// - group:
+    ///   id: group_name
+    ///   entries:
+    ///       - entry
+    ///       - entry
+    /// # Mixed but Related Entries
+    /// - entry:
+    ///   group: group_name
+    /// </code>
     /// </summary>
     /// <param name="handleFunction"/>
     /// <param name="yamlText">Filepath to the text being parsed.</param>
