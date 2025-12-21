@@ -21,3 +21,16 @@ Given that this isn't necessarily a program, the limitations are from C# version
 - Explicitely Used In [Monogame](https://github.com/MonoGame/MonoGame) Projects. [Ms-Pl / MIT]
 
 This library was made by LukeZurg22, All Rights are Reserved. Under the current license you are permitted to fork and develop it under the conditions that you both accredit me, and maintain your fork's public status. This license may change with time.
+
+### References
+Below is a non-exhaustive list of references the project uses, coupled with the uses for these references.
+
+- "FlatRedBall.GumCommon" (Gum UI)
+- "Gum.MonoGame" (Gum UI, but Monogame)
+- "MonoGame.Framework.DesktopGL" (Monogame)
+- "Microsoft.Extensions.Logging" (Logger)
+- "Microsoft.Extensions.Logging.Abstractions" (Logger)
+- "Microsoft.Testing.Platform" (Logger)
+- "Microsoft.TestPlatform.TestHost" (Logger)
+- "RandN" (random number generation)
+- "YamlDotNet" (yaml parsing)
