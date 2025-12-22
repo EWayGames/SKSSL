@@ -1,7 +1,8 @@
 using System.Text.RegularExpressions;
-using SKSSL.YAML;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+
+namespace SKSSL.YAML;
 
 /// <summary>
 /// Load all entries in YAML files based on provided types in BULK. Caches data, and is less efficient than
