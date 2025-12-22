@@ -14,7 +14,7 @@ namespace SKSSL.YAML;
 /// <code>
 /// Yaml Entry Example:
 /// - type: (string)
-///   id: (localization)
+///   id: (string)
 /// </code>
 /// </summary>
 public record BaseYamlEntry
