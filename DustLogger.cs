@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestPlatform.TestHost;
 
+using Microsoft.Extensions.Logging.Console;
+
 namespace SKSSL;
 
 /// <summary>
@@ -48,8 +50,11 @@ public static partial class DustLogger
 
     static DustLogger()
     {
-        using ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Debug));
+        using ILoggerFactory loggerFactory = LoggerFactory.Create(builder
+            => builder.SetMinimumLevel(LogLevel.Debug).AddConsole()
+        );
         // WARN: Console isn't set here. It might not even work.
+
         logger = loggerFactory.CreateLogger<Program>();
     }
 

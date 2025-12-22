@@ -1,6 +1,8 @@
 using System.Reflection;
+using System.Text.RegularExpressions;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+
 // ReSharper disable UnusedType.Global
 
 namespace SKSSL.YAML;
@@ -19,9 +21,12 @@ public static class YamlLoader
     private static readonly ISerializer Serializer = new SerializerBuilder()
         .WithNamingConvention(CamelCaseNamingConvention.Instance)
         .Build();
-    
+
+    private const string YamlFileExtension = "*.yml*";
+
     /// <summary>
     /// Loads YAML files from a folder or a single file and returns a list of deserialized objects.
+    /// This requires the user to know precisely what type is in which folder.
     /// <code>
     /// #(In YAML)
     /// - entry
@@ -32,7 +37,7 @@ public static class YamlLoader
     public static IEnumerable<T> Load<T>(string folderOrFile, Action<T>? postProcess = null)
     {
         var files = Directory.Exists(folderOrFile)
-            ? Directory.GetFiles(folderOrFile, "*.*", SearchOption.AllDirectories)
+            ? Directory.GetFiles(folderOrFile, YamlFileExtension, SearchOption.AllDirectories)
             : [folderOrFile];
 
         foreach (var file in files)
@@ -45,6 +50,60 @@ public static class YamlLoader
                 yield return item;
             }
         }
+    }
+
+    /// <summary>
+    /// Loads a directory, searches every file and every entry in said files for a provided type— and if the
+    /// first entry contains it —attempts to parse the entire file. Honestly, this isn't very useful, and got
+    /// instantly replaced by the <see cref="YamlBulkLoader"/>
+    /// <seealso cref="YamlBulkLoader"/>
+    /// </summary>
+    /// <param name="directory"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static IEnumerable<T> LoadFolderPicky<T>(string directory)
+    {
+        // Loop over every YAML file.
+        var files = Directory.GetFiles(directory, searchPattern: YamlFileExtension, SearchOption.AllDirectories);
+        var list = new List<T>();
+
+        foreach (var file in files)
+        {
+            string expectedTypeName = typeof(T).Name;
+
+            // Regex breakdown:
+            // .*?                  -> any characters (non-greedy) before "type"
+            // type\s*:\s*          -> the keyword "type" (case-insensitive), colon, optional whitespace
+            // (Base)?              -> optional "Base" prefix
+            // ([A-Za-z0-9_]+)      -> capture group 2: the core type name (alphanumeric + _)
+            // (Yaml)?              -> optional "Yaml" suffix
+            // .*                   -> any characters after (we don't care)
+            var regex = new Regex(
+                @".*?type\s*:\s*(Base)?([A-Za-z0-9_]+)(Yaml)?.*",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+            bool typeFound = false;
+            using var reader = new StreamReader(file);
+            while (reader.ReadLine() is { } line)
+            {
+                Match hasType = regex.Match(line);
+                if (!hasType.Success)
+                    continue;
+                string extractedTypeName = hasType.Groups[1].Value;
+
+                if (!string.Equals(extractedTypeName, expectedTypeName, StringComparison.OrdinalIgnoreCase)) continue;
+                typeFound = true;
+                break;
+            }
+
+            if (!typeFound)
+                continue;
+
+            var yaml = Load<T>(file);
+            foreach (T entry in yaml) list.Add(entry);
+        }
+
+        return list;
     }
 
     /// <summary>
@@ -68,6 +127,7 @@ public static class YamlLoader
             TKey key = keySelector(item);
             dict[key] = item; // overwrite duplicates silently
         }
+
         return dict;
     }
 
@@ -117,7 +177,7 @@ public static class YamlLoader
                     var group = Deserializer.Deserialize<Type1>(yamlFragment);
 
                     // Get contained instances
-                    PropertyInfo? prop =typeof(Type1).GetProperty(typeAnno2Plural, 
+                    PropertyInfo? prop = typeof(Type1).GetProperty(typeAnno2Plural,
                         BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 
                     // Handling property without concern for case.
@@ -132,7 +192,7 @@ public static class YamlLoader
                 {
                     string yamlFragment = Serializer.Serialize(entry);
                     var type2Instance = Deserializer.Deserialize<Type2>(yamlFragment);
-                    
+
                     // Run function but exclaim that the thing meant to contain it, is null.
                     handleFunction(type2Instance, null);
                     break;
