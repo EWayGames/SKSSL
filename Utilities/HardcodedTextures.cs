@@ -9,7 +9,7 @@ public static class HardcodedTextures
     private static Texture2D? DefaultError;
     
     /// <returns>Cached Default Error Texture, or creates a new one if one is not present. Defaults to 128x128.</returns>
-    private static Texture2D GetErrorTexture(GraphicsDevice graphicsDevice, int width = 128, int height = 128)
+    public static Texture2D GetErrorTexture(GraphicsDevice graphicsDevice, int width = 128, int height = 128)
     {
         if (DefaultError != null)
             return DefaultError;
