@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.Xna.Framework.Graphics;
 using SKSSL.Utilities;
+
 // ReSharper disable ClassNeverInstantiated.Global
 
 namespace SKSSL.Textures;
@@ -8,7 +9,8 @@ namespace SKSSL.Textures;
 // Default implementation
 public class DefaultTextureLoader : TextureLoader
 {
-    protected override Texture2D GetTextureImplement<T>(string path) => LoadFromFile(path);
+    protected override Texture2D GetTextureImplement<T>(string fullFilePath, bool isModded = false) =>
+        LoadFromFile(fullFilePath);
 }
 
 /// <summary>
@@ -30,7 +32,7 @@ public abstract class TextureLoader
     public static GraphicsDevice _graphicsDevice { get; private set; } = null!;
 
     private static bool IsInitialized { get; set; } = false;
-    
+
     /// <summary>
     /// Initializes texture loaded. An alternative version of the loaded with a custom implement for
     /// <see cref="GetTextureImplement{T}"/> may be provided to override the <see cref="DefaultTextureLoader"/>.
@@ -46,14 +48,14 @@ public abstract class TextureLoader
             return;
         if (alternativeLoader != null)
             _instance = alternativeLoader;
-            
+
         _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
         IsInitialized = true;
     }
 
     // The "static" method — but delegates to instance
-    public static Texture2D GetTexture<T>(string path)
-        => Instance.GetTextureImplement<T>(path);
+    public static Texture2D GetTexture<T>(string fullFilePath, bool isModded = false) where T : class
+        => Instance.GetTextureImplement<T>(fullFilePath, isModded);
 
     #region Get Raw Images
 
@@ -68,6 +70,7 @@ public abstract class TextureLoader
             DustLogger.Log($"Texture file not found: {filePath}", 3);
             return HardcodedAssets.GetErrorTexture();
         }
+
         try
         {
             using FileStream stream = File.OpenRead(filePath);
@@ -84,7 +87,7 @@ public abstract class TextureLoader
             return HardcodedAssets.GetErrorTexture();
         }
     }
-    
+
     /// <summary>
     /// Async version (for large files or many loads)
     /// </summary>
@@ -110,11 +113,11 @@ public abstract class TextureLoader
     }
 
     #endregion
-    
+
     /// <summary>
     /// Overridable Texture acquisition.
     /// </summary>
-    protected abstract Texture2D GetTextureImplement<T>(string path);
+    protected abstract Texture2D GetTextureImplement<T>(string fullFilePath, bool isModded = false) where T : class;
 
     // Generic storage: category → texture name → texture object
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, object>>
