@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.Xna.Framework.Graphics;
 using SKSSL.Utilities;
+// ReSharper disable ClassNeverInstantiated.Global
 
 namespace SKSSL.Textures;
 
