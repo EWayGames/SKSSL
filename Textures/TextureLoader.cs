@@ -15,8 +15,10 @@ public class DefaultTextureLoader : TextureLoader
     protected override void CustomInitializeRegistries() =>
         throw new NotImplementedException(
             "Developer(s) MUST implement custom Registries Initialization, as registries may vary between projects.");
-    
-    public override void CustomOptionalLoad(string input) => LoadAll();
+
+    protected override void CustomOptionalLoad(string input)
+    {
+    }
 }
 
 /// <summary>
@@ -144,7 +146,7 @@ public abstract class TextureLoader
     /// Though all instantiated inheritors of <see cref="TextureLoader"/> require this, the developer is NOT
     /// required to add any code.
     /// </summary>
-    public abstract void CustomOptionalLoad(string input);
+    protected abstract void CustomOptionalLoad(string input);
     
     // Generic storage: category → texture name → texture object
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, object>>
@@ -178,8 +180,9 @@ public abstract class TextureLoader
     /// <summary>
     /// Load all registered texture categories.
     /// </summary>
-    public static void LoadAll()
+    protected static void LoadAll(string input)
     {
+        _instance.CustomOptionalLoad(input);
         foreach ((string categoryName, TextureCategoryConfig config) in _categories)
             LoadCategory(categoryName, config);
     }
