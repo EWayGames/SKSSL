@@ -284,7 +284,7 @@ public abstract class TextureLoader
     }
 }
 
-public abstract class TextureCategoryConfig
+public class TextureCategoryConfig
 {
     public string? AssetPathKey { get; init; } // e.g., "__ASSETS_TEXTURES_ITEMS"
     public bool IsMultiTextureMap { get; init; }
