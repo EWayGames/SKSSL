@@ -7,12 +7,7 @@ namespace SKSSL.Textures;
 // Default implementation
 public class DefaultTextureLoader : TextureLoader
 {
-    protected override Texture2D GetTextureImplement<T>(string path)
-    {
-        // WIP: Attempt to find asset and load it raw.
-        DustLogger.Log($"Failed to load texture file \"{path}\"", 3);
-        return HardcodedAssets.GetErrorTexture();
-    }
+    protected override Texture2D GetTextureImplement<T>(string path) => LoadFromFile(path);
 }
 
 /// <summary>
@@ -31,10 +26,90 @@ public abstract class TextureLoader
         set => _instance = value ?? throw new ArgumentNullException(nameof(value));
     }
 
+    public static GraphicsDevice _graphicsDevice { get; private set; } = null!;
+
+    private static bool IsInitialized { get; set; } = false;
+    
+    /// <summary>
+    /// Initializes texture loaded. An alternative version of the loaded with a custom implement for
+    /// <see cref="GetTextureImplement{T}"/> may be provided to override the <see cref="DefaultTextureLoader"/>.
+    /// </summary>
+    /// <param name="graphicsDevice"></param>
+    /// <param name="alternativeLoader"></param>
+    /// <exception cref="ArgumentNullException"></exception>
+    public static void Initialize(GraphicsDevice graphicsDevice, TextureLoader? alternativeLoader = null)
+    {
+        // If the texture loader has already been initialized by a "surface-level" class override,
+        //  then that override is the one that shall be used and whatever is needed has already been initialized.
+        if (IsInitialized)
+            return;
+        if (alternativeLoader != null)
+            _instance = alternativeLoader;
+            
+        _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
+        IsInitialized = true;
+    }
+
     // The "static" method — but delegates to instance
     public static Texture2D GetTexture<T>(string path)
         => Instance.GetTextureImplement<T>(path);
 
+    #region Get Raw Images
+
+    /// <summary>
+    /// Loads a Texture2D directly from a file path (PNG, JPG, BMP, etc.).
+    /// Returns <see cref="HardcodedAssets"/> error texture on failure.
+    /// </summary>
+    public static Texture2D LoadFromFile(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            DustLogger.Log($"Texture file not found: {filePath}", 3);
+            return HardcodedAssets.GetErrorTexture();
+        }
+        try
+        {
+            using FileStream stream = File.OpenRead(filePath);
+            Texture2D texture = Texture2D.FromStream(_graphicsDevice, stream);
+
+            // Optional: Set sensible defaults
+            texture.Name = Path.GetFileNameWithoutExtension(filePath);
+
+            return texture;
+        }
+        catch (Exception ex)
+        {
+            DustLogger.Log($"Failed to load texture from {filePath}: {ex.Message}", 3);
+            return HardcodedAssets.GetErrorTexture();
+        }
+    }
+    
+    /// <summary>
+    /// Async version (for large files or many loads)
+    /// </summary>
+    public static async Task<Texture2D> LoadFromFileAsync(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            Console.WriteLine($"Texture file not found: {filePath}");
+            return HardcodedAssets.GetErrorTexture();
+        }
+
+        try
+        {
+            using FileStream stream = File.OpenRead(filePath);
+            // FromStream is synchronous — wrap in Task.Run for async I/O
+            return await Task.Run(() => Texture2D.FromStream(_graphicsDevice, stream));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to load texture from {filePath}: {ex.Message}");
+            return HardcodedAssets.GetErrorTexture();
+        }
+    }
+
+    #endregion
+    
     /// <summary>
     /// Overridable Texture acquisition.
     /// </summary>

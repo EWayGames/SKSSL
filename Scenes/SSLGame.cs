@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using MonoGameGum;
 using SKSSL.Localization;
 using SKSSL.Registry;
+using SKSSL.Textures;
 using SKSSL.Utilities;
 
 namespace SKSSL.Scenes;
@@ -97,6 +98,9 @@ public abstract class SSLGame : Game
         
         // Initialize hard-coded textures and assets.
         HardcodedAssets.Initialize(GraphicsDevice);
+        
+        // Must be after Hard-coded assets, or there will be problems.
+        TextureLoader.Initialize(GraphicsDevice);
         
         // Continue
         base.Initialize();
