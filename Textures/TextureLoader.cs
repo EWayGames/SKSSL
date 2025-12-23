@@ -9,7 +9,7 @@ namespace SKSSL.Textures;
 // Default implementation
 public class DefaultTextureLoader : TextureLoader
 {
-    protected override Texture2D GetTextureImplement<T>(string fullFilePath, bool isModded = false) =>
+    protected override Texture2D GetTextureImplement<T>(string fullFilePath) =>
         LoadFromFile(fullFilePath);
 
     protected override void CustomInitializeRegistries() =>
@@ -59,20 +59,20 @@ public abstract class TextureLoader
         //  then that override is the one that shall be used and whatever is needed has already been initialized.
         if (IsInitialized)
             return;
-        
+
         if (alternativeLoader != null)
             _instance = alternativeLoader;
 
         // Load Custom Registries.
         _instance.CustomInitializeRegistries();
-        
+
         _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
         IsInitialized = true;
     }
 
     // The "static" method — but delegates to instance
     public static Texture2D GetTexture<T>(string fullFilePath, bool isModded = false) where T : class
-        => Instance.GetTextureImplement<T>(fullFilePath, isModded);
+        => Instance.GetTextureImplement<T>(fullFilePath);
 
     #region Get Raw Images
 
@@ -118,7 +118,7 @@ public abstract class TextureLoader
 
         try
         {
-            using FileStream stream = File.OpenRead(filePath);
+            await using FileStream stream = File.OpenRead(filePath);
             // FromStream is synchronous — wrap in Task.Run for async I/O
             return await Task.Run(() => Texture2D.FromStream(_graphicsDevice, stream));
         }
@@ -134,7 +134,7 @@ public abstract class TextureLoader
     /// <summary>
     /// Overridable Texture acquisition.
     /// </summary>
-    protected abstract Texture2D GetTextureImplement<T>(string fullFilePath, bool isModded = false) where T : class;
+    protected abstract Texture2D GetTextureImplement<T>(string fullFilePath) where T : class;
 
     /// <summary>
     /// Custom method for initializing dedicated registries. Absolutely required per-project.
@@ -147,7 +147,7 @@ public abstract class TextureLoader
     /// required to add any code.
     /// </summary>
     protected abstract void CustomOptionalLoad(string input);
-    
+
     // Generic storage: category → texture name → texture object
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, object>>
         _textureDatabases = new();
@@ -178,11 +178,17 @@ public abstract class TextureLoader
     }
 
     /// <summary>
+    /// Ambiguous current directory, which may be a game or mod directory.
+    /// </summary>
+    private static string _currentDirectory = string.Empty;
+
+    /// <summary>
     /// Load all registered texture categories.
     /// </summary>
-    public static void LoadAll(string input)
+    public static void LoadAll(string currentDirectory)
     {
-        _instance.CustomOptionalLoad(input);
+        _currentDirectory = currentDirectory;
+        _instance.CustomOptionalLoad(currentDirectory);
         foreach ((string categoryName, TextureCategoryConfig config) in _categories)
             LoadCategory(categoryName, config);
     }
@@ -202,24 +208,19 @@ public abstract class TextureLoader
         TextureCategoryConfig config,
         ConcurrentDictionary<string, object> database)
     {
-        var files = GameLoader.GetGameFiles(config.AssetPathKey);
+        string dir = _currentDirectory;
+        if (config.AssetPathKey != null)
+            dir = Path.Combine(_currentDirectory, config.AssetPathKey);
+
+        var files = GameLoader.GetGameFiles(dir);
 
         foreach (var file in files)
         {
             string fileName = Path.GetFileNameWithoutExtension(file);
             string key = config.KeyTransform?.Invoke(fileName, file) ?? fileName.ToLower();
 
-            Texture2D? texture = _instance.GetTextureImplement<Texture2D>(file);
-
-            if (texture != null)
-            {
-                database[key] = texture;
-            }
-            else
-            {
-                DustLogger.Log($"Failed to load texture \"{key}\" in category \"{categoryName}\"", 3);
-                database[key] = HardcodedAssets.GetErrorTexture();
-            }
+            Texture2D texture = _instance.GetTextureImplement<Texture2D>(file);
+            database[key] = texture; // Error Reporting & Texture is automatically handled in the call.
         }
     }
 
@@ -227,7 +228,11 @@ public abstract class TextureLoader
     private static void LoadMultiTextureCategory(string categoryName, TextureCategoryConfig config,
         ConcurrentDictionary<string, object> database)
     {
-        string[] directories = Directory.GetDirectories(config.AssetPathKey ?? GameLoader.GPath("textures"));
+        string dir = _currentDirectory;
+        if (config.AssetPathKey != null)
+            dir = Path.Combine(_currentDirectory, config.AssetPathKey);
+
+        string[] directories = Directory.GetDirectories(dir);
 
         foreach (var folder in directories)
         {
