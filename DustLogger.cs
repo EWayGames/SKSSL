@@ -34,19 +34,19 @@ public static partial class DustLogger
     }
 
     internal static readonly Action<ILogger, string, Exception?> INFO_PRINT =
-        LoggerMessage.Define<string>(LogLevel.Information, new EventId(0, nameof(INFO_PRINT)), "[INFO]: {Message}");
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId((byte)LOG.INFORMATIONAL_PRINT, nameof(INFO_PRINT)), "[INFO]: {Message}");
 
     internal static readonly Action<ILogger, Exception?> GENERAL_ERROR =
-        LoggerMessage.Define(LogLevel.Error, new EventId(1, nameof(GENERAL_ERROR)), $"[GENERAL ERROR]");
+        LoggerMessage.Define(LogLevel.Error, new EventId((byte)LOG.GENERAL_ERROR, nameof(GENERAL_ERROR)), $"[GENERAL ERROR]");
 
     internal static readonly Action<ILogger, Exception?> META_ERROR =
-        LoggerMessage.Define(LogLevel.Error, new EventId(2, nameof(META_ERROR)), $"[METADATA ERROR]");
+        LoggerMessage.Define(LogLevel.Error, new EventId((byte)LOG.META_DATA_ERROR, nameof(META_ERROR)), $"[METADATA ERROR]");
 
     internal static readonly Action<ILogger, Exception?> FILE_ERROR =
-        LoggerMessage.Define(LogLevel.Error, new EventId(3, nameof(FILE_ERROR)), $"[FILE ERROR]");
+        LoggerMessage.Define(LogLevel.Error, new EventId((byte)LOG.FILE_ERROR, nameof(FILE_ERROR)), $"[FILE ERROR]");
 
     internal static readonly Action<ILogger, Exception?> SYSTEM_ERROR =
-        LoggerMessage.Define(LogLevel.Error, new EventId(4, nameof(SYSTEM_ERROR)), $"[SYSTEM ERROR]");
+        LoggerMessage.Define(LogLevel.Error, new EventId((byte)LOG.SYSTEM_ERROR, nameof(SYSTEM_ERROR)), $"[SYSTEM ERROR]");
 
     static DustLogger()
     {
