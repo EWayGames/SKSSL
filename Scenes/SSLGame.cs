@@ -30,6 +30,12 @@ public abstract class SSLGame : Game
     private readonly InteractiveGue currentScreenGue = new();
 
     /// <summary>
+    /// An array of Tuple paths assigned to an ID. These are loaded into the game's pather, and should
+    /// NEVER change. General examples include game texture and yaml prototypes folders.
+    /// </summary>
+    protected abstract (string id, string path)[] StaticPaths { get; }
+    
+    /// <summary>
     /// The Project Gum UI file that will dictate how UI is loaded.
     /// <code>
     /// Example: "Gum/SolKom.gumx"
@@ -84,8 +90,9 @@ public abstract class SSLGame : Game
         GumProjectSave? gumSave = null;
         if (!string.IsNullOrEmpty(GumFile)) gumSave = Gum.Initialize(this, GumFile);
         SceneManager.Initialize(_graphicsManager, _spriteBatch, gumSave); // Initialize Scene Manager
-
-        GameLoader.Initialize();
+        
+        // Initialize all static paths, which the developer must have defined!
+        GameLoader.Initialize(StaticPaths);
         
         // Continue
         base.Initialize();
