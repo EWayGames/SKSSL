@@ -3,9 +3,22 @@ using Gum.Wireframe;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGameGum;
+using SKSSL.Localization;
+using SKSSL.Registry;
 
 namespace SKSSL.Scenes;
 
+/// <summary>
+/// Game Instances should inherit this class to have Gum and other systems automatically initialized.
+/// <code>
+/// override Initialize() {
+/// base.Initialize(); // Naturally!
+/// GameLoader.Register(...); // &lt;- Registering Game Loaders
+/// }
+/// </code>
+/// Registering Game factories, loaders and such, such as anything that inherits BaseRegistry or <see cref="Loc"/>,
+/// is incredibly important as these are the loaders that will LOAD the game's content.
+/// </summary>
 public abstract class SSLGame : Game
 {
     public readonly SceneManager SceneManager;
@@ -72,6 +85,8 @@ public abstract class SSLGame : Game
         if (!string.IsNullOrEmpty(GumFile)) gumSave = Gum.Initialize(this, GumFile);
         SceneManager.Initialize(_graphicsManager, _spriteBatch, gumSave); // Initialize Scene Manager
 
+        GameLoader.Initialize();
+        
         // Continue
         base.Initialize();
     }
