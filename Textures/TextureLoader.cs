@@ -24,8 +24,9 @@ public class DefaultTextureLoader : TextureLoader
 /// <summary>
 /// Generic texture loader for all game asset categories (blocks, items, UI, etc.).
 /// Supports multi-texture maps (diffuse + normal + etc.) and automatic error texture fallback.
-///
-/// A call to <see cref="CustomInitializeRegistries"/> must be made per-implementation.
+/// <br/><br/>
+/// <see cref="CustomInitializeRegistries"/> MUST be filled-out per-implementation based on the
+/// developer requirements / layout of the project.
 /// </summary>
 public abstract class TextureLoader
 {
@@ -46,6 +47,8 @@ public abstract class TextureLoader
     /// <summary>
     /// Initializes texture loaded. An alternative version of the loaded with a custom implement for
     /// <see cref="GetTextureImplement{T}"/> may be provided to override the <see cref="DefaultTextureLoader"/>.
+    /// <br/><br/>
+    /// It is IMPERATIVE that this be loaded before the base.Initialize() of the game's Initialize() method.
     /// </summary>
     /// <param name="graphicsDevice"></param>
     /// <param name="alternativeLoader"></param>
