@@ -180,7 +180,7 @@ public abstract class TextureLoader
     /// <summary>
     /// Load all registered texture categories.
     /// </summary>
-    protected static void LoadAll(string input)
+    public static void LoadAll(string input)
     {
         _instance.CustomOptionalLoad(input);
         foreach ((string categoryName, TextureCategoryConfig config) in _categories)
