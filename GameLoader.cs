@@ -1,7 +1,7 @@
 using System.Reflection;
 using Microsoft.Xna.Framework.Content;
 
-namespace SKSSL.Registry;
+namespace SKSSL;
 public static class GameLoader
 {
     private static readonly Dictionary<string, string> GAME_PATHS = new();

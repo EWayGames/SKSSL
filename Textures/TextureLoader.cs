@@ -1,0 +1,218 @@
+using System.Collections.Concurrent;
+using Microsoft.Xna.Framework.Graphics;
+using SKSSL.Utilities;
+
+namespace SKSSL.Textures;
+
+// Default implementation
+public class DefaultTextureLoader : TextureLoader
+{
+    protected override Texture2D GetTextureImplement<T>(string path)
+    {
+        // WIP: Attempt to find asset and load it raw.
+        DustLogger.Log($"Failed to load texture file \"{path}\"", 3);
+        return HardcodedAssets.GetErrorTexture();
+    }
+}
+
+/// <summary>
+/// Generic texture loader for all game asset categories (blocks, items, UI, etc.).
+/// Supports multi-texture maps (diffuse + normal + etc.) and automatic error texture fallback.
+/// </summary>
+public abstract class TextureLoader
+{
+    // Default implementation
+    private static TextureLoader _instance = new DefaultTextureLoader();
+
+    // Allow override (e.g., for mods or tests)
+    public static TextureLoader Instance
+    {
+        get => _instance;
+        set => _instance = value ?? throw new ArgumentNullException(nameof(value));
+    }
+
+    // The "static" method — but delegates to instance
+    public static Texture2D GetTexture<T>(string path)
+        => Instance.GetTextureImplement<T>(path);
+
+    /// <summary>
+    /// Overridable Texture acquisition.
+    /// </summary>
+    protected abstract Texture2D GetTextureImplement<T>(string path);
+
+    // Generic storage: category → texture name → texture object
+    private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, object>>
+        _textureDatabases = new();
+
+    private static readonly Dictionary<string, TextureCategoryConfig> _categories = new();
+
+    /// <summary>
+    /// Register a new texture category (e.g., blocks, items).
+    /// </summary>
+    public static void RegisterCategory<TTexture>
+        (string categoryName, TextureCategoryConfig config) where TTexture : class
+    {
+        _categories[categoryName] = config;
+        _textureDatabases.GetOrAdd(categoryName, _ => new ConcurrentDictionary<string, object>());
+    }
+
+    /// <summary>
+    /// Get read-only dictionary for a category.
+    /// </summary>
+    public static IReadOnlyDictionary<string, TTexture> GetCategory<TTexture>(string categoryName)
+    {
+        if (_textureDatabases.TryGetValue(categoryName, out var dict))
+        {
+            return (IReadOnlyDictionary<string, TTexture>)dict.AsReadOnly();
+        }
+
+        return new Dictionary<string, TTexture>().AsReadOnly();
+    }
+
+    /// <summary>
+    /// Load all registered texture categories.
+    /// </summary>
+    public static void LoadAll()
+    {
+        foreach ((string categoryName, TextureCategoryConfig config) in _categories)
+            LoadCategory(categoryName, config);
+    }
+
+    private static void LoadCategory(string categoryName, TextureCategoryConfig config)
+    {
+        var database = _textureDatabases[categoryName];
+
+        if (config.IsMultiTextureMap)
+            LoadMultiTextureCategory(categoryName, config, database);
+        else
+            LoadSingleTextureCategory(categoryName, config, database);
+    }
+
+    private static void LoadSingleTextureCategory(
+        string categoryName,
+        TextureCategoryConfig config,
+        ConcurrentDictionary<string, object> database)
+    {
+        var files = GameLoader.GetGameFiles(config.AssetPathKey);
+
+        foreach (var file in files)
+        {
+            string fileName = Path.GetFileNameWithoutExtension(file);
+            string key = config.KeyTransform?.Invoke(fileName, file) ?? fileName.ToLower();
+
+            Texture2D? texture = _instance.GetTextureImplement<Texture2D>(file);
+
+            if (texture != null)
+            {
+                database[key] = texture;
+            }
+            else
+            {
+                DustLogger.Log($"Failed to load texture \"{key}\" in category \"{categoryName}\"", 3);
+                database[key] = HardcodedAssets.GetErrorTexture();
+            }
+        }
+    }
+
+
+    private static void LoadMultiTextureCategory(string categoryName, TextureCategoryConfig config,
+        ConcurrentDictionary<string, object> database)
+    {
+        string[] directories = Directory.GetDirectories(config.AssetPathKey ?? GameLoader.GPath("textures"));
+
+        foreach (var folder in directories)
+        {
+            string blockName = Path.GetFileName(folder).ToLower();
+            var files = GameLoader.GetGameFiles(null, [folder]);
+
+            TextureMaps currentMap = new();
+            string currentKey = string.Empty;
+
+            foreach (var file in files)
+            {
+                string fileName = Path.GetFileNameWithoutExtension(file);
+
+                Texture2D texture = _instance.GetTextureImplement<Texture2D>(file);
+
+                TextureMaps.TextureType subType =
+                    config.SubTextureClassifier?.Invoke(fileName) ?? TextureMaps.TextureType.DIFFUSE;
+
+                switch (subType)
+                {
+                    case TextureMaps.TextureType.DIFFUSE:
+                        // Finalize previous map
+                        if (!string.IsNullOrEmpty(currentKey))
+                        {
+                            database[currentKey] = FinalizeMap(currentMap, categoryName);
+                        }
+
+                        // Start new map
+                        currentMap = new TextureMaps { Diffuse = texture };
+                        currentKey = config.KeyTransform?.Invoke(blockName, file) ?? $"{blockName}_{fileName}";
+                        break;
+
+                    case TextureMaps.TextureType.NORMAL:
+                        currentMap.Normal = texture;
+                        break;
+
+                    // TODO: Add later.
+                    // case TextureMaps.TextureType.DISPLACEMENT:
+                    //     currentMap.Displacement = texture;
+                    //     break;
+                    // case TextureMaps.TextureType.GLOSSY:
+                    //     currentMap.Glossy = texture;
+                    //     break;
+
+                    default:
+                        DustLogger.Log($"Unknown sub-texture type for {fileName}", 3);
+                        break;
+                }
+            }
+
+            // Finalize last map
+            if (!string.IsNullOrEmpty(currentKey))
+            {
+                database[currentKey] = FinalizeMap(currentMap, categoryName);
+            }
+        }
+    }
+
+    private static TextureMaps FinalizeMap(TextureMaps map, string categoryName)
+    {
+        // Ensure all required textures exist (fallback to error)
+        map.Diffuse ??= HardcodedAssets.GetErrorTexture();
+        map.Normal ??= HardcodedAssets.GetErrorTexture();
+        //map.Displacement ??= HardcodedTextures.GetErrorTexture2D();
+        //map.Glossy ??= HardcodedTextures.GetErrorTexture2D();
+
+        return map;
+    }
+
+    /// <summary>
+    /// Safe accessor with error fallback and logging.
+    /// </summary>
+    public static T GetTexture<T>(string categoryName, string key) where T : class
+    {
+        if (_textureDatabases.TryGetValue(categoryName, out var dict) &&
+            dict.TryGetValue(key, out var texture) &&
+            texture is T result)
+        {
+            return result;
+        }
+
+        if (!key.Equals("error", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.WriteLine($"Missing texture: [{categoryName}] \"{key}\" — using error texture.");
+        }
+
+        return (T)(object)HardcodedAssets.GetErrorTexture();
+    }
+}
+
+public abstract class TextureCategoryConfig
+{
+    public string? AssetPathKey { get; init; } // e.g., "__ASSETS_TEXTURES_ITEMS"
+    public bool IsMultiTextureMap { get; init; }
+    public Func<string, string, string>? KeyTransform { get; init; }
+    public Func<string, TextureMaps.TextureType>? SubTextureClassifier { get; init; }
+}

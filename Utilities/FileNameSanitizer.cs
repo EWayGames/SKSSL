@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace KBSL;
+namespace SKSSL.Utilities;
 
 public static partial class FileNameSanitizer
 {
