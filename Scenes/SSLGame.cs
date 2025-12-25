@@ -103,12 +103,16 @@ public abstract class SSLGame : Game
         // Initialize hard-coded textures and assets.
         HardcodedAssets.Initialize(GraphicsDevice);
 
+        // Get the mods in the game. This is a trick that will come in handy later~
+        var modPaths =
+            GameLoader.GetDirectoriesWithSubPathAndAppend(GameLoader.GetAllModDirectories(), "textures");
+
         // Must be after Hard-coded assets, or there will be problems.
         TextureLoader.Initialize(
-            Content,
-            GraphicsDevice,
+                Content,
+                GraphicsDevice, 
             // Get game mod directory, get all folders within it, and feed as list. These are mods!
-            Directory.GetDirectories(GameLoader.MPath()).ToList());
+            modPaths);
 
         // Continue
         base.Initialize();

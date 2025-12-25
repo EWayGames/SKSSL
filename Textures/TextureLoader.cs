@@ -110,6 +110,7 @@ public abstract class TextureLoader
         // This makes sure that mod assets are loaded -before- vanilla assets.
         foreach (var modFolder in _modFolders.Reverse()) // Reverse() last-mod-wins priority
         {
+            // WARN: Only accommodates surface-level.
             string modPath = Path.Combine(modFolder, assetName + ".png");
             if (!File.Exists(modPath))
                 continue; // Short-circuit.

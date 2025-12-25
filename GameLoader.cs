@@ -93,6 +93,35 @@ public static class GameLoader
     }
 
     /// <summary>
+    /// Retrieves all surface-level folders of provided directories, attempts to find a folder contained in each, and
+    /// outputs a list with entries containing the sub-path appended to the directory paths.
+    /// </summary>
+    /// <param name="directories"></param>
+    /// <param name="folderToFind"></param>
+    /// <returns></returns>
+    public static List<string> GetDirectoriesWithSubPathAndAppend(string[] directories, string folderToFind)
+    {
+        List<string> directoriesWithSubPath = [];
+        foreach (var directory in directories)
+        {
+            string texturesPath = Path.Combine(directory, folderToFind);
+
+            if (Directory.Exists(texturesPath))
+            {
+                directoriesWithSubPath.Add(texturesPath);
+            }
+        }
+
+        return directoriesWithSubPath;
+    }
+
+    /// <summary>
+    /// Retrieves all mod directories in the game.
+    /// </summary>
+    /// <returns></returns>
+    public static string[] GetAllModDirectories() => Directory.GetDirectories(MPath());
+
+    /// <summary>
     /// Initializes the game's two primary directories.
     /// </summary>
     public static void Initialize(params (string id, string path)[] paths)
