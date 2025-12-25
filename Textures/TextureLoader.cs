@@ -14,11 +14,6 @@ namespace SKSSL.Textures;
 // Default implementation
 public class DefaultTextureLoader : TextureLoader
 {
-    protected override Texture2D GetTextureImplement<T>(string fullFilePath)
-    {
-        throw new NotImplementedException();
-    }
-
     protected override void CustomInitializeRegistries() =>
         throw new NotImplementedException(
             "Developer(s) MUST implement custom Registries Initialization, as registries may vary between projects.");
@@ -61,18 +56,23 @@ public abstract class TextureLoader
 
     private static readonly Dictionary<string, Texture2D> _cache = new();
 
+    #region Initialization
+
     private static bool IsInitialized { get; set; } = false;
 
     /// <summary>
     /// Allows the developer to pre-initialize a custom loader for the game, assuming it is on the surface-level of
     /// game initialization and before base.Initialize() is called in the game's Initialize() method.
+    /// <see cref="TextureLoader"/> instance may be provided to override the <see cref="DefaultTextureLoader"/>.
     /// </summary>
     /// <param name="alternativeLoader"></param>
-    public static void PreInitializeLoader(TextureLoader? alternativeLoader = null) => _instance = alternativeLoader ?? new DefaultTextureLoader();
+    public static void PreInitializeLoader(TextureLoader? alternativeLoader = null)
+    {
+        _instance = alternativeLoader ?? new DefaultTextureLoader();
+    }
 
     /// <summary>
     /// Initializes texture loaded. An alternative version of the loaded with a custom implement for
-    /// <see cref="GetTextureImplement{T}"/> may be provided to override the <see cref="DefaultTextureLoader"/>.
     /// <br/><br/>
     /// It is IMPERATIVE that this be loaded before the base.Initialize() of the game's Initialize() method.
     /// </summary>
@@ -96,10 +96,18 @@ public abstract class TextureLoader
         IsInitialized = true;
     }
 
+    #endregion
+
     // The "static" method — but delegates to instance
 
     #region Get Raw Images
 
+    /// <summary>
+    /// Loads a provided asset. Assumes the mod folders within the TextureLoader are all texture folders for each
+    /// mod. 
+    /// </summary>
+    /// <param name="assetName"></param>
+    /// <returns></returns>
     public static Texture2D Load(string assetName) // assetName like "Textures/PlayerSprite" (no extension)
     {
         // Check cache first.
@@ -110,7 +118,6 @@ public abstract class TextureLoader
         // This makes sure that mod assets are loaded -before- vanilla assets.
         foreach (var modFolder in _modFolders.Reverse()) // Reverse() last-mod-wins priority
         {
-            // WARN: Only accommodates surface-level.
             string modPath = Path.Combine(modFolder, assetName + ".png");
             if (!File.Exists(modPath))
                 continue; // Short-circuit.
@@ -137,11 +144,6 @@ public abstract class TextureLoader
     }
 
     #endregion
-
-    /// <summary>
-    /// Overridable Texture acquisition.
-    /// </summary>
-    protected abstract Texture2D GetTextureImplement<T>(string fullFilePath) where T : class;
 
     /// <summary>
     /// Custom method for initializing dedicated registries. Absolutely required per-project.
@@ -226,7 +228,7 @@ public abstract class TextureLoader
             string fileName = Path.GetFileNameWithoutExtension(file);
             string key = config.KeyTransform?.Invoke(fileName, file) ?? fileName.ToLower();
 
-            Texture2D texture = _instance.GetTextureImplement<Texture2D>(file);
+            Texture2D texture = Load(fileName);
             database[key] = texture; // Error Reporting & Texture is automatically handled in the call.
         }
     }
@@ -253,7 +255,7 @@ public abstract class TextureLoader
             {
                 string fileName = Path.GetFileNameWithoutExtension(file);
 
-                Texture2D texture = _instance.GetTextureImplement<Texture2D>(file);
+                Texture2D texture = Load(fileName);
 
                 TextureMaps.TextureType subType =
                     config.SubTextureClassifier?.Invoke(fileName) ?? TextureMaps.TextureType.DIFFUSE;
