@@ -66,36 +66,36 @@ public static partial class DustLogger
         LoggerMessage.Define<string>(LogLevel.Information,
             new EventId((byte)LOG.INFORMATIONAL_PRINT, nameof(INFO_PRINT)), "[INFO]: {Message}");
 
-    internal static readonly Action<ILogger, Exception?> GENERAL_WARNING =
-        LoggerMessage.Define(LogLevel.Warning, new EventId((byte)LOG.GENERAL_WARNING, nameof(GENERAL_WARNING)),
+    internal static readonly Action<ILogger, string, Exception?> GENERAL_WARNING =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId((byte)LOG.GENERAL_WARNING, nameof(GENERAL_WARNING)),
             "[GENERAL WARNING]: {Message}");
 
-    internal static readonly Action<ILogger, Exception?> META_WARNING =
-        LoggerMessage.Define(LogLevel.Warning, new EventId((byte)LOG.META_DATA_WARNING, nameof(META_WARNING)),
+    internal static readonly Action<ILogger, string, Exception?> META_WARNING =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId((byte)LOG.META_DATA_WARNING, nameof(META_WARNING)),
             "[METADATA WARNING]: {Message}");
 
-    internal static readonly Action<ILogger, Exception?> FILE_WARNING =
-        LoggerMessage.Define(LogLevel.Warning, new EventId((byte)LOG.FILE_WARNING, nameof(FILE_WARNING)),
+    internal static readonly Action<ILogger, string, Exception?> FILE_WARNING =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId((byte)LOG.FILE_WARNING, nameof(FILE_WARNING)),
             "[FILE WARNING]: {Message}");
 
-    internal static readonly Action<ILogger, Exception?> SYSTEM_WARNING =
-        LoggerMessage.Define(LogLevel.Warning, new EventId((byte)LOG.SYSTEM_WARNING, nameof(SYSTEM_WARNING)),
+    internal static readonly Action<ILogger, string, Exception?> SYSTEM_WARNING =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId((byte)LOG.SYSTEM_WARNING, nameof(SYSTEM_WARNING)),
             "[SYSTEM WARNING]: {Message}");
 
-    internal static readonly Action<ILogger, Exception?> GENERAL_ERROR =
-        LoggerMessage.Define(LogLevel.Error, new EventId((byte)LOG.GENERAL_ERROR, nameof(GENERAL_ERROR)),
+    internal static readonly Action<ILogger, string, Exception?> GENERAL_ERROR =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId((byte)LOG.GENERAL_ERROR, nameof(GENERAL_ERROR)),
             "[GENERAL ERROR]: {Message}");
 
-    internal static readonly Action<ILogger, Exception?> META_ERROR =
-        LoggerMessage.Define(LogLevel.Error, new EventId((byte)LOG.META_DATA_ERROR, nameof(META_ERROR)),
+    internal static readonly Action<ILogger, string, Exception?> META_ERROR =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId((byte)LOG.META_DATA_ERROR, nameof(META_ERROR)),
             "[METADATA ERROR]: {Message}");
 
-    internal static readonly Action<ILogger, Exception?> FILE_ERROR =
-        LoggerMessage.Define(LogLevel.Error, new EventId((byte)LOG.FILE_ERROR, nameof(FILE_ERROR)),
+    internal static readonly Action<ILogger, string, Exception?> FILE_ERROR =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId((byte)LOG.FILE_ERROR, nameof(FILE_ERROR)),
             "[FILE ERROR]: {Message}");
 
-    internal static readonly Action<ILogger, Exception?> SYSTEM_ERROR =
-        LoggerMessage.Define(LogLevel.Error, new EventId((byte)LOG.SYSTEM_ERROR, nameof(SYSTEM_ERROR)),
+    internal static readonly Action<ILogger, string, Exception?> SYSTEM_ERROR =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId((byte)LOG.SYSTEM_ERROR, nameof(SYSTEM_ERROR)),
             "[SYSTEM ERROR]: {Message}");
 #pragma warning restore CA2017
 
@@ -124,29 +124,29 @@ public static partial class DustLogger
         {
             // Errors
             case LOG.GENERAL_ERROR:
-                GENERAL_ERROR(logger, exception);
+                GENERAL_ERROR(logger, string.Empty, exception);
                 break;
             case LOG.META_DATA_ERROR:
-                META_ERROR(logger, exception);
+                META_ERROR(logger, string.Empty, exception);
                 break;
             case LOG.FILE_ERROR:
-                FILE_ERROR(logger, exception);
+                FILE_ERROR(logger, string.Empty, exception);
                 break;
             case LOG.SYSTEM_ERROR:
-                SYSTEM_ERROR(logger, exception);
+                SYSTEM_ERROR(logger, string.Empty, exception);
                 break;
             // Warnings
             case LOG.META_DATA_WARNING:
-                META_WARNING(logger, exception);
+                META_WARNING(logger, message, null);
                 break;
             case LOG.GENERAL_WARNING:
-                GENERAL_WARNING(logger, exception);
+                GENERAL_WARNING(logger, message, null);
                 break;
             case LOG.FILE_WARNING:
-                FILE_WARNING(logger, exception);
+                FILE_WARNING(logger, message, null);
                 break;
             case LOG.SYSTEM_WARNING:
-                SYSTEM_WARNING(logger, exception);
+                SYSTEM_WARNING(logger, message, null);
                 break;
             // Info
             case LOG.INFORMATIONAL_PRINT:
