@@ -1,4 +1,5 @@
 using SKSSL.YAML;
+// ReSharper disable ClassWithVirtualMembersNeverInherited.Global
 
 #pragma warning disable CS8618, CS9264
 
