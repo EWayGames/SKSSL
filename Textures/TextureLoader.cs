@@ -201,6 +201,9 @@ public abstract class TextureLoader
         foreach ((string categoryName, TextureCategoryConfig config) in _categories)
             LoadCategory(categoryName, config);
     }
+    
+    // ERR: The load methods below now call Load() instead of the instanced loader. They are fickle.
+    //  It might cause some errors when testing.
 
     private static void LoadCategory(string categoryName, TextureCategoryConfig config)
     {
@@ -334,7 +337,7 @@ public abstract class TextureLoader
 
 public class TextureCategoryConfig
 {
-    public string? AssetPathKey { get; init; } // e.g., "__ASSETS_TEXTURES_ITEMS"
+    public string? AssetPathKey { get; init; } // e.g., "I.e. "blocks", "items" , etc."
     public bool IsMultiTextureMap { get; init; }
     public Func<string, string, string>? KeyTransform { get; init; }
     public Func<string, TextureMaps.TextureType>? SubTextureClassifier { get; init; }
