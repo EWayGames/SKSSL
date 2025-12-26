@@ -88,6 +88,7 @@ public readonly struct Vector3Int : IEquatable<Vector3Int>
 
     public Vector3 ToVector3() => new(X, Y, Z);
     public Vector3 Center() => new(X + 0.5f, Y + 0.5f, Z + 0.5f);
-    
+    public static Vector3Int Zero() => new(0, 0, 0);
+
     #endregion
 }
