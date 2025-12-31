@@ -34,7 +34,7 @@ public sealed record SKEntity
     /// For every index, there is a unique component type.
     /// <seealso cref="ComponentArray{T}"/>
     /// </summary>
-    public int[] ComponentIndices;
+    public readonly int[] ComponentIndices;
 
     /// <summary>
     /// Reverse-reference back to the world that this entity inhabits.
