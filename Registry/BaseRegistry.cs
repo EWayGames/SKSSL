@@ -62,7 +62,8 @@ public abstract class
     /// </summary>
     protected static void RegisterWithOverride(string key, BaseComponent component)
     {
-        if (Registered.ContainsKey(key)) Console.WriteLine($"[Warning] Detected registry override: {key}");
+        if (Registered.ContainsKey(key))
+            DustLogger.Log($"Detected registry override: {key}", DustLogger.LOG.SYSTEM_WARNING);
         // Override previous entry
         Registered[key] = component;
     }
