@@ -1,5 +1,12 @@
 # What is an ECS?
-ECS is short for "Entity Component System", where a set of components contain certain data about the entity they are contained in. Every component definition has an `EntitySystem` defined for it, which interacts with all components in a certain way and handles certain behaviours.
+ECS is short for "Entity Component System", where a set of components contain certain data about the entity they are contained in.
+
+Every component definition *should* have an `EntitySystem` dedicated to it with the current arrangement.
+
+Every `EntitySystem` interacts with as many types of `Components` that you wish and dictates how behaviors are applied to the entities containing those components, but I suggest keeping them 1:1 for the safe of cleanliness.
+
+In essence, what you are seeing here is a `n:m` "Pure" ECS where `n` components could be accessed by `m` systems. If `0` components are accessed by `m` systems, all `m` systems would literally just be plain classes.
+
 ```
 Example:
     A tree can have the "Grow" component.
