@@ -94,6 +94,14 @@ public class ComponentYaml
     [YamlMember(Alias = "type")] public string Type { get; set; }
 
     // Dictionary for flexible fields (for varied components)
+    /// <summary>
+    /// Variable Fields contained in the record that defines the component.
+    /// Private code will require provided component documentation for user-defined entities.
+    /// </summary>
+    /// <remarks>
+    /// It's funky. Field names should be about as 1:1 to the actual component's fields.
+    /// As far as I know, it's case sensitive.
+    /// </remarks>
     public Dictionary<string, object> Fields { get; set; } = new();
 }
 

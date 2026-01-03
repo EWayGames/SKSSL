@@ -70,7 +70,9 @@ public static class EntityRegistry
                 PropertyInfo? property = componentType.GetProperty(field.Key,
                     BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 
-                if (property?.CanWrite != true) continue;
+                // If the property can't be written to, then why bother.
+                if (property?.CanWrite != true)
+                    continue;
 
                 try
                 {
