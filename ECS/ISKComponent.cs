@@ -1,4 +1,10 @@
 namespace SKSSL.ECS;
 
 #pragma warning disable CS8618, CS9264
+
+/// Required interface to implement custom components.
+/// <remarks>
+/// SKSSL's ECS uses reflection to get all ISKComponents and their fields.
+/// Components exist here solely to store and represent data within an entity.
+/// </remarks>
 public interface ISKComponent;
