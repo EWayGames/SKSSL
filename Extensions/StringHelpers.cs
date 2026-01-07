@@ -16,6 +16,13 @@ public static class StringHelpers
         return value;
     }
     
+    /// <returns>A "..._&lt;value&gt;" ending tag from a provided string value.</returns>
+    public static string GetUnderscoreEndingTag(this string value)
+    {
+        int i = value.LastIndexOf('_');
+        return i >= 0 ? value[(i + 1)..] : "";
+    }
+    
     public static string ToPascalCase(this string input)
     {
         if (string.IsNullOrWhiteSpace(input))
