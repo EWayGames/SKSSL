@@ -2,16 +2,29 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace SKSSL.Textures;
 
-public record TextureMaps
+/// <summary>
+/// Texture mapping fields mapped to various types of textures.
+/// <example>Diffuse, Normal, Displacement, etc.</example>
+/// </summary>
+public record TextureMaps()
 {
-    public enum TextureType
+    /// <summary>
+    /// Supported texture-types in the system.
+    /// </summary>
+    public enum TextureType : byte
     {
-        DIFFUSE,
-        NORMAL,
-
-        // Unused
-        DISPLACEMENT,
-        GLOSSY,
+        /// <summary>
+        /// Plain color information.
+        /// </summary>
+        DIFFUSE = 0,
+        /// <summary>
+        /// Normal-data.
+        /// </summary>
+        NORMAL = 1,
+        
+        // Unused as of 20260106
+        //DISPLACEMENT,
+        //GLOSSY,
     }
 
     public Texture2D? Diffuse { get; set; }
@@ -21,12 +34,8 @@ public record TextureMaps
     public Texture2D? Roughness { get; set; }
     public Texture2D? Emissive { get; set; }
 
-    public TextureMaps()
-    {
-    }
-
     // Positional constructor for normal use
-    public TextureMaps(Texture2D? diffuse, Texture2D? normal = null)
+    public TextureMaps(Texture2D? diffuse, Texture2D? normal = null) : this()
     {
         Diffuse = diffuse;
         Normal = normal;
