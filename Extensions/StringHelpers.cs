@@ -4,6 +4,18 @@ namespace SKSSL.Utilities;
 
 public static class StringHelpers
 {
+    /// <summary>
+    /// Removes "..._&lt;value&gt;" from the end of a string value.
+    /// </summary>
+    /// <returns>Provided string value with any endings removed.</returns>
+    public static string RemoveUnderscoreEndingTag(this string value)
+    {
+        int i = value.LastIndexOf('_');
+        if (i >= 0)
+            value = value[..i];
+        return value;
+    }
+    
     public static string ToPascalCase(this string input)
     {
         if (string.IsNullOrWhiteSpace(input))
