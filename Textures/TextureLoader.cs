@@ -5,7 +5,6 @@ using Microsoft.Xna.Framework.Graphics;
 using SKSSL.Utilities;
 
 // ReSharper disable SwitchStatementHandlesSomeKnownEnumValuesWithDefault
-
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 // ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedMethodReturnValue.Global
@@ -15,22 +14,25 @@ using SKSSL.Utilities;
 namespace SKSSL.Textures;
 
 /// <summary>
-/// Supported texture-types in the system. Defaults to <see cref="DIFFUSE"/>
+/// Supported texture-types in the system. Defaults to <see cref="DIFFUSE"/>.
 /// </summary>
+/// <remarks>
+/// This will not inherently do anything besides permit additional map types. Rendering must be implemented separately.
+/// </remarks>
 public enum TextureType : byte
 {
-    /// <summary>
     /// Plain color information.
-    /// </summary>
     DIFFUSE = 0,
 
-    /// <summary>
     /// Normal-data.
-    /// </summary>
     NORMAL = 1,
 
+    /// Height data.
     DISPLACEMENT = 2,
+
+    /// Glow data.
     EMISSIVE = 3,
+    
     // Unused as of 20260106
     //GLOSSY,
 }
@@ -261,9 +263,9 @@ public abstract class TextureLoader
 
             // Error Reporting & Texture is automatically handled in the Load() call.
             Texture2D texture = Load(fileName);
-            
+
             // Using KeyValuePair directly for single-entries. Treating it as a standard dictionary in this respect.
-            database[categoryName] = new KeyValuePair<string,Texture2D>(key, texture);
+            database[categoryName] = new KeyValuePair<string, Texture2D>(key, texture);
         }
     }
 
@@ -458,9 +460,20 @@ public abstract class TextureLoader
     }
 }
 
+/// <summary>
+/// Configurable handling for texture registration behaviour.
+/// </summary>
 public class TextureCategoryConfig
 {
-    public string? AssetPathKey { get; init; } // e.g., "I.e. "objects", "items" , etc."
+    /// Asset path dictating overall category.
+    /// <remarks>Make sure that this is assigned as lowercase, or whatever case needed to match folder structure</remarks>
+    /// <example>e.g., "I.e. "objects", "items" , etc."</example>
+    public string? AssetPathKey { get; init; }
+
+    /// Does this texture category store complex texture maps?
+    /// <value>Stores simple key-value pairs when false, and a <see cref="SKMaterial"/> dictionary when true.</value>
     public bool IsMultiTextureMap { get; init; }
+
+    /// In-line function call to transform string tuple (key, value), returning and assigning a resulting string value. 
     public Func<string, string, string>? KeyTransform { get; init; }
 }
