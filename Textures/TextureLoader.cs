@@ -3,6 +3,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using SKSSL.Utilities;
+using static SKSSL.DustLogger;
+using static SKSSL.Textures.TextureLoader.MaterialRegistry;
 
 // ReSharper disable SwitchStatementHandlesSomeKnownEnumValuesWithDefault
 // ReSharper disable UnusedAutoPropertyAccessor.Global
@@ -32,7 +34,7 @@ public enum TextureType : byte
 
     /// Glow data.
     EMISSIVE = 3,
-    
+
     // Unused as of 20260106
     //GLOSSY,
 }
@@ -56,7 +58,7 @@ public class BlankTextureLoader : TextureLoader
 /// <see cref="CustomInitializeRegistries"/> MUST be filled-out per-implementation based on the
 /// developer requirements / layout of the project.
 /// </summary>
-public abstract class TextureLoader
+public abstract partial class TextureLoader
 {
     // Default implementation
     private static TextureLoader _instance = new BlankTextureLoader();
@@ -129,16 +131,19 @@ public abstract class TextureLoader
     #region Get Raw Images
 
     /// <summary>
-    /// Loads a provided asset. Assumes the mod folders within the TextureLoader are all texture folders for each
-    /// mod. 
+    /// Loads a provided asset name as a <see cref="Texture2D"/>.
+    /// Assumes the mod folders within the TextureLoader are all texture folders for each mod.
+    /// Use <see cref="GetTexture"/> for external use.
     /// </summary>
     /// <param name="assetName">Name of the provided asset without extension. (e.g. "Textures/PlayerSprite")</param>
-    /// <returns></returns>
-    public static Texture2D Load(string assetName)
+    /// <returns>Texture asset or Default Error Texture, instead.</returns>
+    private static Texture2D Load(string assetName)
     {
         // Check cache first.
         if (_cache.TryGetValue(assetName, out Texture2D? cached))
             return cached;
+
+        Texture2D? texture;
 
         // TODO: Add <mod_name>:<asset_name> support.
 
@@ -153,7 +158,7 @@ public abstract class TextureLoader
                 if (!File.Exists(modPath))
                     continue; // Short-circuit.
                 using FileStream stream = File.OpenRead(modPath);
-                Texture2D? texture = Texture2D.FromStream(_graphicsDevice, stream);
+                texture = Texture2D.FromStream(_graphicsDevice, stream);
                 _cache[assetName] = texture;
                 return texture;
             }
@@ -162,7 +167,7 @@ public abstract class TextureLoader
         // Try vanilla pipeline load (falls back if no .xnb exists)
         try
         {
-            var texture = _vanillaContent.Load<Texture2D>(assetName);
+            texture = _vanillaContent.Load<Texture2D>(assetName);
             _cache[assetName] = texture;
             return texture;
         }
@@ -170,8 +175,8 @@ public abstract class TextureLoader
         {
         } // Expected if no vanilla asset
 
-        DustLogger.Log($"Image texture not found: {assetName}. Defaulting to error texture instead.",
-            DustLogger.LOG.FILE_WARNING);
+        Log($"Image texture not found: {assetName}. Defaulting to error texture instead.",
+            LOG.FILE_WARNING);
         return HardcodedTextures.GetErrorTexture();
     }
 
@@ -190,8 +195,8 @@ public abstract class TextureLoader
     protected abstract void CustomOptionalLoad(string input);
 
     // Generic storage: category → texture name → texture object
-    private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, object>>
-        _textureDatabases = new();
+    private static readonly
+        ConcurrentDictionary<string, Dictionary<string, Texture2D>> _simpleTextures = new();
 
     private static readonly Dictionary<string, TextureCategoryConfig> _categories = new();
 
@@ -201,7 +206,10 @@ public abstract class TextureLoader
     public static void RegisterCategory(string categoryName, TextureCategoryConfig config)
     {
         _categories[categoryName] = config;
-        _textureDatabases.GetOrAdd(categoryName, _ => new ConcurrentDictionary<string, object>());
+
+        // Material mapping is now handled in the Material Registry.
+        if (!config.IsMultiTextureMap)
+            _simpleTextures[categoryName] = new Dictionary<string, Texture2D>();
     }
 
     /// <summary>
@@ -209,9 +217,9 @@ public abstract class TextureLoader
     /// </summary>
     public static IReadOnlyDictionary<string, TTexture> GetCategory<TTexture>(string categoryName)
     {
-        if (_textureDatabases.TryGetValue(categoryName, out var dict))
+        if (_simpleTextures.TryGetValue(categoryName, out var dict))
         {
-            return (IReadOnlyDictionary<string, TTexture>)dict.AsReadOnly();
+            return (IReadOnlyDictionary<string, TTexture>)dict;
         }
 
         return new Dictionary<string, TTexture>().AsReadOnly();
@@ -233,28 +241,24 @@ public abstract class TextureLoader
             LoadCategory(categoryName, config);
     }
 
-    // ERR: The load methods below now call Load() instead of the instanced loader. They are fickle.
-    //  It might cause some errors when testing.
-
     private static void LoadCategory(string categoryName, TextureCategoryConfig config)
     {
         // Database for specific category, such as "Items" or "Entities", etc.
-        var database = _textureDatabases[categoryName];
-
         if (config.IsMultiTextureMap)
-            LoadMultiTextureCategory(categoryName, config, database);
+            LoadMaterialTextureCategory(config);
         else
-            LoadSingleTextureCategory(categoryName, config, database);
+            LoadSingleTextureCategory(categoryName, config);
     }
 
-    private static void LoadSingleTextureCategory(string categoryName, TextureCategoryConfig config,
-        ConcurrentDictionary<string, object> database)
+    private static void LoadSingleTextureCategory(string categoryName, TextureCategoryConfig config)
     {
         string dir = _currentDirectory;
         if (config.AssetPathKey != null)
             dir = Path.Combine(_currentDirectory, config.AssetPathKey);
 
         var files = GameLoader.GetGameFiles(dir);
+
+        Dictionary<string, Texture2D> flatTextures = new();
 
         foreach (var file in files)
         {
@@ -264,14 +268,18 @@ public abstract class TextureLoader
             // Error Reporting & Texture is automatically handled in the Load() call.
             Texture2D texture = Load(fileName);
 
-            // Using KeyValuePair directly for single-entries. Treating it as a standard dictionary in this respect.
-            database[categoryName] = new KeyValuePair<string, Texture2D>(key, texture);
+            flatTextures[key] = texture;
         }
+
+        // Using KeyValuePair directly for single-entries. Treating it as a standard dictionary in this respect.
+        _simpleTextures[categoryName] = flatTextures;
     }
 
-
-    private static void LoadMultiTextureCategory(string categoryName, TextureCategoryConfig config,
-        ConcurrentDictionary<string, object> database)
+    /// <summary>
+    /// Handles materials entirely differently using a material registry.
+    /// </summary>
+    /// <param name="config"></param>
+    private static void LoadMaterialTextureCategory(TextureCategoryConfig config)
     {
         string dir = _currentDirectory;
         if (config.AssetPathKey != null)
@@ -303,7 +311,7 @@ public abstract class TextureLoader
                 //  Hacky, yes. However this supports "..._diffuse.png" as much as it supports "....png" 
                 if (!Enum.TryParse(subTypeName, true, out TextureType subType))
                 {
-                    DustLogger.Log($"Unknown sub-texture type for {fileName}. Defaulting to Diffuse.", 3);
+                    Log($"Unknown sub-texture type for {fileName}. Defaulting to Diffuse.", 3);
                     subType = TextureType.DIFFUSE;
                 }
 
@@ -345,36 +353,39 @@ public abstract class TextureLoader
             }
         }
 
-        // Complete material group assignations.
-        //  database[Category]
-        //      -> Group A -> Texture Map A
-        //      -> Group B -> Texture Map B
-        database[categoryName] = materialGroups;
+        // Register all materials.
+        // I am aware this is a call to yet another static class. I am not going to add a wrapper or two and make an
+        //  entire registry a dictionary entry. Simple textures are bad as it is.
+        foreach (var group in materialGroups)
+            RegisterMaterial(group.Key, group.Value);
     }
+
+    /// <summary>
+    /// Slow calls to get material from Material Registry. Not recommended for common or repetitive use. 
+    /// </summary>
+    public static SKMaterial GetMaterialWithKey(string key) => GetMaterial(GetId(key));
 
     /// <summary>
     /// Safe accessor with error fallback and logging.
     /// </summary>
-    public static T GetTexture<T>(string categoryName, string key) where T : class
+    public static Texture2D GetTexture(string category, string key)
     {
-        if (_textureDatabases.TryGetValue(categoryName, out var dict) &&
-            dict.TryGetValue(key, out var texture) &&
-            texture is T result)
-        {
-            return result;
-        }
+        // Attempting to retrieve a Texture2D.
+        if (_simpleTextures.TryGetValue(category, out var dict))
+            if (dict.TryGetValue(key, out Texture2D? value))
+                return value;
 
-        if (!key.Equals("error", StringComparison.OrdinalIgnoreCase))
-        {
-            Console.WriteLine($"Missing texture: [{categoryName}] \"{key}\" — using error texture.");
-        }
-
-        return (T)(object)HardcodedTextures.GetErrorTexture();
+        Log($"Provided Texture Key invalid for category-key pair: [{category}][{key}] — using error texture.",
+            LOG.FILE_WARNING);
+        return HardcodedTextures.GetErrorTexture();
     }
 
     private const int DEFAULT_WIDTH = 128;
     private const int DEFAULT_HEIGHT = 128;
 
+    /// <summary>
+    /// Programmer-assigned textures for use elsewhere.
+    /// </summary>
     private static class HardcodedTextures
     {
         private static Texture2D? DefaultError;
@@ -400,63 +411,6 @@ public abstract class TextureLoader
             DefaultError = tex;
             return tex;
         }
-    }
-
-    /// <summary>
-    /// Internal Material Registry for Texture Loader class. Utilized for any kind of object that requires more than one map.
-    /// Handles multiple map-types.
-    /// </summary>
-    public static class MaterialRegistry
-    {
-        /// The maximum number of materials the game is willing to load at any given runtime instance.
-        private const int MaxMaterials = 2048;
-
-        /// Used as numerical ID selector for new materials, as well as total material counter. 
-        public static int MaterialCount { get; private set; } = 0;
-
-        public static readonly SKMaterial[] Materials = new SKMaterial[MaxMaterials];
-        public static readonly Dictionary<string, int> NameToId = new(MaxMaterials); // only used during loading
-
-        /// <summary>
-        /// Registers or gets an existing material ID by name.
-        /// Called during loading when a multi-texture folder is processed.
-        /// </summary>
-        public static int RegisterMaterial(string name, SKMaterial material)
-        {
-            if (NameToId.TryGetValue(name, out int existingId))
-                return existingId;
-
-            if (MaterialCount >= MaxMaterials)
-                throw new InvalidOperationException($"Exceeded maximum material count ({MaxMaterials})");
-
-            int newId = MaterialCount++;
-            Materials[newId] = material;
-            NameToId[name] = newId;
-
-            return newId;
-        }
-
-        /// <summary>
-        /// Fast access by ID — used heavily at runtime.
-        /// <remarks>
-        /// If id &lt; 0, or id &gt; Material Count, use Default Error Material.
-        /// Otherwise, utilize Materials[id] entry.
-        /// </remarks>
-        /// </summary>
-        public static SKMaterial GetMaterial(int id)
-            => id < 0 || id >= MaterialCount ? DefaultErrorMaterial : Materials[id];
-
-        /// <summary>
-        /// Lookup by name (only for debugging/tools)
-        /// </summary>
-        public static int GetId(string name) => NameToId.GetValueOrDefault(name, -1);
-
-        private static readonly SKMaterial DefaultErrorMaterial = new()
-        {
-            Diffuse = HardcodedTextures.GetErrorTexture(),
-            Normal = HardcodedTextures.GetErrorTexture(),
-            // Emissive, Displacement, and the rest can stay null.
-        };
     }
 }
 
