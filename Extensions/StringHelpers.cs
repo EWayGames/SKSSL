@@ -127,4 +127,14 @@ public static class StringHelpers
         // Default to string
         return line;
     }
+
+    /// <summary>
+    /// Extension method for <see cref="string.IsNullOrEmpty"/>
+    /// </summary>
+    public static string? IsNullOrEmpty(this string? value) => string.IsNullOrEmpty(value) ? null : value;
+    
+    /// <summary>
+    /// Extension method for <see cref="string.IsNullOrWhiteSpace"/>
+    /// </summary>
+    public static string? IsNullOrWhiteSpace(this string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
 }
