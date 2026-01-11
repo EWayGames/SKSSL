@@ -131,10 +131,10 @@ public static class StringHelpers
     /// <summary>
     /// Extension method for <see cref="string.IsNullOrEmpty"/>
     /// </summary>
-    public static string? IsNullOrEmpty(this string? value) => string.IsNullOrEmpty(value) ? null : value;
+    public static bool IsNullOrEmpty(this string? value) => string.IsNullOrEmpty(value);
     
     /// <summary>
     /// Extension method for <see cref="string.IsNullOrWhiteSpace"/>
     /// </summary>
-    public static string? IsNullOrWhiteSpace(this string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+    public static bool IsNullOrWhiteSpace(this string? value) => string.IsNullOrWhiteSpace(value);
 }
