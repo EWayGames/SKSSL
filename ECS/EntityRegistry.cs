@@ -5,6 +5,9 @@ using static SKSSL.DustLogger;
 
 namespace SKSSL.ECS;
 
+/// <summary>
+/// Registry of all game entity definitions.
+/// </summary>
 public static class EntityRegistry
 {
     private static readonly Dictionary<string, EntityTemplate> _definitions = new();
@@ -116,4 +119,11 @@ public static class EntityRegistry
     /// <returns>True if a template was found. False if one was not. The output is also Null if one was not found.</returns>
     public static bool TryGetTemplate(string referenceId, out EntityTemplate? template)
         => _definitions.TryGetValue(referenceId, out template);
+    
+    /// <summary>
+    /// Inquiry to the <see cref="EntityRegistry"/> for a possible entity definition.
+    /// </summary>
+    /// <param name="handle">Reference ID that the Entity Registry SHOULD have.</param>
+    /// <returns>True if a template was found. False if one was not.</returns>
+    public static bool ContainsTemplate(string handle) => _definitions.ContainsKey(handle);
 }
