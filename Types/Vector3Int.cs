@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace SKSSL.Utilities;
+namespace SKSSL.Types;
 
 // ReSharper disable UnusedType.Global
 // ReSharper disable UnusedMember.Global
