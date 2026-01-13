@@ -2,7 +2,8 @@ using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Type = System.Type;
+using static SKSSL.DustLogger; // I like my DustLogger. I will use it everywhere.
+using Type = System.Type; // For reflection purposes.
 
 // ReSharper disable InvalidXmlDocComment
 
@@ -50,29 +51,37 @@ public static partial class ComponentRegistry
     private static readonly Dictionary<Type, int> _typeToId = new();
     private static readonly Dictionary<int, Type> _idToType = new();
     private static readonly Dictionary<string, Type> _registeredComponents = new();
-    public static IReadOnlyDictionary<string, Type> RegisteredComponentTypes => _registeredComponents;
-    
+    public static IReadOnlyDictionary<string, Type> RegisteredComponentTypesDictionary => _registeredComponents;
+
+    public static IReadOnlyList<Type> RegisteredComponentTypesList =>
+        _registeredComponents.Values.ToList().AsReadOnly();
+
     /// <summary>
     /// Dictionary of all active components.
     /// </summary>
-    private static readonly ConcurrentDictionary<Type, object> _activeComponentArrays = new(); // Type -> ComponentArray<T>
+    private static readonly ConcurrentDictionary<Type, object>
+        _activeComponentArrays = new(); // Type -> ComponentArray<T>
 
     private static int _nextTypeId = 0;
     private static bool _initialized = false;
 
     #region Component Registration and Assembly Checks
 
+    /// <summary>
+    /// Uses reflection to get all defined components in the (relevant) assemblies, and initializes them.
+    /// 
+    /// </summary>
     public static void RegisterAllComponents()
     {
         if (_initialized) return;
 
+        // Keeping stopwatch timer for releases. It's nice to have.
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-
         var assemblies = AppDomain.CurrentDomain.GetAssemblies()
             .Where(IsRelevantAssembly)
             .ToArray();
 
-        DustLogger.Log($"Scanning {assemblies.Length} assemblies for components...");
+        Log($"Scanning {assemblies.Length} assemblies for components...");
 
         int componentCount = 0;
         foreach (Assembly assembly in assemblies)
@@ -91,10 +100,10 @@ public static partial class ComponentRegistry
         _initialized = true;
 
         // Logging
-        DustLogger.Log($"Registered {componentCount} components in {stopwatch.ElapsedMilliseconds}ms");
-        DustLogger.Log("Registered types:");
+        Log($"Registered {componentCount} components in {stopwatch.ElapsedMilliseconds}ms");
+        Log("Registered types:");
         foreach (Type type in _registeredComponents.Values)
-            DustLogger.Log($"  {type.Name} -> ID {GetOrRegister(type)}");
+            Log($"  {type.Name} -> ID {GetOrRegister(type)}");
     }
 
     /// <summary>
@@ -147,7 +156,9 @@ public static partial class ComponentRegistry
 
     // I just couldn't choose which to implement. Theres multiple ways to do this and i am picky about performance.
     //  The compiler shall handle the rest of this, consequences be damned.
+
     #region ComponentArray Activators
+
 #pragma warning disable CS0162 // Unreachable code detected
 #pragma warning disable SYSLIB0050
 
@@ -161,7 +172,7 @@ public static partial class ComponentRegistry
             return Activator.CreateInstance(arrayType)!;
         }
     }
-    
+
     internal static object GetOrCreateComponentArrayRuntime(Type componentType)
     {
         return _activeComponentArrays.GetOrAdd(componentType, t =>
@@ -173,7 +184,24 @@ public static partial class ComponentRegistry
     }
 #pragma warning restore SYSLIB0050
 #pragma warning restore CS0162 // Unreachable code detected
+
     #endregion
+
+    /// <summary>
+    /// Used for extensions that attempt to retrieve a defined component from an entity.
+    /// </summary>
+    private static bool TryGetComponentIndex(SKEntity entity, Type componentType, out int index)
+    {
+        var compId = entity.ComponentIndices[_typeToId.TryGetValue(componentType, out index) ? index : -1];
+
+        // Effectively HasComponent() call, but index is reused later so... ¯\_(ツ)_/¯
+        if (compId != -1)
+            return true;
+
+        Log($"Tried to get bad component index. Entity {entity.RuntimeId} missing component type {componentType.Name}",
+            LOG.GENERAL_WARNING);
+        return false;
+    }
 
     /// <summary>
     /// Convenient version of <see cref="GetOrCreateComponentArray"/> that which it calls.
@@ -187,7 +215,7 @@ public static partial class ComponentRegistry
     /// Gets or creates the ComponentArray<T> for the given component type.
     /// Called only once per component type.
     /// </summary>
-    public static object GetOrCreateComponentArray(Type componentType)
+    private static object GetOrCreateComponentArray(Type componentType)
     {
         ArgumentNullException.ThrowIfNull(componentType);
 
@@ -203,10 +231,25 @@ public static partial class ComponentRegistry
                    ?? throw new InvalidOperationException($"Failed to instantiate ComponentArray<{t.Name}>");
         }
     }
-   
-    internal static ISKComponent? GetComponentAt(object array, int index)
-        => ((IList<object>)array)[index] as ISKComponent;
 
+    /// <param name="array"><see cref="ComponentArray{T}"/> of Active components.</param>
+    /// <param name="index">Index of component provided by an <see cref="SKEntity"/> up the chain.</param>
+    /// <returns>
+    /// Gets a component using a <see cref="ComponentArray{T}"/> and provided index of the component's position
+    /// within the array.
+    /// </returns>
+    internal static ISKComponent? GetComponentAt(object array, int index)
+    {
+        ArgumentNullException.ThrowIfNull(array);
+        ArgumentOutOfRangeException.ThrowIfNegative(index);
+        return ((IComponentArray)array)[index] as ISKComponent;
+    }
+    
+    internal static T GetComponentAt<T>(ComponentArray<T> array, int index) where T : struct, ISKComponent
+        => array.GetAt(index);
+
+    /// <returns>ID of component defined in type dictionary, or -1.</returns>
+    /// <exception cref="ArgumentException">Provided type not present in dictionary.</exception>
     private static int GetComponentTypeId(Type componentType)
     {
         if (!_typeToId.TryGetValue(componentType, out int id))
@@ -214,9 +257,16 @@ public static partial class ComponentRegistry
         return id;
     }
 
+    /// <inheritdoc cref="GetComponentTypeId(type)"/>
     public static int GetComponentTypeId<T>() => GetComponentTypeId(typeof(T));
 
-    public static int GetOrRegister(Type type)
+    /// <summary>
+    /// Multi-purpose method used to retrieve an ID of a registered type, or additionally
+    /// register said-type before returning.
+    /// </summary>
+    /// <param name="type">A class-type definition hopefully implementing <see cref="ISKComponent"/>.</param>
+    /// <returns>Integer ID of (what should be) a Type implementing <see cref="ISKComponent"/>.</returns>
+    private static int GetOrRegister(Type type)
     {
         if (_typeToId.TryGetValue(type, out int id))
             return id;
@@ -232,11 +282,17 @@ public static partial class ComponentRegistry
         return id;
     }
 
+    /// Number of Components registered in the registry. Gets next available Component ID.
     public static int Count => _nextTypeId;
 
-    public static IReadOnlyList<Type> RegisteredTypes => _registeredComponents.Values.ToList().AsReadOnly();
-
+    /// <param name="id">ID of Registered Component</param>
+    /// <returns>Null or Type Definition based on provided ID.</returns>
     public static Type? GetType(int id) => _idToType.GetValueOrDefault(id);
+}
+
+public interface IComponentArray
+{
+    object? this[int index] { get; }
 }
 
 /// <summary>
@@ -244,29 +300,44 @@ public static partial class ComponentRegistry
 /// </summary>
 /// <typeparam name="T">Type of components being stored in this particular list.</typeparam>
 /// <seealso cref="List"/>
-public sealed class ComponentArray<T> where T : struct
+public class ComponentArray<T> : IComponentArray where T : struct, ISKComponent
 {
     public ComponentArray(int capacity) => _items = new T[capacity];
-    public ComponentArray() : this(1024) {}
-    
-    private T[] _items;
-    private int _count = 0;
 
-    public int Count => _count;
-
-    public ref T Add()
+    public ComponentArray() : this(1024)
     {
-        if (_count >= _items.Length)
-            Array.Resize(ref _items, _items.Length * 2);
-
-        return ref _items[_count++];
     }
 
+    /// Private list of contained items.
+    private T[] _items;
+
+    public int Count { get; private set; } = 0;
+
+    /// <summary>
+    /// Expands list of available items.
+    /// </summary>
+    /// <returns>Reference to <see cref="_items"/> slot.</returns>
+    public ref T Add()
+    {
+        // Double item space every time it's over max.
+        if (Count >= _items.Length)
+            Array.Resize(ref _items, _items.Length * 2);
+
+        return ref _items[Count++];
+    }
+
+    /// <param name="index">Index of desired registered type.</param>
+    /// <returns>Type definition at index.</returns>
+    /// <exception cref="IndexOutOfRangeException">If (<see cref="Count"/> &gt; index &lt; 0 )</exception>
     public ref T GetAt(int index)
     {
-        if (index < 0 || index >= _count)
-            throw new IndexOutOfRangeException();
+        if (index < 0 || index >= Count)
+            throw new IndexOutOfRangeException($"{nameof(GetAt)} index #{index} out of range.");
 
         return ref _items[index];
     }
+
+    public ref T this[int index] => ref _items[index];
+    object IComponentArray.this[int index] => _items[index];
+    
 }
