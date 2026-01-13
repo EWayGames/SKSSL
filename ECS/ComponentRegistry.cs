@@ -51,7 +51,10 @@ public static partial class ComponentRegistry
     private static readonly Dictionary<Type, int> _typeToId = new();
     private static readonly Dictionary<int, Type> _idToType = new();
     private static readonly Dictionary<string, Type> _registeredComponents = new();
-    public static IReadOnlyDictionary<string, Type> RegisteredComponentTypes => _registeredComponents;
+    public static IReadOnlyDictionary<string, Type> RegisteredComponentTypesDictionary => _registeredComponents;
+
+    public static IReadOnlyList<Type> RegisteredComponentTypesList =>
+        _registeredComponents.Values.ToList().AsReadOnly();
 
     /// <summary>
     /// Dictionary of all active components.
@@ -185,6 +188,22 @@ public static partial class ComponentRegistry
     #endregion
 
     /// <summary>
+    /// Used for extensions that attempt to retrieve a defined component from an entity.
+    /// </summary>
+    private static bool TryGetComponentIndex(SKEntity entity, Type componentType, out int index)
+    {
+        var compId = entity.ComponentIndices[_typeToId.TryGetValue(componentType, out index) ? index : -1];
+
+        // Effectively HasComponent() call, but index is reused later so... ¯\_(ツ)_/¯
+        if (compId != -1)
+            return true;
+
+        Log($"Tried to get bad component index. Entity {entity.RuntimeId} missing component type {componentType.Name}",
+            LOG.GENERAL_WARNING);
+        return false;
+    }
+
+    /// <summary>
     /// Convenient version of <see cref="GetOrCreateComponentArray"/> that which it calls.
     /// </summary>
     /// <typeparam name="T"></typeparam>
@@ -196,7 +215,7 @@ public static partial class ComponentRegistry
     /// Gets or creates the ComponentArray<T> for the given component type.
     /// Called only once per component type.
     /// </summary>
-    public static object GetOrCreateComponentArray(Type componentType)
+    private static object GetOrCreateComponentArray(Type componentType)
     {
         ArgumentNullException.ThrowIfNull(componentType);
 
@@ -213,9 +232,24 @@ public static partial class ComponentRegistry
         }
     }
 
+    /// <param name="array"><see cref="ComponentArray{T}"/> of Active components.</param>
+    /// <param name="index">Index of component provided by an <see cref="SKEntity"/> up the chain.</param>
+    /// <returns>
+    /// Gets a component using a <see cref="ComponentArray{T}"/> and provided index of the component's position
+    /// within the array.
+    /// </returns>
     internal static ISKComponent? GetComponentAt(object array, int index)
-        => ((IList<object>)array)[index] as ISKComponent;
+    {
+        ArgumentNullException.ThrowIfNull(array);
+        ArgumentOutOfRangeException.ThrowIfNegative(index);
+        return ((IComponentArray)array)[index] as ISKComponent;
+    }
+    
+    internal static T GetComponentAt<T>(ComponentArray<T> array, int index) where T : struct, ISKComponent
+        => array.GetAt(index);
 
+    /// <returns>ID of component defined in type dictionary, or -1.</returns>
+    /// <exception cref="ArgumentException">Provided type not present in dictionary.</exception>
     private static int GetComponentTypeId(Type componentType)
     {
         if (!_typeToId.TryGetValue(componentType, out int id))
@@ -223,7 +257,7 @@ public static partial class ComponentRegistry
         return id;
     }
 
-    /// <returns>Integer ID of Component Type contained in Type Dictionary.</returns>
+    /// <inheritdoc cref="GetComponentTypeId(type)"/>
     public static int GetComponentTypeId<T>() => GetComponentTypeId(typeof(T));
 
     /// <summary>
@@ -248,13 +282,17 @@ public static partial class ComponentRegistry
         return id;
     }
 
+    /// Number of Components registered in the registry. Gets next available Component ID.
     public static int Count => _nextTypeId;
-
-    public static IReadOnlyList<Type> RegisteredTypes => _registeredComponents.Values.ToList().AsReadOnly();
 
     /// <param name="id">ID of Registered Component</param>
     /// <returns>Null or Type Definition based on provided ID.</returns>
     public static Type? GetType(int id) => _idToType.GetValueOrDefault(id);
+}
+
+public interface IComponentArray
+{
+    object? this[int index] { get; }
 }
 
 /// <summary>
@@ -262,7 +300,7 @@ public static partial class ComponentRegistry
 /// </summary>
 /// <typeparam name="T">Type of components being stored in this particular list.</typeparam>
 /// <seealso cref="List"/>
-public sealed class ComponentArray<T> where T : struct
+public class ComponentArray<T> : IComponentArray where T : struct, ISKComponent
 {
     public ComponentArray(int capacity) => _items = new T[capacity];
 
@@ -270,23 +308,36 @@ public sealed class ComponentArray<T> where T : struct
     {
     }
 
+    /// Private list of contained items.
     private T[] _items;
 
     public int Count { get; private set; } = 0;
 
+    /// <summary>
+    /// Expands list of available items.
+    /// </summary>
+    /// <returns>Reference to <see cref="_items"/> slot.</returns>
     public ref T Add()
     {
+        // Double item space every time it's over max.
         if (Count >= _items.Length)
             Array.Resize(ref _items, _items.Length * 2);
 
         return ref _items[Count++];
     }
 
+    /// <param name="index">Index of desired registered type.</param>
+    /// <returns>Type definition at index.</returns>
+    /// <exception cref="IndexOutOfRangeException">If (<see cref="Count"/> &gt; index &lt; 0 )</exception>
     public ref T GetAt(int index)
     {
         if (index < 0 || index >= Count)
-            throw new IndexOutOfRangeException();
+            throw new IndexOutOfRangeException($"{nameof(GetAt)} index #{index} out of range.");
 
         return ref _items[index];
     }
+
+    public ref T this[int index] => ref _items[index];
+    object IComponentArray.this[int index] => _items[index];
+    
 }
