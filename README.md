@@ -1,21 +1,21 @@
 # SKSSL
-This is a shared library. "SKSSL" stands for "SolKom Shared Standard Library" This was written in and for C#, and for particular use in the MonoGame engine with Gum UI.
+This is a shared library. "SKSSL" stands for "SolKom Shared Standard Library" This was written in and for C#, and for use in the MonoGame engine with Gum UI. Many parts of this library— including its name —are derived from various other fragmented projects of mine whose parts were merged into this. (Example: DustLogger ➡ DustToDust, SolKom ➡ SolarKommand, YAMLParser ➡ XMP, etc.)
 
 ## System Information
 - .NET 9.0 SDK
 - Developer OS: Windows
-- Intended OS('s): Windows & Linux (Maybe MacOS? Not sure.)
+- Intended OS('s): Windows & Linux (and MacOS? Untested.)
 - Framework: Monogame DesktopGL 3.4.2+
 - Language(s): C#, YAML, YML
 
 ## Program Goal
-There is no defined goal for this Library. I develop it as I progress my skills as a game developer, sharing what I know and my active understanding of code as I progress.
+The goal is to establish a library built on top of Monogame and Gum that acts as a general framework for my other projects. As I progress my skills as a game developer, I am sharing my active understanding of code as the library progresses.
 
 ## Limitations
-Given that this isn't necessarily a program, the limitations are from C# version 9+ and the frameworks involved. The classes are meant to be as ubiquitous as can be, but very-distant versions past the one this was developed-in will likely cause issues.
+Given that this is a library, it has limitations from C# version 9+ and its other depedencies. The classes are meant to be as ubiquitous as can be, but very-distant dependency versions past the ones this was developed with may cause issues. Otherwise, the limitations are systematic to the library and anything self-referential within it. (E.g. ECS & BaseWorld, SceneManager & BaseWorld, etc.)
 
 ## Maintainer's Remarks
-This is all a massive work-in-progress, but don't bother waiting for it to improve before using it. The moment I find a system in this library satisfactory enough to suit my purposes, I will stop adding and improving that system. Pull Requests are welcomed from those who intend to contribute to the system in places that I cannot be bothered to touch.
+This is all a massive work-in-progress, but don't wait for releases! When I find a system in this library satisfactory enough for my other projects I will stop adding to that system. Pull Requests to contribute to the system in places that are no longer actively maintained are welcomed.
 
 ---
 
