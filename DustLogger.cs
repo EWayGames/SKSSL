@@ -6,7 +6,7 @@ namespace SKSSL;
 
 /// <summary>
 /// A built-in error handler coming from the DustToDust project. This follows Microsoft's guidelines for
-/// performance-efficient error logging into a console. The errors type's here are generalized for use elsewhere.
+/// performance-efficient error logging. The errors type's here are generalized for use elsewhere.
 /// </summary>
 public static partial class DustLogger
 {
