@@ -3,7 +3,8 @@ namespace SKSSL.Types;
 /// <summary>
 /// Hash Grid set on two axes.
 /// </summary>
-/// <typeparam name="T"></typeparam>
+/// <typeparam name="T">Dynamic object Type contained within internal grid cells.</typeparam>
+/// <remarks>T can be a List if desired, for whatever reason.</remarks>
 public class SpatialHashGrid<T> where T : class
 {
     /// Maximum cell size of the hash grid.
