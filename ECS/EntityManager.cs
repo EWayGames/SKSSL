@@ -1,10 +1,8 @@
 using System.Reflection;
-using SKSSL.ECS;
 using SKSSL.Scenes;
 using SKSSL.YAML;
-using ComponentRegistry = SKSSL.ECS.ComponentRegistry;
 
-namespace SKSSL.Managers;
+namespace SKSSL.ECS;
 
 public class EntityManager
 {

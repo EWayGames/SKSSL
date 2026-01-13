@@ -1,8 +1,5 @@
-using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.Xna.Framework;
 using SKSSL.ECS;
-using SKSSL.Managers;
-using SKSSL.Registry;
 
 namespace SKSSL.Scenes;
 

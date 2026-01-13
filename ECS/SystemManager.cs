@@ -2,7 +2,7 @@ using System.Reflection;
 using Microsoft.Xna.Framework;
 using SKSSL.Scenes;
 
-namespace SKSSL.Managers;
+namespace SKSSL.ECS;
 
 /// <summary>
 /// Manages all system draw and update calls. Should be added once per Game instance.
