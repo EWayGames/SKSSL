@@ -8,6 +8,10 @@ using SKSSL.YAML;
 
 namespace SKSSL.ECS;
 
+/// <summary>
+/// Instanced Entity representing an object present within game memory. Entities are contained within a
+/// <see cref="World"/>, and contain <see cref="ComponentIndices"/> for pointing to component arrays.
+/// </summary>
 public record SKEntity
 {
     #region IDs

@@ -1,6 +1,9 @@
 using System.Reflection;
 using Microsoft.Xna.Framework;
 using SKSSL.Scenes;
+using static SKSSL.DustLogger;
+
+// ReSharper disable RedundantAttributeUsageProperty
 
 namespace SKSSL.ECS;
 
@@ -12,6 +15,12 @@ public class SystemManager
     private readonly List<IUpdateSystem> _updateSystems = [];
     private readonly List<IDrawSystem> _drawSystems = [];
     
+    /// <summary>
+    /// Registers all systems within a provided world.
+    /// </summary>
+    /// <param name="world">World that this system will be managing systems in.</param>
+    /// <exception cref="InvalidOperationException">A defined system type doesn't have a valid World constructor.</exception>
+    /// <remarks>Called by <see cref="BaseWorld"/>.Initialize()</remarks>
     public void RegisterAll(BaseWorld world)
     {
         var systemTypes = AppDomain.CurrentDomain.GetAssemblies()
@@ -44,8 +53,8 @@ public class SystemManager
             }
         }
 
-        DustLogger.Log($"Auto-registered {_updateSystems.Count + _drawSystems.Count} systems",
-            DustLogger.LOG.INFORMATIONAL_PRINT);
+        Log($"Auto-registered {_updateSystems.Count + _drawSystems.Count} systems",
+            LOG.INFORMATIONAL_PRINT);
     }
 
     public void Register<T>() where T : new()
