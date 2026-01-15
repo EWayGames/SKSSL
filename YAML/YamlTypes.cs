@@ -130,5 +130,5 @@ public record EntityYaml : BaseLocalizedYamlEntry
     /// Registers this yaml instance as a template.
     /// </summary>
     /// <typeparam name="T">The type of template to register this <see cref="EntityYaml"/> as.</typeparam>
-    public void RegisterAsTemplate<T>() where T : EntityTemplate => EntityRegistry.RegisterTemplate<T>(this);
+    public void RegisterAsTemplate<T>() where T : EntityTemplate => EntityManager.RegisterTemplate<T>(this);
 }

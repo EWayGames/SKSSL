@@ -65,9 +65,9 @@ public record SKEntity
 
     /// <summary>
     /// Default required constructor. Inheritance-entities may use inherited template types to fill certain details in
-    /// their constructors and but always MUST call this base constructor. 
+    /// their constructors but always MUST call this base constructor. 
     /// </summary>
-    /// <param name="id">Unique numerical of of the entity.</param>
+    /// <param name="id">Unique numerical of the entity.</param>
     /// <param name="count">Number of component indices in the game.</param>
     /// <param name="template">Provided template. Uses base <see cref="EntityTemplate"/> by default.</param>
     protected SKEntity(int id, int count, EntityTemplate template)
