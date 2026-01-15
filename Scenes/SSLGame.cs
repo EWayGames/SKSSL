@@ -34,7 +34,7 @@ public abstract class SSLGame : Game
     private readonly InteractiveGue currentScreenGue = new();
     
     /// Non-static game data.
-    public AbstractGameData GameData { get; set; }
+    public abstract AbstractGameData GameData { get; set; }
     
     /// Registries and services belonging to the game.
     private readonly IServiceProvider GameServices;
