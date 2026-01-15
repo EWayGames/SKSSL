@@ -139,8 +139,6 @@ public abstract class SSLGame : Game
             validModTextures);
 
         #endregion
-
-        ComponentRegistry.RegisterAllComponents();
         
         // Continue
         base.Initialize();
