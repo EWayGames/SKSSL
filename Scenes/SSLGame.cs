@@ -1,10 +1,12 @@
 using Gum.DataTypes;
 using Gum.Wireframe;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGameGum;
 using SKSSL.Localization;
 using SKSSL.Textures;
+// ReSharper disable VirtualMemberCallInConstructor
 
 namespace SKSSL.Scenes;
 
@@ -31,6 +33,8 @@ public abstract class SSLGame : Game
     
     public AbstractGameData GameData { get; set; }
 
+    private readonly IServiceProvider GameServices;
+    
     /// <summary>
     /// An array of Tuple paths assigned to an ID. These are loaded into the game's pather, and should
     /// NEVER change. General examples include game texture and yaml prototypes folders.
@@ -69,6 +73,20 @@ public abstract class SSLGame : Game
             DustLogger.Log($"Provided gum project file is empty! {title}, {nameof(SSLGame)}", 3);
         else
             GumFile = gumFile;
+        
+        var services = new ServiceCollection();
+        LoadServices(services);
+        GameServices = services.BuildServiceProvider();
+    }
+
+    /// <summary>
+    /// Loads programmer-provided game services and registries.
+    /// </summary>
+    /// <param name="services"></param>
+    /// <code>services.AddSingleton&lt;ExampleRegistry&gt;();</code>
+    protected virtual void LoadServices(ServiceCollection services)
+    {
+        // Add game services to override method here.
     }
 
     // WARN: I have no idea how to do networking. This needs work. Set False as Default, for now.
