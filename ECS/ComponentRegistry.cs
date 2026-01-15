@@ -63,7 +63,7 @@ public static partial class ComponentRegistry
         _activeComponentArrays = new(); // Type -> ComponentArray<T>
 
     private static int _nextTypeId = 0;
-    private static bool _initialized = false;
+    public static bool Initialized { get; private set; } = false;
 
     #region Component Registration and Assembly Checks
 
@@ -71,9 +71,10 @@ public static partial class ComponentRegistry
     /// Uses reflection to get all defined components in the (relevant) assemblies, and initializes them.
     /// 
     /// </summary>
-    public static void RegisterAllComponents()
+    public static void InitializeComponents()
     {
-        if (_initialized) return;
+        if (Initialized) return;
+        Initialized = true;
 
         // Keeping stopwatch timer for releases. It's nice to have.
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -97,7 +98,7 @@ public static partial class ComponentRegistry
         }
 
         stopwatch.Stop();
-        _initialized = true;
+        Initialized = true;
 
         // Logging
         Log($"Registered {componentCount} components in {stopwatch.ElapsedMilliseconds}ms");
@@ -261,7 +262,7 @@ public static partial class ComponentRegistry
     public static int GetComponentTypeId<T>() => GetComponentTypeId(typeof(T));
 
     /// <summary>
-    /// Multi-purpose method used to retrieve an ID of a registered type, or additionally
+    /// Multipurpose method used to retrieve an ID of a registered type, or additionally
     /// register said-type before returning.
     /// </summary>
     /// <param name="type">A class-type definition hopefully implementing <see cref="ISKComponent"/>.</param>

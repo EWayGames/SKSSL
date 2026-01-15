@@ -154,6 +154,9 @@ public class EntityManager
     /// </summary>
     private static Dictionary<Type, object> BuildComponentsFromYaml(EntityYaml yaml)
     {
+        if (!ComponentRegistry.Initialized)
+            throw new ApplicationException($"Component registry has not been initialized before {nameof(BuildComponentsFromYaml)} call.");
+
         var components = new Dictionary<Type, object>();
 
         foreach (ComponentYaml yamlComponent in yaml.Components)
