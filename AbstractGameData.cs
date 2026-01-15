@@ -1,3 +1,5 @@
+using SKSSL.Scenes;
+
 namespace SKSSL;
 
 using static DustLogger;
@@ -24,4 +26,12 @@ public abstract class AbstractGameData
     /// </summary>
     /// <param name="gamePath"></param>
     public abstract void Load(string gamePath);
+
+    /// <summary>
+    /// Additional optional handling once all game data has been loaded. Automatically called AFTER <see cref="SSLGame"/> LoadContent(); 
+    /// </summary>
+    /// <remarks>Will do nothing on its own. Developer must implement additional post-loading if desired.</remarks>
+    public virtual void PostLoad()
+    {
+    }
 }

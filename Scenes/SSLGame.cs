@@ -5,7 +5,6 @@ using Microsoft.Xna.Framework.Graphics;
 using MonoGameGum;
 using SKSSL.Localization;
 using SKSSL.Textures;
-using SKSSL.Utilities;
 
 namespace SKSSL.Scenes;
 
@@ -130,12 +129,16 @@ public abstract class SSLGame : Game
 
     protected override void LoadContent()
     {
-        // Load Game Data
+        // Load Game Data. Currently, forces mod-loading, even if they don't exist. Probably not the best idea.
         GameData.Load(
         [ // Load Game and Mods in one breath.
             StaticGameLoader.GPath(StaticGameLoader.DEFAULT_FOLDER_GAME),
             StaticGameLoader.MPath(StaticGameLoader.DEFAULT_FOLDER_GAME)
         ]);
+        base.LoadContent();
+        
+        // After game data and additional base content is loaded, then initiate post-load.
+        GameData.PostLoad();
     }
 
     public void Quit() => throw new NotImplementedException();
