@@ -256,7 +256,7 @@ public abstract partial class TextureLoader
         if (config.AssetPathKey != null)
             dir = Path.Combine(_currentDirectory, config.AssetPathKey);
 
-        var files = GameLoader.GetGameFiles(dir);
+        var files = StaticGameLoader.GetGameFiles(dir);
 
         Dictionary<string, Texture2D> flatTextures = new();
 
@@ -292,7 +292,7 @@ public abstract partial class TextureLoader
         {
             // E.g. "gneiss"
             string folderPrefix = Path.GetFileName(folder).ToLower();
-            var files = GameLoader.GetGameFiles(null, folder);
+            var files = StaticGameLoader.GetGameFiles(null, folder);
 
             foreach (var file in files)
             {

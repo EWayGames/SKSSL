@@ -93,11 +93,11 @@ public static class Loc
         {
             // If null, then use default localization.
             case null:
-                localePath = GameLoader.FOLDER_LOCALIZATION;
+                localePath = StaticGameLoader.FOLDER_LOCALIZATION;
                 break;
             // Override default localization folder in case a new one was provided. 
             default:
-                GameLoader.FOLDER_LOCALIZATION = localePath;
+                StaticGameLoader.FOLDER_LOCALIZATION = localePath;
                 break;
         }
 

@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Content;
 
 namespace SKSSL;
 
-public static class GameLoader
+public static class StaticGameLoader
 {
     private static readonly Dictionary<string, string> GAME_PATHS = new();
 

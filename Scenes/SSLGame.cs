@@ -29,6 +29,8 @@ public abstract class SSLGame : Game
 
     private static GumService Gum => GumService.Default;
     private readonly InteractiveGue currentScreenGue = new();
+    
+    public BaseGameData GameData { get; set; }
 
     /// <summary>
     /// An array of Tuple paths assigned to an ID. These are loaded into the game's pather, and should
@@ -44,8 +46,16 @@ public abstract class SSLGame : Game
     /// </summary>
     public static string GumFile = "CHANGE_ME"; // Example: 
 
-    protected SSLGame(string title, string gumFile = "")
+    /// <summary>
+    /// Constructor for SSLGame.
+    /// </summary>
+    /// <param name="gameDataClass">Provided non-static game data.</param>
+    /// <param name="title">Title of the game window.</param>
+    /// <param name="gumFile">Gum Interface File</param>
+    protected SSLGame(BaseGameData gameDataClass, string title, string gumFile = "")
     {
+        GameData = gameDataClass;
+        
         Title = title;
         SceneManager = new SceneManager(this);
         _graphicsManager = HandleGraphicsDesignManager(new GraphicsDeviceManager(this));
@@ -86,7 +96,7 @@ public abstract class SSLGame : Game
     }
 
     /// <summary>
-    /// For custom <see cref="GameLoader"/>s, you MUST initialize them before the base.Initialize() an inheritance
+    /// For custom <see cref="StaticGameLoader"/>s, you MUST initialize them before the base.Initialize() an inheritance
     /// level above this class.
     /// </summary>
     protected override void Initialize()
@@ -97,13 +107,13 @@ public abstract class SSLGame : Game
         SceneManager.Initialize(_graphicsManager, _spriteBatch, gumSave); // Initialize Scene Manager
 
         // Initialize all static paths, which the developer must have defined!
-        GameLoader.Initialize(StaticPaths);
+        StaticGameLoader.Initialize(StaticPaths);
 
         #region Modding
 
         // Get the mods in the game. This is a trick that will come in handy later~
-        var mods = GameLoader.GetAllModDirectories();
-        var validModTextures = GameLoader.GetDirectoriesWithSubPathAndAppend(mods, "textures");
+        var mods = StaticGameLoader.GetAllModDirectories();
+        var validModTextures = StaticGameLoader.GetDirectoriesWithSubPathAndAppend(mods, "textures");
 
         // Must be after Hard-coded assets, or there will be problems.
         TextureLoader.Initialize(
@@ -116,6 +126,16 @@ public abstract class SSLGame : Game
 
         // Continue
         base.Initialize();
+    }
+
+    protected override void LoadContent()
+    {
+        // Load Game Data
+        GameData.Load(
+        [ // Load Game and Mods in one breath.
+            StaticGameLoader.GPath(StaticGameLoader.DEFAULT_FOLDER_GAME),
+            StaticGameLoader.MPath(StaticGameLoader.DEFAULT_FOLDER_GAME)
+        ]);
     }
 
     public void Quit() => throw new NotImplementedException();
