@@ -2,7 +2,7 @@ namespace SKSSL;
 
 using static DustLogger;
 
-public abstract class BaseGameData
+public abstract class AbstractGameData
 {
     /// <summary>
     /// Load all game data based on multiple game paths.
@@ -15,7 +15,7 @@ public abstract class BaseGameData
             if (!string.IsNullOrEmpty(path))
                 Load(path);
             else
-                Log($"Missing filepath in LoadContent() call in {nameof(BaseGameData)}", LOG.SYSTEM_ERROR);
+                Log($"Missing filepath in LoadContent() call in {nameof(AbstractGameData)}", LOG.SYSTEM_ERROR);
         }
     }
 

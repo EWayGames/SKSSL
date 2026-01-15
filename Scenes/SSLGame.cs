@@ -30,7 +30,7 @@ public abstract class SSLGame : Game
     private static GumService Gum => GumService.Default;
     private readonly InteractiveGue currentScreenGue = new();
     
-    public BaseGameData GameData { get; set; }
+    public AbstractGameData GameData { get; set; }
 
     /// <summary>
     /// An array of Tuple paths assigned to an ID. These are loaded into the game's pather, and should
@@ -52,7 +52,7 @@ public abstract class SSLGame : Game
     /// <param name="gameDataClass">Provided non-static game data.</param>
     /// <param name="title">Title of the game window.</param>
     /// <param name="gumFile">Gum Interface File</param>
-    protected SSLGame(BaseGameData gameDataClass, string title, string gumFile = "")
+    protected SSLGame(AbstractGameData gameDataClass, string title, string gumFile = "")
     {
         GameData = gameDataClass;
         
