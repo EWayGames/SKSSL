@@ -34,9 +34,6 @@ public abstract class SSLGame : Game
     private static GumService Gum => GumService.Default;
     private readonly InteractiveGue currentScreenGue = new();
 
-    /// Non-static game data.
-    public readonly AbstractGameData GameData;
-    
     /// Registries and services belonging to the game.
     private readonly IServiceProvider GameServices;
     
@@ -57,13 +54,10 @@ public abstract class SSLGame : Game
     /// <summary>
     /// Constructor for SSLGame.
     /// </summary>
-    /// <param name="gameDataClass">Provided non-static game data.</param>
     /// <param name="title">Title of the game window.</param>
     /// <param name="gumFile">Gum Interface File</param>
-    protected SSLGame(AbstractGameData gameDataClass, string title, string gumFile = "")
+    protected SSLGame(string title, string gumFile = "")
     {
-        GameData = gameDataClass;
-        
         Title = title;
         SceneManager = new SceneManager(this);
         _graphicsManager = HandleGraphicsDesignManager(new GraphicsDeviceManager(this));
@@ -155,27 +149,23 @@ public abstract class SSLGame : Game
     /// <inheritdoc />
     protected override void LoadContent()
     {
-        // Load Game Data. Currently, forces mod-loading, even if they don't exist. Probably not the best idea.
-        GameData.Load(
-        [ // Load Game and Mods in one breath.
-            StaticGameLoader.GPath(),
-            StaticGameLoader.MPath()
-        ]);
         base.LoadContent();
         PostLoad();
     }
-
+    
+    /// <summary>
+    /// Custom user-defined load operation. After most LoadContent() has been loaded, but before Update calls.
+    /// </summary>
     protected virtual void PostLoad()
     {
         // After game data and additional base content is loaded, then initiate post-load.
-        GameData.PostLoad();
     }
 
     /// Quits the game.
-    public void Quit() => throw new NotImplementedException();
+    public void Quit() => throw new NotImplementedException("Quit is not implemented, really. Let's crash, instead.");
 
     /// Resets the game.
-    public void ResetGame() => throw new NotImplementedException();
+    public void ResetGame() => throw new NotImplementedException("ResetGame is not implemented, really. Let's crash, instead.");
 
     /// <inheritdoc />
     protected override void Draw(GameTime gameTime)
