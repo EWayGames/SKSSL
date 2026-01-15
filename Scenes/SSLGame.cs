@@ -6,7 +6,9 @@ using Microsoft.Xna.Framework.Graphics;
 using MonoGameGum;
 using SKSSL.Localization;
 using SKSSL.Textures;
+
 // ReSharper disable VirtualMemberCallInConstructor
+// ReSharper disable NotAccessedField.Local
 
 namespace SKSSL.Scenes;
 
@@ -35,7 +37,6 @@ public abstract class SSLGame : Game
     public AbstractGameData GameData { get; set; }
     
     /// Registries and services belonging to the game.
-
     private readonly IServiceProvider GameServices;
     
     /// <summary>
@@ -163,10 +164,13 @@ public abstract class SSLGame : Game
         GameData.PostLoad();
     }
 
+    /// Quits the game.
     public void Quit() => throw new NotImplementedException();
 
+    /// Resets the game.
     public void ResetGame() => throw new NotImplementedException();
 
+    /// <inheritdoc />
     protected override void Draw(GameTime gameTime)
     {
         SceneManager.Draw(gameTime);
@@ -174,6 +178,7 @@ public abstract class SSLGame : Game
         base.Draw(gameTime);
     }
 
+    /// <inheritdoc />
     protected override void Update(GameTime gameTime)
     {
         SceneManager.Update(gameTime);
