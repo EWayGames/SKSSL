@@ -7,12 +7,17 @@ namespace SKSSL.Utilities;
 /// <param name="Maximum"></param>
 public class IDIterator(int InitialId = 0, int Maximum = -1)
 {
-    public int _nextId = InitialId;
+    public static implicit operator int(IDIterator iterator) => iterator.ID;
+    public static implicit operator IDIterator(int id) => new(id);
+    public int ID { get; internal set; } = InitialId;
     public int Iterate()
     {
-        int id = _nextId++;
-        if (Maximum != -1 && _nextId >= Maximum)
+        int nextId = ID++;
+        if (Maximum != -1 && this.ID >= Maximum)
             throw new IndexOutOfRangeException("Too many voxel definitions for maximum voxel count!");
-        return id;
+        return nextId;
     }
+
+    public override string ToString() => ID.ToString();
+    
 }
