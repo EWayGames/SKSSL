@@ -9,9 +9,9 @@ namespace SKSSL.Types;
 /// </summary>
 public readonly struct Vector3Int : IEquatable<Vector3Int>
 {
-    private readonly int X;
-    private readonly int Y;
-    private readonly int Z;
+    public readonly int X;
+    public readonly int Y;
+    public readonly int Z;
 
     /// <summary>
     /// Instantiates an instance of <see cref="Vector3Int"/> with all values 0.
