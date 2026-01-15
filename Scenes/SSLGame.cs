@@ -136,6 +136,10 @@ public abstract class SSLGame : Game
             StaticGameLoader.GPath(StaticGameLoader.DEFAULT_FOLDER_GAME),
             StaticGameLoader.MPath(StaticGameLoader.DEFAULT_FOLDER_GAME)
         ]);
+        base.LoadContent();
+        
+        // After game data and additional base content is loaded, then initiate post-load.
+        GameData.PostLoad();
     }
 
     public void Quit() => throw new NotImplementedException();
