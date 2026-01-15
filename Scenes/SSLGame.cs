@@ -159,7 +159,11 @@ public abstract class SSLGame : Game
             StaticGameLoader.MPath(StaticGameLoader.DEFAULT_FOLDER_GAME)
         ]);
         base.LoadContent();
-        
+        PostLoad();
+    }
+
+    protected virtual void PostLoad()
+    {
         // After game data and additional base content is loaded, then initiate post-load.
         GameData.PostLoad();
     }
