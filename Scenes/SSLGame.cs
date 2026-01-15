@@ -32,9 +32,9 @@ public abstract class SSLGame : Game
 
     private static GumService Gum => GumService.Default;
     private readonly InteractiveGue currentScreenGue = new();
-    
+
     /// Non-static game data.
-    public abstract AbstractGameData GameData { get; set; }
+    public readonly AbstractGameData GameData;
     
     /// Registries and services belonging to the game.
     private readonly IServiceProvider GameServices;
