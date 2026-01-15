@@ -155,8 +155,8 @@ public abstract class SSLGame : Game
         // Load Game Data. Currently, forces mod-loading, even if they don't exist. Probably not the best idea.
         GameData.Load(
         [ // Load Game and Mods in one breath.
-            StaticGameLoader.GPath(StaticGameLoader.DEFAULT_FOLDER_GAME),
-            StaticGameLoader.MPath(StaticGameLoader.DEFAULT_FOLDER_GAME)
+            StaticGameLoader.GPath(),
+            StaticGameLoader.MPath()
         ]);
         base.LoadContent();
         PostLoad();
