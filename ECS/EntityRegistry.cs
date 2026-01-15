@@ -55,9 +55,10 @@ public static class EntityRegistry
 
         foreach (ComponentYaml yamlComponent in yaml.Components)
         {
-            var cleanTypeId = yamlComponent.Type.Replace("Component", string.Empty);
+            if (yamlComponent.Type.Contains("Component"))
+                yamlComponent.Type = yamlComponent.Type.Replace("Component", string.Empty);
 
-            if (!ComponentRegistry.RegisteredComponentTypesDictionary.TryGetValue(cleanTypeId, out Type? componentType))
+            if (!ComponentRegistry.RegisteredComponentTypesDictionary.TryGetValue(yamlComponent.Type, out Type? componentType))
             {
                 Log($"Unknown component type: {yamlComponent.Type}", LOG.FILE_WARNING);
                 continue;
@@ -119,7 +120,7 @@ public static class EntityRegistry
     /// <returns>True if a template was found. False if one was not. The output is also Null if one was not found.</returns>
     public static bool TryGetTemplate(string referenceId, out EntityTemplate? template)
         => _definitions.TryGetValue(referenceId, out template);
-    
+
     /// <summary>
     /// Inquiry to the <see cref="EntityRegistry"/> for a possible entity definition.
     /// </summary>
