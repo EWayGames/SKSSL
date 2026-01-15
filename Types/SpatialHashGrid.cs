@@ -7,8 +7,8 @@ namespace SKSSL.Types;
 /// <remarks>T can be a List if desired, for whatever reason.</remarks>
 public class SpatialHashGrid<T> where T : class
 {
-    /// Maximum cell size of the hash grid.
-    private readonly int _cellSize;
+    /// Maximum cell size of the hash grid. Set by the constructor.
+    public readonly Vector2Int Size;
 
     //private readonly Dictionary<(int, int), object> _cells = new();
     private readonly T?[,] _cells;
@@ -16,17 +16,15 @@ public class SpatialHashGrid<T> where T : class
     /// <summary>
     /// Constructor for Spacial Hash Grid.
     /// </summary>
-    /// <param name="cellSize">Provided Cell Size</param>
-    /// <param name="gridSizeY"></param>
-    /// <param name="gridSizeX"></param>
-    /// <value><see cref="_cellSize"/> = 64</value>
-    public SpatialHashGrid(int gridSizeX = 32, int gridSizeY = 32, int cellSize = 64)
+    /// <param name="gridSizeX">Size of X-axis</param>
+    /// <param name="gridSizeY">Size of Y-axis</param>
+    public SpatialHashGrid(int gridSizeX = 32, int gridSizeY = 32)
     {
         _cells = new T?[gridSizeX, gridSizeY];
-        _cellSize = cellSize;
+        Size = new Vector2Int(gridSizeX, gridSizeY);
     }
 
-    internal (int, int) GetCell(float x, float y) => ((int)Math.Floor(x / _cellSize), (int)Math.Floor(y / _cellSize));
+    internal (int, int) GetCell(float x, float y) => ((int)Math.Floor(x / Size.X), (int)Math.Floor(y / Size.Y));
 
     /// <summary>
     /// Sets cell at provided coordinates to provided value.
@@ -109,10 +107,10 @@ public class SpatialHashGrid<T> where T : class
     /// <returns>Enumerable list of cell entries within the provided radius.</returns>
     public IEnumerable<T> Query(float x, float y, float radius = 0)
     {
-        int minX = (int)Math.Floor((x - radius) / _cellSize);
-        int maxX = (int)Math.Floor((x + radius) / _cellSize);
-        int minY = (int)Math.Floor((y - radius) / _cellSize);
-        int maxY = (int)Math.Floor((y + radius) / _cellSize);
+        int minX = (int)Math.Floor((x - radius) / Size.X);
+        int maxX = (int)Math.Floor((x + radius) / Size.X);
+        int minY = (int)Math.Floor((y - radius) / Size.Y);
+        int maxY = (int)Math.Floor((y + radius) / Size.Y);
 
         for (int cellX = minX; cellX <= maxX; cellX++)
         for (int cellY = minY; cellY <= maxY; cellY++)
