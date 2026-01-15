@@ -11,6 +11,8 @@ namespace SKSSL.ECS;
 public static class EntityRegistry
 {
     private static readonly Dictionary<string, EntityTemplate> _definitions = new();
+    
+    /// All entity template definitions.
     public static IReadOnlyDictionary<string, EntityTemplate> Definitions => _definitions;
 
     /// <summary>
@@ -55,10 +57,8 @@ public static class EntityRegistry
 
         foreach (ComponentYaml yamlComponent in yaml.Components)
         {
-            if (yamlComponent.Type.Contains("Component"))
-                yamlComponent.Type = yamlComponent.Type.Replace("Component", string.Empty);
-
-            if (!ComponentRegistry.RegisteredComponentTypesDictionary.TryGetValue(yamlComponent.Type, out Type? componentType))
+            if (!ComponentRegistry.RegisteredComponentTypesDictionary
+                    .TryGetValue(yamlComponent.Type.Replace("Component", string.Empty), out Type? componentType))
             {
                 Log($"Unknown component type: {yamlComponent.Type}", LOG.FILE_WARNING);
                 continue;
