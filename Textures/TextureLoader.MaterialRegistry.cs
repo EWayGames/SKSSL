@@ -14,8 +14,11 @@ public abstract partial class TextureLoader
         /// Used as numerical ID selector for new materials, as well as total material counter. 
         public static int MaterialCount { get; private set; } = 0;
 
+        /// Materials used by the game. <seealso cref="SKMaterial"/>
         public static readonly SKMaterial[] Materials = new SKMaterial[MaxMaterials];
-        public static readonly Dictionary<string, int> NameToId = new(MaxMaterials); // only used during loading
+
+        /// Only used during loading. Assigns a material name to a <see cref="SKMaterial"/>'s integer ID.
+        public static readonly Dictionary<string, int> NameToId = new(MaxMaterials);
 
         /// <summary>
         /// Registers or gets an existing material ID by name.
