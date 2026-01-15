@@ -19,7 +19,7 @@ public class IDIterator(int InitialId = 0, int Maximum = -1)
     public int Iterate()
     {
         int nextId = ID++;
-        if (Maximum != -1 && this.ID >= Maximum)
+        if (Maximum != -1 && ID > Maximum)
             throw new IndexOutOfRangeException("Too many voxel definitions for maximum voxel count!");
         return nextId;
     }
