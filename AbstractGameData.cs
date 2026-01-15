@@ -4,6 +4,9 @@ namespace SKSSL;
 
 using static DustLogger;
 
+/// <summary>
+/// Non-static Game data stored by the game. Includes but is not limited to various registries and Singletons.  
+/// </summary>
 public abstract class AbstractGameData
 {
     /// <summary>
