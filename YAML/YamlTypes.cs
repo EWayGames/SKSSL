@@ -1,5 +1,6 @@
 using System.Drawing;
 using RenderingLibrary.Graphics;
+using SKSSL.ECS;
 using YamlDotNet.Serialization;
 using Color = Microsoft.Xna.Framework.Color;
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
@@ -114,7 +115,7 @@ public class ComponentYaml
 ///       field_1: (varies)
 ///       field_2: (varies)
 ///       field_3: (varies)
-/// Component fields vary between component type.
+/// # (Note: Component fields vary between component type.)
 /// </code>
 /// </summary>
 public record EntityYaml : BaseLocalizedYamlEntry
@@ -124,4 +125,10 @@ public record EntityYaml : BaseLocalizedYamlEntry
     /// </summary>
     [YamlMember(Alias = "components")]
     public List<ComponentYaml> Components { get; set; } = [];
+    
+    /// <summary>
+    /// Registers this yaml instance as a template.
+    /// </summary>
+    /// <typeparam name="T">The type of template to register this <see cref="EntityYaml"/> as.</typeparam>
+    public void RegisterAsTemplate<T>() where T : EntityTemplate => EntityRegistry.RegisterTemplate<T>(this);
 }
