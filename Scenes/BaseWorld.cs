@@ -51,13 +51,13 @@ public abstract class BaseWorld : IWorld
     public virtual void Update(GameTime gameTime)
     {
         ECS?.Update(gameTime);
-        WorldSpace?.Update();
+        WorldSpace?.Update(gameTime);
     }
 
     public virtual void Draw(GameTime gameTime)
     {
         ECS?.Draw(gameTime);
-        WorldSpace?.Draw();
+        WorldSpace?.Draw(gameTime);
     }
 
     public virtual void Destroy()

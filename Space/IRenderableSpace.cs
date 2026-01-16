@@ -21,8 +21,8 @@ public abstract class RenderableSpace
         graphics = game;
         renderableSpriteBatch = new SpriteBatch(graphics.GraphicsDevice);
     }
-    public abstract void Draw();
+    public abstract void Draw(GameTime gameTime);
 
-    public abstract void Update();
+    public abstract void Update(GameTime gameTime);
     public abstract void Destroy();
 }
