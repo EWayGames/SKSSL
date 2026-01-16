@@ -27,9 +27,9 @@ public class ECSController
     private ComponentRegistry? _componentRegistry;
     private EntityManager? _entityManager;
     private SystemManager? _systemManager;
-    private readonly BaseWorld _world;
+    private readonly IWorld _world;
 
-    public ECSController(BaseWorld world)
+    public ECSController(IWorld world)
     {
         _world = world;
     }
@@ -40,7 +40,7 @@ public class ECSController
             "Entity manager is null. Did you forget to Initialize the ECS?");
 
     private SKEntity SpawnEntity(string referenceId)
-        => _entityManager?.Spawn(referenceId, _world) ?? throw new InvalidOperationException(
+        => _entityManager?.Spawn(referenceId) ?? throw new InvalidOperationException(
             "Entity manager is null. Did you forget to Initialize the ECS?");
 
     /// <summary>
@@ -57,12 +57,12 @@ public class ECSController
         Initialized = true;
 
         _systemManager = new SystemManager();
-        _systemManager.RegisterAll(_world);
+        _systemManager.RegisterAll();
         
         _componentRegistry = new ComponentRegistry();
         _componentRegistry.InitializeComponents();
         
-        _entityManager = new EntityManager(ref _componentRegistry);
+        _entityManager = new EntityManager(ref _componentRegistry, _world);
         
         // Assign entity context for reflective purposes.
         EntityContext = new EntityContext(_entityManager, _componentRegistry);
