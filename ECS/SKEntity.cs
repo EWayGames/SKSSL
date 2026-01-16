@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SKSSL.Localization;
 using SKSSL.Scenes;
+using SKSSL.Space;
 using SKSSL.YAML;
 
 // ReSharper disable ClassNeverInstantiated.Global
@@ -44,7 +45,7 @@ public record SKEntity
     /// <summary>
     /// Reverse-reference back to the world that this entity inhabits.
     /// </summary>
-    public BaseWorld? World;
+    public IWorld World;
 
     #region Localization Properties
 
