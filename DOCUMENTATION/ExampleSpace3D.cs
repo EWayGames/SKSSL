@@ -3,7 +3,12 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace SKSSL.Space;
 
-public class Space3D : RenderableSpace
+/// <summary>
+/// Exemplary class for implementing a 3D space.
+/// Controls are usually handled in the Update() method.
+/// </summary>
+/// <seealso cref="RenderableSpace"/>
+public abstract class ExampleSpace3D : RenderableSpace
 {
     /// Rendering effect / shader for this space.
     internal BasicEffect _effect;
