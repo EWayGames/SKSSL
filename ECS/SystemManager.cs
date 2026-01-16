@@ -14,14 +14,13 @@ public class SystemManager
 {
     private readonly List<IUpdateSystem> _updateSystems = [];
     private readonly List<IDrawSystem> _drawSystems = [];
-    
+
     /// <summary>
     /// Registers all systems within a provided world.
     /// </summary>
-    /// <param name="world">World that this system will be managing systems in.</param>
     /// <exception cref="InvalidOperationException">A defined system type doesn't have a valid World constructor.</exception>
     /// <remarks>Called by <see cref="BaseWorld"/>.Initialize()</remarks>
-    public void RegisterAll(BaseWorld world)
+    public void RegisterAll()
     {
         var systemTypes = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(a => a.GetTypes())
