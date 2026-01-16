@@ -1,9 +1,17 @@
+using Microsoft.Xna.Framework;
+
 namespace SKSSL.Space;
 
-public interface IRenderableSpace
+public abstract class RenderableSpace
 {
-    public void Initialize();
-    public void Draw();
+    internal GraphicsDeviceManager graphics = null!;
 
-    public void Update();
+    public virtual void Initialize(GraphicsDeviceManager game)
+    {
+        graphics = game;
+    }
+    public abstract void Draw();
+
+    public abstract void Update();
+    public abstract void Destroy();
 }
