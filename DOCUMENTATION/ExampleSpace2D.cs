@@ -7,22 +7,14 @@ namespace SKSSL.Space;
 public abstract class ExampleSpace2D : RenderableSpace
 {
     public override void Initialize(GraphicsDeviceManager game)
-    {
-        throw new NotImplementedException("2D Space Not Implemented");
-    }
+        => throw new NotImplementedException("Implement this yourself!");
 
-    public override void Draw()
-    {
-        throw new NotImplementedException();
-    }
+    public override void Draw(GameTime gameTime)
+        => throw new NotImplementedException("Implement this yourself!");
 
-    public override void Update()
-    {
-        throw new NotImplementedException();
-    }
+    public override void Update(GameTime gameTime)
+        => throw new NotImplementedException("Implement this yourself!");
 
     public override void Destroy()
-    {
-        throw new NotImplementedException();
-    }
+        => throw new NotImplementedException("Implement this yourself!");
 }

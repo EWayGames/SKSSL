@@ -31,15 +31,9 @@ public abstract class ExampleSpace3D : RenderableSpace
         _effect.AmbientLightColor = new Vector3(0.3f);
     }
 
-    public override void Draw()
-    {
-    }
+    public override void Draw(GameTime gameTime) => throw new NotImplementedException("Implement this yourself!");
 
-    public override void Update()
-    {
-    }
+    public override void Update(GameTime gameTime) => throw new NotImplementedException("Implement this yourself!");
 
-    public override void Destroy()
-    {
-    }
+    public override void Destroy() => throw new NotImplementedException("Implement this yourself!");
 }
