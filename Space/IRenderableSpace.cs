@@ -13,13 +13,13 @@ namespace SKSSL.Space;
 /// <seealso cref="ExampleSpace3D"/>
 public abstract class RenderableSpace
 {
-    internal GraphicsDeviceManager graphics = null!;
-    private SpriteBatch renderableSpriteBatch = null!;
+    internal GraphicsDeviceManager _graphics = null!;
+    private SpriteBatch _renderableSpriteBatch = null!;
 
-    public virtual void Initialize(GraphicsDeviceManager game)
+    public virtual void Initialize(GraphicsDeviceManager graphics)
     {
-        graphics = game;
-        renderableSpriteBatch = new SpriteBatch(graphics.GraphicsDevice);
+        _graphics = graphics;
+        _renderableSpriteBatch = new SpriteBatch(this._graphics.GraphicsDevice);
     }
     public abstract void Draw(GameTime gameTime);
 

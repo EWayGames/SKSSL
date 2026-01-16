@@ -6,7 +6,7 @@ namespace SKSSL.Space;
 /// <seealso cref="RenderableSpace"/>
 public abstract class ExampleSpace2D : RenderableSpace
 {
-    public override void Initialize(GraphicsDeviceManager game)
+    public override void Initialize(GraphicsDeviceManager graphics)
         => throw new NotImplementedException("Implement this yourself!");
 
     public override void Draw(GameTime gameTime)

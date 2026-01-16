@@ -18,14 +18,14 @@ public abstract class ExampleSpace3D : RenderableSpace
 
     internal SK3DCamera Camera { get; set; } = new();
 
-    public override void Initialize(GraphicsDeviceManager game)
+    public override void Initialize(GraphicsDeviceManager graphics)
     {
         Camera = new SK3DCamera();
-        Camera.Default(graphics);
+        Camera.Default(base._graphics);
         Camera.ResetPosition();
         
         // Shader / Rendering
-        _effect = new BasicEffect(graphics.GraphicsDevice);
+        _effect = new BasicEffect(base._graphics.GraphicsDevice);
         _effect.EnableDefaultLighting();
         _effect.LightingEnabled = true;
         _effect.AmbientLightColor = new Vector3(0.3f);
