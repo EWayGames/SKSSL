@@ -19,7 +19,7 @@ public abstract class RenderableSpace
     public virtual void Initialize(GraphicsDeviceManager graphics)
     {
         _graphics = graphics;
-        _renderableSpriteBatch = new SpriteBatch(this._graphics.GraphicsDevice);
+        _renderableSpriteBatch = new SpriteBatch(_graphics.GraphicsDevice);
     }
     public abstract void Draw(GameTime gameTime);
 
