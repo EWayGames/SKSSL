@@ -14,7 +14,6 @@ public class SceneManager
 
     private readonly SpriteBatch _gameMainSpriteBatch;
     private readonly GraphicsDeviceManager _graphicsManager;
-    public static SSLGame Game { get; private set; } = null!;
 
     /// <summary>
     /// World definition that should be initialized with a custom variant.
