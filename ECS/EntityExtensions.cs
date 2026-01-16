@@ -2,7 +2,6 @@ namespace SKSSL.ECS;
 
 public static class EntityExtensions
 {
-    // The magic: get current context from somewhere reliable
     private static EntityContext CurrentContext
         => ECSController.EntityContext ??
            throw new InvalidOperationException("No active ECS context! Initialize ECS first!");
@@ -14,7 +13,7 @@ public static class EntityExtensions
         CurrentContext.Components.AddComponent(entity, type);
 
     public static T AddComponent<T>(this SKEntity entity) where T : struct, ISKComponent =>
-        (T)AddComponent(entity, typeof(T))!;
+        (T)AddComponent(entity, typeof(T));
     
     public static List<object> GetAllComponents(this SKEntity entity) => CurrentContext.Components.GetAllComponents(entity);
 
