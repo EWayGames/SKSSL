@@ -9,21 +9,20 @@ namespace SKSSL.ECS;
 
 /// <summary>
 /// Instantiated Manager for all <see cref="SKEntity"/> instances contained within it. Fundamental ECS
-/// infrastructure that currently softly requires a <see cref="BaseWorld"/> to be contained-in.
+/// infrastructure that currently softly requires a world to be contained-in.
 /// </summary>
 public partial class EntityManager
 {
-    private static IDIterator _nextId = new();
+    private static readonly IDIterator _nextId = new();
     private readonly List<SKEntity> _allEntities = [];
     internal readonly ComponentRegistry _componentRegistry;
+    private readonly IWorld _world;
     
-    /// <summary>
-    /// Instantiated Manager for all <see cref="SKEntity"/> instances contained within it. Fundamental ECS
-    /// infrastructure that currently softly requires a <see cref="BaseWorld"/> to be contained-in.
-    /// </summary>
-    public EntityManager(ref ComponentRegistry componentRegistry)
+    /// <inheritdoc cref="EntityManager"/>
+    public EntityManager(ref ComponentRegistry componentRegistry, IWorld world)
     {
         _componentRegistry = componentRegistry;
+        _world = world;
     }
 
     /// Get all active entities.
@@ -84,7 +83,7 @@ public partial class EntityManager
     /// Creates a new entity and returns its handle.
     /// Optionally fills metadata from a template or explicit values.
     /// </summary>
-    private SKEntity CreateEntity(EntityTemplate template, BaseWorld? world = null)
+    private SKEntity CreateEntity(EntityTemplate template)
     {
         int id = _nextId.Iterate();
 
@@ -100,24 +99,23 @@ public partial class EntityManager
                          $"Failed to create entity \"{template.ReferenceId}\" in {nameof(CreateEntity)}");
 
         // Assign world to entity. Will cause some funk if the world is null.
-        entity.World = world;
+        entity.World = _world;
 
         foreach ((Type type, object _) in template.DefaultComponents)
             entity.AddComponent(type);
 
         return entity;
     }
-    
+
     /// <summary>
     /// Acquires an entity template using a provided reference id, and creates an entity instance using it.
     /// </summary>
     /// <param name="handle">Reference id to template stored in registry.</param>
-    /// <param name="world">Optional world parameter to define what world this entity is present in.</param>
     /// <returns>Spawned entity for later use.</returns>
-    public SKEntity Spawn(string handle, BaseWorld? world = null)
+    public SKEntity Spawn(string handle)
     {
         EntityTemplate template = GetTemplate(handle);
-        SKEntity entity = CreateEntity(template, world);
+        SKEntity entity = CreateEntity(template);
         _allEntities.Add(entity);
         return entity;
     }
