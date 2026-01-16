@@ -35,12 +35,16 @@ public class SystemManager
 
         foreach (Type type in systemTypes)
         {
-            // All systems have (World) constructor
-            ConstructorInfo constructor = type.GetConstructor([typeof(BaseWorld)])
-                                          ?? throw new InvalidOperationException(
-                                              $"System {type.Name} missing (World world) constructor");
+            // Systems no longer have WORLD constructor due to accessed global context.
+            // OLD: All systems have (World) constructor
+            //ConstructorInfo constructor = type.GetConstructor([typeof(BaseWorld)])
+            //                              ?? throw new InvalidOperationException(
+            //                                  $"System {type.Name} missing (World world) constructor");
 
-            var system = constructor.Invoke([world]);
+            ConstructorInfo constructor = type.GetConstructor([])!;
+            
+            //var system = constructor.Invoke([world]);
+            var system = constructor.Invoke([]);
 
             switch (system)
             {
@@ -57,6 +61,11 @@ public class SystemManager
             LOG.INFORMATIONAL_PRINT);
     }
 
+    /// <summary>
+    /// Manual registration.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    [Obsolete("System registration is automatic via reflection. This method is no longer required.")]
     public void Register<T>() where T : new()
     {
         var system = new T();
