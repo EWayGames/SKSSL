@@ -5,12 +5,13 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGameGum;
 using SKSSL.Localization;
+using SKSSL.Scenes;
 using SKSSL.Textures;
 
 // ReSharper disable VirtualMemberCallInConstructor
 // ReSharper disable NotAccessedField.Local
 
-namespace SKSSL.Scenes;
+namespace SKSSL;
 
 /// <summary>
 /// Game Instances should inherit this class to have Gum and other systems automatically initialized.
@@ -63,7 +64,7 @@ public abstract class SSLGame : Game
         Window.ClientSizeChanged += HandleClientSizeChanged;
         _graphicsManager = HandleGraphicsDesignManager(new GraphicsDeviceManager(this));
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        SceneManager = new SceneManager(_graphicsManager);
+        SceneManager = new SceneManager(_graphicsManager, _spriteBatch);
         currentScreenGue.UpdateLayout(); // UI Behaviour when dragged
 
         if (string.IsNullOrEmpty(gumFile))
