@@ -2,73 +2,62 @@ using Gum.DataTypes;
 using Gum.Forms.Controls;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-// ReSharper disable NotAccessedField.Local
-
-#pragma warning disable CS0169 // Field is never used
-
-// ReSharper disable CollectionNeverQueried.Local
-
-// ReSharper disable CollectionNeverQueried.Global
-// ReSharper disable VirtualMemberNeverOverridden.Global
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
 namespace SKSSL.Scenes;
 
 public abstract class BaseScene
 {
-    protected Game _game;
-    protected SpriteBatch _spriteBatch;
-    protected GraphicsDeviceManager _graphicsManager;
+    /// Dedicated scene spritebatch for screen rendering.
+    protected SpriteBatch _spriteBatch = null!;
+    
+    /// Graphics management passed-down from the game.
+    protected GraphicsDeviceManager _graphicsManager = null!;
+    
+    /// Save-data for gum UI project.
     internal GumProjectSave? _gumProjectSave;
 
+    /// List of UI elements this scene possesses.
     protected readonly List<FrameworkElement> _Menus = [];
 
     /// <summary>
     /// World definition that should be initialized with a custom variant.
     /// Allows developers to initialize world settings / data per-scene.
-    /// <remarks>May need improvement later.</remarks>
     /// </summary>
-    public BaseWorld? SceneWorld;
+    /// <remarks>
+    /// Gameworld is passed-through as a reference. A world does NOT need to be updated within a scene, and shouldn't.
+    /// The <see cref="SceneManager"/> calls world updates.
+    /// </remarks>
+    public IWorld? GameWorld;
 
-    public void Initialize(
-        Game game,
-        GraphicsDeviceManager graphicsManager,
-        SpriteBatch spriteBatch,
-        GumProjectSave? gumProjectSave,
-        ref BaseWorld? world)
+    public void Initialize(GraphicsDeviceManager manager, SpriteBatch gameSpriteBatch, GumProjectSave? gumProjectSave, ref IWorld? world)
     {
-        _game = game;
-        _graphicsManager = graphicsManager;
-        _spriteBatch = spriteBatch;
+        _spriteBatch = gameSpriteBatch;
+        _graphicsManager = manager;
         _gumProjectSave = gumProjectSave;
-        SceneWorld = world;
-        
-        SceneWorld?.Initialize();
+        GameWorld = world;
+
+        GameWorld?.Initialize(manager); // GameWorld has its own spritebatch.
     }
 
-    protected abstract void LoadScreens();
-    protected abstract void UniqueLoadContent();
-
-    public virtual void LoadContent()
-    {
-        LoadScreens();
-        UniqueLoadContent();
-    }
+    /// <summary>
+    /// The screens and UI elements that are being loaded in this scene.
+    /// </summary>
+    public abstract void LoadContent();
 
     public void UnloadContent()
     {
-        SceneWorld?.Destroy();
-        SceneManager.ClearScreens();
-        UniqueUnloadContent();
+        GameWorld?.Destroy();
+        SpecialUnload();
     }
 
-    protected abstract void UniqueUnloadContent();
-
-    public virtual void Update(GameTime gameTime)
+    /// Special overridable unloading instructions should they be required.
+    protected virtual void SpecialUnload()
     {
     }
 
-    public virtual void Draw(GameTime gameTime)
-    {
-    }
+    /// Per-scene Update instructions.
+    public abstract void Update(GameTime gameTime);
+
+    /// Per-scene Draw instructions.
+    public abstract void Draw(GameTime gameTime);
 }

@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Gum.DataTypes;
 using Gum.Forms.Controls;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Media;
 using MonoGameGum;
 
@@ -11,6 +12,7 @@ public class SceneManager
 {
     protected GumProjectSave? _gumProjectSave;
 
+    private readonly SpriteBatch _gameMainSpriteBatch;
     private readonly GraphicsDeviceManager _graphicsManager;
     public static SSLGame Game { get; private set; } = null!;
 
@@ -23,8 +25,9 @@ public class SceneManager
 
     protected BaseScene? _currentScene;
 
-    public SceneManager(GraphicsDeviceManager graphics)
+    public SceneManager(GraphicsDeviceManager graphics, SpriteBatch gameMainSpriteBatch)
     {
+        _gameMainSpriteBatch = gameMainSpriteBatch;
         _graphicsManager = graphics;
         _currentScene = null;
     }
@@ -86,7 +89,7 @@ public class SceneManager
         }
 
         // Initialize the Scene
-        _currentScene.Initialize(_graphicsManager, _gumProjectSave, ref CurrentWorld);
+        _currentScene.Initialize(_graphicsManager, _gameMainSpriteBatch, _gumProjectSave, ref CurrentWorld);
 
         _currentScene.LoadContent(); // Load the new scene content
     }
