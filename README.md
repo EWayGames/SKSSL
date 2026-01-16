@@ -1,5 +1,5 @@
 # SKSSL
-This is a shared library. "SKSSL" stands for "SolKom Shared Standard Library" This was written in and for C#, and for use in the MonoGame engine with Gum UI. Many parts of this library— including its name —are derived from various other fragmented projects of mine whose parts were merged into this. (Example: DustLogger ➡ DustToDust, SolKom ➡ SolarKommand, YAMLParser ➡ XMP, etc.)
+This is a shared library turned game engine. "SKSSL" stands for "SolKom Shared Standard Library" This was written in and for C#, and for use with the MonoGame and Gum UI frameworks. Many parts of this library— including its name —are derived from various other fragmented projects of mine whose parts were merged into this. (Example: DustLogger ➡ DustToDust, SolKom ➡ SolarKommand, YAMLParser ➡ XMP, etc.)
 
 ## System Information
 - .NET 9.0 SDK
