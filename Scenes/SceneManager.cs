@@ -1,20 +1,17 @@
+using System.Diagnostics.CodeAnalysis;
 using Gum.DataTypes;
 using Gum.Forms.Controls;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Media;
 using MonoGameGum;
-// ReSharper disable ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
-// ReSharper disable UnusedMember.Global
 
 namespace SKSSL.Scenes;
 
 public class SceneManager
 {
-    protected SpriteBatch _spriteBatch;
-    protected GraphicsDeviceManager _graphicsManager;
     protected GumProjectSave? _gumProjectSave;
-    protected BaseScene? _currentScene;
+
+    private readonly GraphicsDeviceManager _graphicsManager;
     public static SSLGame Game { get; private set; } = null!;
 
     /// <summary>
@@ -22,13 +19,13 @@ public class SceneManager
     /// Allows developers to initialize world settings / data per-scene.
     /// <remarks>May need improvement later.</remarks>
     /// </summary>
-    protected internal BaseWorld? CurrentWorld;
-    
-    public SceneManager(SSLGame game)
+    protected internal IWorld? CurrentWorld;
+
+    protected BaseScene? _currentScene;
+
+    public SceneManager(GraphicsDeviceManager graphics)
     {
-        Game = game;
-        _spriteBatch = game._spriteBatch;
-        _graphicsManager = game._graphicsManager;
+        _graphicsManager = graphics;
         _currentScene = null;
     }
 
@@ -40,17 +37,14 @@ public class SceneManager
         if (GumService.Default.Root.Children != null)
             GumService.Default.Root.Children.Clear();
     }
-    
-    public void Initialize(
-        GraphicsDeviceManager graphicsManager,
-        SpriteBatch spriteBatch,
-        GumProjectSave? gumProjectSave)
+
+    public void Initialize(GumProjectSave? gumProjectSave)
     {
-        _graphicsManager = graphicsManager;
-        _spriteBatch = spriteBatch;
         _gumProjectSave = gumProjectSave;
     }
-    
+
+    // WARN: This might not actually be needed? If scene switching is as I think it is, then all of this is automated. 
+    [Obsolete]
     public static void LoadScreen<T>() where T : new()
     {
         if (typeof(T).BaseType != typeof(FrameworkElement))
@@ -59,30 +53,42 @@ public class SceneManager
         ClearScreens();
 
         T screen = new();
-        (screen as FrameworkElement ??
-         throw new InvalidOperationException("The screen didn't cast correctly on load"))
-            .AddToRoot();
+        if (screen is FrameworkElement frameworkElement)
+            frameworkElement.AddToRoot();
+        else
+            throw new InvalidOperationException("The screen didn't cast correctly on load.");
     }
 
-    public void SwitchScene(BaseScene newScene)
+    /// <summary>
+    /// Switches scene to new scene based on provided scene type.
+    /// </summary>
+    /// <typeparam name="BS"></typeparam>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public void SwitchScene<BS>() where BS : BaseScene, new()
     {
+        if (typeof(BS).BaseType != typeof(BaseScene))
+            throw new TypeLoadException("Attempted to load scene type that does not derive from BaseScene.");
+
+        // Force empty constructor of new scene. Scenes aren't instantiated and stored elsewhere, they're created here.
+        var newScene = new BS();
+
         MediaPlayer.Stop(); // Stop The Music
+        ClearScreens(); // Clear old screens.
         _currentScene?.UnloadContent(); // UniqueUnloadContent the current scene
 
         _currentScene = newScene; // Switch to the new scene
 
         // Allow scenes to override current world.
-        if (_currentScene.SceneWorld != null)
+        if (_currentScene.GameWorld != null)
         {
             CurrentWorld?.Destroy();
-            CurrentWorld = _currentScene.SceneWorld;
+            CurrentWorld = _currentScene.GameWorld;
         }
-        
+
         // Initialize the Scene
-        _currentScene.Initialize(Game, _graphicsManager, _spriteBatch, _gumProjectSave, world: ref CurrentWorld);
+        _currentScene.Initialize(_graphicsManager, _gumProjectSave, ref CurrentWorld);
 
         _currentScene.LoadContent(); // Load the new scene content
-
     }
 
     public void Draw(GameTime gameTime)
