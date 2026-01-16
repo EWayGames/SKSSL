@@ -1,5 +1,10 @@
-namespace SKSSL.Scenes;
+using SKSSL.Scenes;
 
+namespace SKSSL;
+
+/// <summary>
+/// Static class game manager used to run and handle total game instance.
+/// </summary>
 public static class GameManager
 {
     public static SSLGame Game { get; private set; } = null!;
