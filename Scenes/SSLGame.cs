@@ -58,14 +58,13 @@ public abstract class SSLGame : Game
     protected SSLGame(string title, string gumFile = "")
     {
         Title = title;
-        SceneManager = new SceneManager(this);
-        _graphicsManager = HandleGraphicsDesignManager(new GraphicsDeviceManager(this));
+        Content.RootDirectory = "Content";
         Window.AllowUserResizing = true;
         Window.ClientSizeChanged += HandleClientSizeChanged;
-        currentScreenGue.UpdateLayout(); // UI Behaviour when dragged
-
+        _graphicsManager = HandleGraphicsDesignManager(new GraphicsDeviceManager(this));
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        Content.RootDirectory = "Content";
+        SceneManager = new SceneManager(_graphicsManager);
+        currentScreenGue.UpdateLayout(); // UI Behaviour when dragged
 
         if (string.IsNullOrEmpty(gumFile))
             DustLogger.Log($"Provided gum project file is empty! {title}, {nameof(SSLGame)}", 3);
@@ -119,7 +118,7 @@ public abstract class SSLGame : Game
         // Initialize Gum UI Handling (Some projects may choose not to utilize Gum)
         GumProjectSave? gumSave = null;
         if (!string.IsNullOrEmpty(GumFile)) gumSave = Gum.Initialize(this, GumFile);
-        SceneManager.Initialize(_graphicsManager, _spriteBatch, gumSave); // Initialize Scene Manager
+        SceneManager.Initialize(gumSave); // Initialize Scene Manager
 
         // Initialize all static paths, which the developer must have defined!
         StaticGameLoader.Initialize(StaticPaths);
