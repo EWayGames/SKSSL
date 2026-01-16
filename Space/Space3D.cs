@@ -6,12 +6,12 @@ namespace SKSSL.Space;
 public class Space3D : RenderableSpace
 {
     /// Rendering effect / shader for this space.
-    private BasicEffect _effect;
+    internal BasicEffect _effect;
     
     /// Buffer of vertices for rendering.
-    VertexBuffer _vertexBuffer;
+    internal VertexBuffer _vertexBuffer;
 
-    private SK3DCamera Camera { get; set; } = new();
+    internal SK3DCamera Camera { get; set; } = new();
 
     public override void Initialize(GraphicsDeviceManager game)
     {
