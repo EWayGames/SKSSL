@@ -13,7 +13,7 @@ namespace SKSSL.Extensions;
 /// QueryE ➡ Query-returns Entities <br/>
 /// QueryEC ➡ Query-returns Entities and Components<br/>
 /// </remarks>
-public static class EntitySystemQueryExtensions
+/*public partial class EntityManager
 {
     /// <summary>
     /// Overload for <see cref="QueryE{T}"/> for user convenience, as the notation may be foreign for some.
@@ -108,4 +108,4 @@ public static class EntitySystemQueryExtensions
                 yield return entity;
         }
     }
-}
+}*/

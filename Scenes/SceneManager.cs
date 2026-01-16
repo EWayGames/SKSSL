@@ -14,8 +14,8 @@ public class SceneManager
     protected SpriteBatch _spriteBatch;
     protected GraphicsDeviceManager _graphicsManager;
     protected GumProjectSave? _gumProjectSave;
-    protected internal BaseScene? _currentScene;
-    public SSLGame Game { get; private set; }
+    protected BaseScene? _currentScene;
+    public static SSLGame Game { get; private set; } = null!;
 
     /// <summary>
     /// World definition that should be initialized with a custom variant.
@@ -78,7 +78,8 @@ public class SceneManager
             CurrentWorld = _currentScene.SceneWorld;
         }
         
-        _currentScene.Initialize(Game, _graphicsManager, _spriteBatch, _gumProjectSave, world: ref CurrentWorld); // Initialize the Scene
+        // Initialize the Scene
+        _currentScene.Initialize(Game, _graphicsManager, _spriteBatch, _gumProjectSave, world: ref CurrentWorld);
 
         _currentScene.LoadContent(); // Load the new scene content
 

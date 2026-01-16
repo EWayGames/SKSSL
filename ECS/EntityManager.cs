@@ -1,6 +1,6 @@
 using System.Reflection;
-using SKSSL.Extensions;
 using SKSSL.Scenes;
+using SKSSL.Utilities;
 using SKSSL.YAML;
 using YamlDotNet.Core;
 using static SKSSL.DustLogger;
@@ -11,17 +11,28 @@ namespace SKSSL.ECS;
 /// Instantiated Manager for all <see cref="SKEntity"/> instances contained within it. Fundamental ECS
 /// infrastructure that currently softly requires a <see cref="BaseWorld"/> to be contained-in.
 /// </summary>
-public class EntityManager
+public partial class EntityManager
 {
-    private static int _nextId = 0;
+    private static IDIterator _nextId = new();
     private readonly List<SKEntity> _allEntities = [];
+    internal readonly ComponentRegistry _componentRegistry;
+    
+    /// <summary>
+    /// Instantiated Manager for all <see cref="SKEntity"/> instances contained within it. Fundamental ECS
+    /// infrastructure that currently softly requires a <see cref="BaseWorld"/> to be contained-in.
+    /// </summary>
+    public EntityManager(ref ComponentRegistry componentRegistry)
+    {
+        _componentRegistry = componentRegistry;
+    }
 
     /// Get all active entities.
     public IReadOnlyList<SKEntity> AllEntities => _allEntities;
-
+    
     /// All entity template definitions.
     public static IReadOnlyDictionary<string, EntityTemplate> Definitions => _definitions;
 
+    #region Entity Management
 
     /// <summary>
     /// Remove all entities contained within this entity Manager.
@@ -46,14 +57,13 @@ public class EntityManager
     {
         if (_allEntities.Any(e => e.Id == id))
             return _allEntities[id];
-        DustLogger.Log($"Attempted to retrieve nonexistent entity with ID {id}");
+        Log($"Attempted to retrieve nonexistent entity with ID {id}");
         return null;
     }
 
     /// <summary>
     /// Get-Method for all Entities of desired type. Does not handle component contents.
     /// </summary>
-    /// <seealso cref="EntitySystemQueryExtensions"/>
     /// <typeparam name="T">
     /// Type of entities queried. <see cref="SKEntity"/> will return all entities, as
     /// all entities inherit that type.
@@ -74,9 +84,9 @@ public class EntityManager
     /// Creates a new entity and returns its handle.
     /// Optionally fills metadata from a template or explicit values.
     /// </summary>
-    private static SKEntity CreateEntity(EntityTemplate template, BaseWorld? world = null)
+    private SKEntity CreateEntity(EntityTemplate template, BaseWorld? world = null)
     {
-        int id = _nextId++;
+        int id = _nextId.Iterate();
 
         // Use the template's desired entity type
         //  This is essentially a dynamic constructor to account for varying component definitions and templates.
@@ -89,7 +99,7 @@ public class EntityManager
                      ?? throw new InvalidOperationException(
                          $"Failed to create entity \"{template.ReferenceId}\" in {nameof(CreateEntity)}");
 
-        // Make a copy of the entity and force the reference ID. Funky, but it works.
+        // Assign world to entity. Will cause some funk if the world is null.
         entity.World = world;
 
         foreach ((Type type, object _) in template.DefaultComponents)
@@ -97,7 +107,7 @@ public class EntityManager
 
         return entity;
     }
-
+    
     /// <summary>
     /// Acquires an entity template using a provided reference id, and creates an entity instance using it.
     /// </summary>
@@ -112,6 +122,8 @@ public class EntityManager
         return entity;
     }
 
+    #endregion
+
     #region Entity Registry
 
     private static readonly Dictionary<string, EntityTemplate> _definitions = new();
@@ -122,9 +134,8 @@ public class EntityManager
     /// <param name="yaml">The yaml file of the template.</param>
     /// <typeparam name="T">Type of template being registered. Forces inheritance.</typeparam>
     /// <exception cref="ArgumentException"></exception>
-    public static void RegisterTemplate<T>(EntityYaml yaml) where T : EntityTemplate
-        => RegisterTemplate<EntityYaml, T>(yaml);
-
+    public void RegisterTemplate<T>(EntityYaml yaml) where T : EntityTemplate => RegisterTemplate<EntityYaml, T>(yaml);
+    
     /// <summary>
     /// Creates copyable entity template from a provided Yaml file, and Template type.
     /// </summary>
@@ -132,7 +143,7 @@ public class EntityManager
     /// <typeparam name="TYaml"></typeparam>
     /// <typeparam name="TTemplate"></typeparam>
     /// <exception cref="YamlException"></exception>
-    public static void RegisterTemplate<TYaml, TTemplate>(TYaml yaml)
+    public void RegisterTemplate<TYaml, TTemplate>(TYaml yaml)
         where TYaml : EntityYaml
         where TTemplate : EntityTemplate
     {
@@ -152,16 +163,13 @@ public class EntityManager
     /// Helper for extracting components from a yaml file. Should work with any kind that inherits <see cref="EntityYaml"/>.
     /// Does NOT support other yaml types that implement this. This is for the ECS ONLY
     /// </summary>
-    private static Dictionary<Type, object> BuildComponentsFromYaml(EntityYaml yaml)
+    private Dictionary<Type, object> BuildComponentsFromYaml(EntityYaml yaml)
     {
-        if (!ComponentRegistry.Initialized)
-            throw new ApplicationException($"Component registry has not been initialized before {nameof(BuildComponentsFromYaml)} call.");
-
         var components = new Dictionary<Type, object>();
 
         foreach (ComponentYaml yamlComponent in yaml.Components)
         {
-            if (!ComponentRegistry.RegisteredComponentTypesDictionary
+            if (!_componentRegistry.RegisteredComponentTypesDictionary
                     .TryGetValue(yamlComponent.Type.Replace("Component", string.Empty), out Type? componentType))
             {
                 Log($"Unknown component type: {yamlComponent.Type}", LOG.FILE_WARNING);
@@ -233,4 +241,5 @@ public class EntityManager
     public static bool ContainsTemplate(string handle) => _definitions.ContainsKey(handle);
 
     #endregion
+
 }

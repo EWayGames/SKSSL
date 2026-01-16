@@ -30,7 +30,6 @@ public abstract class BaseScene
     /// </summary>
     protected internal BaseWorld? SceneWorld;
 
-    
     public void Initialize(
         Game game,
         GraphicsDeviceManager graphicsManager,

@@ -32,7 +32,7 @@ public record SKEntity
     public int Id => RuntimeId;
 
     #endregion
-    
+
     /// <summary>
     /// Array of component indices. Index = ComponentTypeId&lt;T&gt;.Id, Value = slot in ComponentArray&lt;T&gt; (-1 if missing)
     /// <br/><br/>
@@ -45,7 +45,7 @@ public record SKEntity
     /// Reverse-reference back to the world that this entity inhabits.
     /// </summary>
     public BaseWorld? World;
-    
+
     #region Localization Properties
 
     /// <summary>
@@ -75,7 +75,7 @@ public record SKEntity
         ReferenceId = template.ReferenceId;
         NameKey = template.NameKey;
         DescriptionKey = template.DescriptionKey;
-        
+
         RuntimeId = id;
         ComponentIndices = new int[count];
         Array.Fill(ComponentIndices, -1); // ← All slots start as "missing"

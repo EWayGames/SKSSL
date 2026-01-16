@@ -5,17 +5,13 @@ namespace SKSSL.Scenes;
 
 public abstract class BaseWorld
 {
-    public readonly EntityManager _entityManager;
-    public List<SKEntity> ActiveEntities => _entityManager.AllEntities.ToList();
-    public SKEntity SpawnEntity(string referenceId) => _entityManager.Spawn(referenceId, this);
+    public ECSController ECS { get; }
 
-    private readonly SystemManager _systemManager;
-
+    public virtual bool HasECS => false;    
+    
     public BaseWorld()
     {
-        _entityManager = new EntityManager();
-        _systemManager = new SystemManager();
-        
+        ECS = new ECSController(this);
     }
 
     /// <summary>
@@ -24,17 +20,19 @@ public abstract class BaseWorld
     /// </summary>
     public void Initialize()
     {
-        _systemManager.RegisterAll(this);
+        // If programmer forces ECS to be enabled, toggle it in initialize.
+        if (HasECS)
+            ECS.Initialize();
     }
 
     public void Update(GameTime gameTime)
     {
-        _systemManager.Update(gameTime);
+        ECS.Update(gameTime);
     }
 
     public void Draw(GameTime gameTime)
     {
-        _systemManager.Draw(gameTime);
+        ECS.Draw(gameTime);
     }
 
     /// <summary>
@@ -42,6 +40,6 @@ public abstract class BaseWorld
     /// </summary>
     public void Destroy()
     {
-        _entityManager.WipeAllEntities();
+        ECS.Destroy();
     }
 }
