@@ -6,48 +6,99 @@ using SKSSL.Space;
 
 namespace SKSSL.Scenes;
 
-public abstract class BaseWorld
+/// <summary>
+/// Common contract for all worlds (used by SceneManager, ECSController, etc.)
+/// </summary>
+public interface IWorld
 {
-    public ECSController ECS { get; }
-    
-    public abstract IRenderableSpace WorldSpace { get; }
+    RenderableSpace? WorldSpace { get; }
+    void Initialize(GraphicsDeviceManager graphics);
+    void Update(GameTime gameTime);
+    void Draw(GameTime gameTime);
+    void Destroy();
+}
 
-    public virtual bool HasECS => false;    
-    
-    public BaseWorld()
+/// <summary>
+/// Non-generic base class with common infrastructure
+/// </summary>
+public abstract class BaseWorld : IWorld
+{
+    protected bool IsInitialized { get; private set; }
+
+    public RenderableSpace? WorldSpace { get; protected set; }
+
+    // Most worlds use ECS — this is opt-out instead of opt-in
+    protected virtual bool UsesECS => false;
+
+    public ECSController? ECS { get; private set; }
+
+    protected BaseWorld()
     {
-        ECS = new ECSController(this);
+        // ReSharper disable once VirtualMemberCallInConstructor
+        if (UsesECS)
+            ECS = new ECSController(this);
     }
 
-    /// <summary>
-    /// Called by <see cref="BaseScene"/> initialization.
-    /// <seealso cref="SceneManager"/>
-    /// </summary>
-    public virtual void Initialize()
+    public virtual void Initialize(GraphicsDeviceManager graphics)
     {
-        // If programmer forces ECS to be enabled, toggle it in initialize.
-        if (HasECS)
-            ECS.Initialize();
-        WorldSpace.Initialize();
+        if (IsInitialized) return;
+        IsInitialized = true;
+
+        ECS?.Initialize();
+        WorldSpace?.Initialize(graphics);
     }
 
-    public void Update(GameTime gameTime)
+    public virtual void Update(GameTime gameTime)
     {
-        ECS.Update(gameTime);
-        WorldSpace.Update();
+        ECS?.Update(gameTime);
+        WorldSpace?.Update();
     }
 
-    public void Draw(GameTime gameTime)
+    public virtual void Draw(GameTime gameTime)
     {
-        ECS.Draw(gameTime);
-        WorldSpace.Draw();
+        ECS?.Draw(gameTime);
+        WorldSpace?.Draw();
     }
 
-    /// <summary>
-    /// Ensures that this world instance is safely deleted before being replaced.
-    /// </summary>
-    public void Destroy()
+    public virtual void Destroy()
     {
-        ECS.Destroy();
+        ECS?.Destroy();
+        WorldSpace?.Destroy();
+        WorldSpace = null;
+        ECS = null;
+        IsInitialized = false;
     }
+}
+
+/// <summary>
+/// Generic typed version — inherit from this for concrete worlds
+/// </summary>
+public abstract class BaseWorld<TSpace> : BaseWorld
+    where TSpace : RenderableSpace, new()
+{
+    // Strongly-typed access for derived classes
+    public new TSpace? WorldSpace
+    {
+        get => base.WorldSpace as TSpace;
+        protected set => base.WorldSpace = value;
+    }
+
+    protected BaseWorld()
+    {
+        // Guaranteed non-null after construction
+        WorldSpace = new TSpace();
+    }
+
+    // ReSharper disable RedundantOverriddenMember
+
+    #region Virtual Basic Methods
+
+    public override void Initialize(GraphicsDeviceManager graphics) => base.Initialize(graphics);
+    public override void Update(GameTime gameTime) => base.Update(gameTime);
+
+    public override void Draw(GameTime gameTime) => base.Draw(gameTime);
+
+    public override void Destroy() => base.Destroy();
+
+    #endregion
 }
