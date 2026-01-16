@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using SKSSL.ECS;
+// ReSharper disable PublicConstructorInAbstractClass
 
 namespace SKSSL.Scenes;
 
@@ -9,10 +10,7 @@ public abstract class BaseWorld
 
     public virtual bool HasECS => false;    
     
-    public BaseWorld()
-    {
-        ECS = new ECSController(this);
-    }
+    public BaseWorld() => ECS = new ECSController(this);
 
     /// <summary>
     /// Called by <see cref="BaseScene"/> initialization.
