@@ -28,7 +28,7 @@ public abstract class BaseScene
     /// Allows developers to initialize world settings / data per-scene.
     /// <remarks>May need improvement later.</remarks>
     /// </summary>
-    protected internal BaseWorld? SceneWorld;
+    public BaseWorld? SceneWorld;
 
     public void Initialize(
         Game game,
