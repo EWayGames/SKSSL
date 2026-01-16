@@ -18,19 +18,19 @@ public abstract class BaseWorld
     /// Called by <see cref="BaseScene"/> initialization.
     /// <seealso cref="SceneManager"/>
     /// </summary>
-    public void Initialize()
+    public virtual void Initialize()
     {
         // If programmer forces ECS to be enabled, toggle it in initialize.
         if (HasECS)
             ECS.Initialize();
     }
 
-    public void Update(GameTime gameTime)
+    public virtual void Update(GameTime gameTime)
     {
         ECS.Update(gameTime);
     }
 
-    public void Draw(GameTime gameTime)
+    public virtual void Draw(GameTime gameTime)
     {
         ECS.Draw(gameTime);
     }
@@ -38,7 +38,7 @@ public abstract class BaseWorld
     /// <summary>
     /// Ensures that this world instance is safely deleted before being replaced.
     /// </summary>
-    public void Destroy()
+    public virtual void Destroy()
     {
         ECS.Destroy();
     }
