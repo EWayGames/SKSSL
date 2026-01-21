@@ -27,8 +27,11 @@ public abstract class BaseWorld : IWorld
 
     public RenderableSpace? WorldSpace { get; protected set; }
 
-    // Most worlds use ECS — this is opt-out instead of opt-in
+    /// Most worlds use ECS — this is opt-out instead of opt-in
     protected virtual bool UsesECS => false;
+    
+    /// Overridable toggle to use Raw Entities or Entity Templates in ECS.
+    protected virtual bool UseECSRawEntities => true;
 
     public ECSController? ECS { get; private set; }
 
@@ -39,13 +42,21 @@ public abstract class BaseWorld : IWorld
             ECS = new ECSController(this);
     }
 
-    public virtual void Initialize(GraphicsDeviceManager graphics)
+    public virtual void Initialize(GraphicsDeviceManager? graphics)
     {
+        // Avoid re-initializing what already has been initialized.
         if (IsInitialized) return;
         IsInitialized = true;
 
-        ECS?.Initialize();
-        WorldSpace?.Initialize(graphics);
+        // Enable ECS if toggled-on.
+        if (UsesECS)
+            ECS?.Initialize(UseECSRawEntities);
+
+        // Initialize WorldSpace assuming graphics provided + exception.
+        if (graphics != null)
+            WorldSpace?.Initialize(graphics);
+        else if (WorldSpace == null && graphics != null)
+            throw new NullReferenceException("Attempted to initialize WorldSpace with null GraphicsDeviceManager");
     }
 
     public virtual void Update(GameTime gameTime)
@@ -71,7 +82,7 @@ public abstract class BaseWorld : IWorld
 }
 
 /// <summary>
-/// Generic typed version — inherit from this for concrete worlds
+/// Strongly generic-typed version of BaseWorld — inherit this for concrete world definitions.
 /// </summary>
 public abstract class BaseWorld<TSpace> : BaseWorld
     where TSpace : RenderableSpace, new()
@@ -93,7 +104,7 @@ public abstract class BaseWorld<TSpace> : BaseWorld
 
     #region Virtual Basic Methods
 
-    public override void Initialize(GraphicsDeviceManager graphics) => base.Initialize(graphics);
+    public override void Initialize(GraphicsDeviceManager? graphics) => base.Initialize(graphics);
     public override void Update(GameTime gameTime) => base.Update(gameTime);
 
     public override void Draw(GameTime gameTime) => base.Draw(gameTime);
