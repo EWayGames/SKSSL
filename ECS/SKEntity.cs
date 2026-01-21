@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SKSSL.Scenes;
 using SKSSL.YAML;
+// ReSharper disable RedundantBaseConstructorCall
 
 // ReSharper disable ClassNeverInstantiated.Global
 
@@ -11,7 +12,7 @@ namespace SKSSL.ECS;
 /// Instanced Entity representing an object present within game memory. Entities are contained within a
 /// <see cref="World"/>, and contain <see cref="ComponentIndices"/> for pointing to component arrays.
 /// </summary>
-public record SKEntity : IEntityCommon
+public record SKEntity : AEntityCommon
 {
     /// <summary>
     /// Can be overwritten to allow for safe type-casting.
@@ -23,7 +24,7 @@ public record SKEntity : IEntityCommon
     /// <summary>
     /// Static Reference ID of this particular entry to a template reference.
     /// </summary>
-    public string Handle { get; init; } = null!;
+    internal sealed override string Handle { get; init; } = null!;
 
     /// <summary>
     /// Unique runtime ID (only set on spawned instances, -1 on templates)
@@ -38,14 +39,14 @@ public record SKEntity : IEntityCommon
     public int Id => RuntimeId;
 
     /// <inheritdoc/>
-    public string NameKey { get; set; }
+    internal sealed override string NameKey { get; set; }
 
     /// <inheritdoc/>
-    public string DescriptionKey { get; set; }
+    internal sealed override string DescriptionKey { get; set; }
 
     /// <inheritdoc/>
     /// Virtual for allow overrides, permitting manually-defined type-specific default components.
-    public virtual IReadOnlyDictionary<Type, object> DefaultComponents { get; init; } = new Dictionary<Type, object>();
+    public override IReadOnlyDictionary<Type, object> DefaultComponents { get; init; } = new Dictionary<Type, object>();
 
     /// <summary>
     /// Array of component indices. Index = ComponentTypeId&lt;T&gt;.Id, Value = slot in ComponentArray&lt;T&gt; (-1 if missing)
@@ -61,9 +62,10 @@ public record SKEntity : IEntityCommon
     public IWorld? World;
     #endregion
 
+    #region Constructors (Active Entities)
 
     /// <summary>
-    /// Default required constructor. Inheritance-entities may use inherited template types to fill certain details in
+    /// Entities may use inherited template types to fill certain details in
     /// their constructors but always MUST call this base constructor. 
     /// </summary>
     /// <param name="id">Unique numerical of the entity.</param>
@@ -80,15 +82,15 @@ public record SKEntity : IEntityCommon
     {
     }
 
-    public SKEntity(EntityYaml yaml, Dictionary<Type, object> components)
-    {
-        Handle = yaml.ReferenceId;
-        NameKey = yaml.Name;
-        DescriptionKey = yaml.Description;
-        DefaultComponents = components;
-    }
-
-    protected SKEntity(int count, string handle, string name, string description, int? id)
+    /// <summary>
+    /// Manual constructor to create active entity.
+    /// </summary>
+    /// <param name="count"></param>
+    /// <param name="handle"></param>
+    /// <param name="name"></param>
+    /// <param name="description"></param>
+    /// <param name="id"></param>
+    protected SKEntity(int count, string handle, string name, string description, int? id) : base()
     {
         Handle = handle;
         NameKey = name;
@@ -102,6 +104,16 @@ public record SKEntity : IEntityCommon
         Array.Fill(ComponentIndices, -1); // ← All slots start as "missing"
     }
 
+    #endregion
+
+    #region Constructors (Raw Definition / Pseudo-Template)
+
+    internal SKEntity(EntityYaml yaml, IReadOnlyDictionary<Type, object> components) : base(yaml, components)
+    {
+    }
+
+    #endregion
+    
     public void Initialize()
     {
     }

@@ -7,30 +7,26 @@ namespace SKSSL.YAML;
 
 /// Pseudo-abstract entity definition used to initialize new entities.
 /// Best used for systems where entities are complex and require templating.
-public record EntityTemplate : IEntityCommon
+public record EntityTemplate : AEntityCommon
 {
     /// <inheritdoc/>
-    public string Handle { get; init; }
+    internal override string Handle { get; init; }
 
     /// <inheritdoc/>
-    public string NameKey { get; set; }
+    internal override string NameKey { get; set; }
     
     /// <inheritdoc/>
-    public string DescriptionKey { get; set; }
+    internal override string DescriptionKey { get; set; }
     
     /// <inheritdoc/>
-    public IReadOnlyDictionary<Type, object> DefaultComponents { get; init; }
+    public override IReadOnlyDictionary<Type, object> DefaultComponents { get; init; }
     
     /// <summary>
     /// Can be overwritten to allow for safe type-casting.
     /// </summary>
     public virtual Type EntityType => typeof(SKEntity);
-    protected EntityTemplate(EntityYaml yaml, IReadOnlyDictionary<Type, object> components)
+    protected EntityTemplate(EntityYaml yaml, IReadOnlyDictionary<Type, object> components) : base(yaml, components)
     {
-        Handle = yaml.ReferenceId;
-        NameKey = yaml.Name;
-        DescriptionKey = yaml.Description;
-        DefaultComponents = components;
     }
 
     /// <summary>

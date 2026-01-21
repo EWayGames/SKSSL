@@ -44,8 +44,8 @@ public partial class EntityManager
     /// <seealso cref="Definitions"/>
     public IReadOnlyList<SKEntity> AllEntities => _allEntities;
 
-    /// All inactive Entity Definitions, which ubiquitously inherit <see cref="IEntityCommon"/>.
-    public static IReadOnlyDictionary<string, IEntityCommon> Definitions => _definitions;
+    /// All inactive Entity Definitions, which ubiquitously inherit <see cref="AEntityCommon"/>.
+    public static IReadOnlyDictionary<string, AEntityCommon> Definitions => _definitions;
 
     #region Entity Management
 
@@ -190,7 +190,7 @@ public partial class EntityManager
 
     #region Entity Registry
 
-    private static readonly Dictionary<string, IEntityCommon> _definitions = new();
+    private static readonly Dictionary<string, AEntityCommon> _definitions = new();
 
     /// <summary>
     /// Calls <see cref="RegisterTemplate{TYaml, TTemplate}"/> with a default to the <see cref="EntityYaml"/> type.
@@ -198,7 +198,7 @@ public partial class EntityManager
     /// <param name="yaml">The yaml file of the template.</param>
     /// <typeparam name="T">Type of template being registered. Forces inheritance.</typeparam>
     /// <exception cref="ArgumentException"></exception>
-    public void RegisterEntity<T>(EntityYaml yaml) where T : IEntityCommon
+    public void RegisterEntity<T>(EntityYaml yaml) where T : AEntityCommon
     {
         // Register raw entity
         if (typeof(T) == typeof(SKEntity))
@@ -311,17 +311,17 @@ public partial class EntityManager
     }
 
     /// <summary>
-    /// Register an entity Definition raw or template according to <see cref="IEntityCommon"/>.
+    /// Register an entity Definition raw or template according to <see cref="AEntityCommon"/>.
     /// </summary>
-    private static void RegisterTemplate(IEntityCommon definition) => _definitions[definition.Handle] = definition;
+    private static void RegisterTemplate(AEntityCommon definition) => _definitions[definition.Handle] = definition;
 
     /// <summary>
     /// Safe[r] TryGet method to retrieve an Entity Definition *OR* Template using a reference id.
     /// </summary>
     /// <returns>True if a template was found. False if one was not. The output is also Null if one was not found.</returns>
-    public static bool TryGetDefinition<T>(string referenceId, out T? definition) where T : IEntityCommon
+    public static bool TryGetDefinition<T>(string referenceId, out T? definition) where T : AEntityCommon
     {
-        var gotValue = _definitions.TryGetValue(referenceId, out IEntityCommon? entityCommon);
+        var gotValue = _definitions.TryGetValue(referenceId, out AEntityCommon? entityCommon);
         definition = (T)entityCommon!;
         return gotValue;
     }
