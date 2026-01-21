@@ -108,7 +108,7 @@ public record SKEntity : AEntityCommon
 
     #region Constructors (Raw Definition / Pseudo-Template)
 
-    internal SKEntity(EntityYaml yaml, IReadOnlyDictionary<Type, object> components) : base(yaml, components)
+    protected internal SKEntity(EntityYaml yaml, IReadOnlyDictionary<Type, object> components) : base(yaml, components)
     {
     }
 
