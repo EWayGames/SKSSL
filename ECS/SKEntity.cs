@@ -24,7 +24,7 @@ public record SKEntity : AEntityCommon
     /// <summary>
     /// Static Reference ID of this particular entry to a template reference.
     /// </summary>
-    internal sealed override string Handle { get; init; } = null!;
+    internal override string Handle { get; init; } = null!;
 
     /// <summary>
     /// Unique runtime ID (only set on spawned instances, -1 on templates)
@@ -39,10 +39,10 @@ public record SKEntity : AEntityCommon
     public int Id => RuntimeId;
 
     /// <inheritdoc/>
-    internal sealed override string NameKey { get; set; }
+    internal override string NameKey { get; set; }
 
     /// <inheritdoc/>
-    internal sealed override string DescriptionKey { get; set; }
+    internal override string DescriptionKey { get; set; }
 
     /// <inheritdoc/>
     /// Virtual for allow overrides, permitting manually-defined type-specific default components.
@@ -109,6 +109,10 @@ public record SKEntity : AEntityCommon
     #region Constructors (Raw Definition / Pseudo-Template)
 
     protected internal SKEntity(EntityYaml yaml, IReadOnlyDictionary<Type, object> components) : base(yaml, components)
+    {
+    }
+
+    protected internal SKEntity() : base()
     {
     }
 
