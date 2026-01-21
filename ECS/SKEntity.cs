@@ -44,9 +44,8 @@ public record SKEntity : IEntityCommon
     public string DescriptionKey { get; set; }
 
     /// <inheritdoc/>
-    public IReadOnlyDictionary<Type, object> DefaultComponents { get; init; }
-
-    #endregion
+    /// Virtual for allow overrides, permitting manually-defined type-specific default components.
+    public virtual IReadOnlyDictionary<Type, object> DefaultComponents { get; init; } = new Dictionary<Type, object>();
 
     /// <summary>
     /// Array of component indices. Index = ComponentTypeId&lt;T&gt;.Id, Value = slot in ComponentArray&lt;T&gt; (-1 if missing)
@@ -59,9 +58,9 @@ public record SKEntity : IEntityCommon
     /// <summary>
     /// Reverse-reference back to the world that this entity inhabits.
     /// </summary>
-    public IWorld World;
+    public IWorld? World;
+    #endregion
 
-    private IEntityCommon _entityCommonImplementation;
 
     /// <summary>
     /// Default required constructor. Inheritance-entities may use inherited template types to fill certain details in
@@ -71,7 +70,8 @@ public record SKEntity : IEntityCommon
     /// <param name="count">Number of component indices in the game.</param>
     /// <param name="template">Provided template. Uses base <see cref="EntityTemplate"/> by default.</param>
     protected SKEntity(int id, int count, EntityTemplate template)
-        : this(count: count,
+        : this(
+            count: count,
             handle: template.Handle,
             name: template.NameKey,
             description:
