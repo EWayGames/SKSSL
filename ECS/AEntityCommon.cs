@@ -7,7 +7,7 @@ using SKSSL.YAML;
 namespace SKSSL.ECS;
 
 /// <summary>
-/// Common interface for <see cref="SKEntity"/> and <see cref="EntityTemplate"/> objects.
+/// Common abstraction for <see cref="SKEntity"/> and <see cref="EntityTemplate"/> objects.
 /// Allows ECS to store one of either type in its definitions, depending on use-case.
 /// </summary>
 public abstract record AEntityCommon
