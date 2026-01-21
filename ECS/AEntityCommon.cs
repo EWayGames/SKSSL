@@ -15,24 +15,28 @@ public abstract record AEntityCommon
     /// <summary>
     /// Definition's Reference ID to later refer-to when making copies.
     /// </summary>
-    internal abstract string Handle { get; init; }
+    public abstract string Handle { get; init; }
 
     /// <summary>
     /// Localization for name.
     /// </summary>
-    internal abstract string NameKey { get; set; }
+    public abstract string NameKey { get; set; }
 
     /// <summary>
     /// Localization for description.
     /// </summary>
-    internal abstract string DescriptionKey { get; set; }
+    public abstract string DescriptionKey { get; set; }
 
+    /// <returns>Localized name from Name Key.</returns>
     public void GetName() => Loc.Get(NameKey);
+
+    /// <returns>Localized Description from Description Key.</returns>
     public void GetDescription() => Loc.Get(DescriptionKey);
 
     /// Predefined class-specific dictionary of components.
     public abstract IReadOnlyDictionary<Type, object> DefaultComponents { get; init; }
 
+    /// Constructor for Entity Yaml basic fields and default components. This is for definitions.
     protected AEntityCommon(EntityYaml yaml, IReadOnlyDictionary<Type, object> components)
     {
         // ReSharper disable VirtualMemberCallInConstructor
@@ -42,6 +46,8 @@ public abstract record AEntityCommon
         DefaultComponents = components;
     }
 
+    /// Blank constructor for Common Entity root. Avoid using this unless absolutely necessary.
+    /// Used for creating active <see cref="SKEntity"/> instances in the ECS, where properties are set elsewhere.
     protected AEntityCommon()
     {
     }

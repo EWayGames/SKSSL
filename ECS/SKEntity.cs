@@ -24,7 +24,7 @@ public record SKEntity : AEntityCommon
     /// <summary>
     /// Static Reference ID of this particular entry to a template reference.
     /// </summary>
-    internal override string Handle { get; init; } = null!;
+    public override string Handle { get; init; } = null!;
 
     /// <summary>
     /// Unique runtime ID (only set on spawned instances, -1 on templates)
@@ -39,10 +39,10 @@ public record SKEntity : AEntityCommon
     public int Id => RuntimeId;
 
     /// <inheritdoc/>
-    internal override string NameKey { get; set; }
+    public override string NameKey { get; set; }
 
     /// <inheritdoc/>
-    internal override string DescriptionKey { get; set; }
+    public override string DescriptionKey { get; set; }
 
     /// <inheritdoc/>
     /// Virtual for allow overrides, permitting manually-defined type-specific default components.

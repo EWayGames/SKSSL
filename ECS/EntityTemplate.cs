@@ -12,13 +12,13 @@ public record EntityTemplate : AEntityCommon
     #region Fields
 
     /// <inheritdoc/>
-    internal override string Handle { get; init; }
+    public override string Handle { get; init; }
 
     /// <inheritdoc/>
-    internal override string NameKey { get; set; }
+    public override string NameKey { get; set; }
 
     /// <inheritdoc/>
-    internal override string DescriptionKey { get; set; }
+    public override string DescriptionKey { get; set; }
 
     /// <inheritdoc/>
     public override IReadOnlyDictionary<Type, object> DefaultComponents { get; init; }
