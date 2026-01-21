@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SKSSL.Scenes;
 using SKSSL.YAML;
+
 // ReSharper disable RedundantBaseConstructorCall
 
 // ReSharper disable ClassNeverInstantiated.Global
@@ -60,6 +61,7 @@ public record SKEntity : AEntityCommon
     /// Reverse-reference back to the world that this entity inhabits.
     /// </summary>
     public IWorld? World;
+
     #endregion
 
     #region Constructors (Active Entities)
@@ -119,16 +121,27 @@ public record SKEntity : AEntityCommon
     }
 
     #endregion
-    
-    public void Initialize()
+
+    /// <summary>
+    /// Special initialization logic for Entity.
+    /// </summary>
+    /// <remarks>
+    /// This is called from <see cref="EntityManager.Spawn(string)"/>; as in on-spawn.
+    /// <br/><br/>
+    /// Systems will automatically act upon an entity's components, this method is a formality for special
+    /// alternative behaviour on-creation.
+    /// </remarks>
+    public virtual void Initialize()
     {
     }
 
-    public void Draw(SpriteBatch spriteBatch)
+    /// Special draw instructions per-entity, should a Rendering component not be enough.
+    public virtual void Draw(SpriteBatch spriteBatch)
     {
     }
 
-    public void Update(GameTime gameTime)
+    /// Special entity behaviour / status update call, should behavioural components not be enough.
+    public virtual void Update(GameTime gameTime)
     {
     }
 }
