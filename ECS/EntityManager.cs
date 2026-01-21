@@ -116,7 +116,7 @@ public partial class EntityManager
 
         entity.SetRuntimeId(id);
 
-        return FinalizeEntityWorldAndComponents(ref entity, definition.DefaultComponents);
+        return FinalizeEntity(ref entity, definition.DefaultComponents);
     }
 
     /// <summary>
@@ -138,15 +138,15 @@ public partial class EntityManager
                           ?? throw new InvalidOperationException(
                               $"Failed to create entity \"{template.Handle}\" in {nameof(CreateEntity)}");
 
-        return FinalizeEntityWorldAndComponents(ref entity, template.DefaultComponents);
+        return FinalizeEntity(ref entity, template.DefaultComponents);
     }
 
     /// <summary>
     /// Generalization of final steps in completing entity creation.
+    /// <br/>-➡ Assign World
+    /// <br/>-➡ Copy Default Components
     /// </summary>
-    private SKEntity FinalizeEntityWorldAndComponents(
-        ref SKEntity entity,
-        IReadOnlyDictionary<Type, object> defaultComponents)
+    private SKEntity FinalizeEntity(ref SKEntity entity, IReadOnlyDictionary<Type, object> defaultComponents)
     {
         // Assign world to entity. Will cause some funk if the world is null.
         entity.World = _world;
@@ -198,7 +198,25 @@ public partial class EntityManager
     /// <param name="yaml">The yaml file of the template.</param>
     /// <typeparam name="T">Type of template being registered. Forces inheritance.</typeparam>
     /// <exception cref="ArgumentException"></exception>
-    public void RegisterTemplate<T>(EntityYaml yaml) where T : EntityTemplate => RegisterTemplate<EntityYaml, T>(yaml);
+    public void RegisterEntity<T>(EntityYaml yaml) where T : IEntityCommon
+    {
+        // Register raw entity
+        if (typeof(T) == typeof(SKEntity))
+        {
+            // Error handling - don't use raw entities whilst it's disabled!
+            if (!_useRawEntities)
+                throw new InvalidCastException("Attempted to create Raw Entity whilst UseRawEntities = false!");
+            RegisterDefinition<EntityYaml, SKEntity>(yaml);
+        }
+        // Attempt register of template
+        else if (typeof(T) == typeof(EntityTemplate))
+        {
+            // Error handling - don't use entity templates whilst raw entities are enabled!
+            if (_useRawEntities)
+                throw new InvalidCastException("Attempted to create Entity Template whilst UseRawEntities = true!");
+            RegisterTemplate<EntityYaml, EntityTemplate>(yaml);
+        }
+    }
 
     /// <summary>
     /// Creates copyable entity template from a provided Yaml file, and Template type.
@@ -221,6 +239,27 @@ public partial class EntityManager
             throw new YamlException("Template must have ReferenceId");
 
         RegisterTemplate(template);
+    }
+
+    /// <summary>
+    /// Creates a raw entity definition using provided yaml.
+    /// </summary>
+    /// <param name="yaml"></param>
+    /// <typeparam name="TYaml"></typeparam>
+    /// <typeparam name="TTemplate"></typeparam>
+    /// <exception cref="YamlException"></exception>
+    public void RegisterDefinition<TYaml, TTemplate>(TYaml yaml)
+        where TYaml : EntityYaml
+        where TTemplate : SKEntity
+    {
+        // Get components.
+        var components = BuildComponentsFromYaml(yaml);
+
+        var entity = new SKEntity(yaml, components);
+        if (entity is null)
+            throw new YamlException("SKEntity created was null!");
+
+        RegisterTemplate(entity);
     }
 
     /// <summary>
@@ -272,23 +311,9 @@ public partial class EntityManager
     }
 
     /// <summary>
-    /// Register a template.
+    /// Register an entity Definition raw or template according to <see cref="IEntityCommon"/>.
     /// </summary>
-    private static void RegisterTemplate(EntityTemplate template) => _definitions[template.Handle] = template;
-
-    /// <summary>
-    /// Retrieves a template from the defined templates list. Throws an exception.
-    /// <remarks>I suggest using <see cref="TryGetDefinition{T}"/> instead and add additional handling for safety.</remarks>
-    /// </summary>
-    /// <exception cref="KeyNotFoundException">Thrown when template not found using provided reference id.</exception>
-    public static EntityTemplate GetTemplate(string referenceId)
-    {
-        if (!TryGetDefinition(referenceId, out EntityTemplate? template))
-            throw new KeyNotFoundException(
-                $"Call on {nameof(GetTemplate)} found no template for reference id: {referenceId}");
-
-        return template!;
-    }
+    private static void RegisterTemplate(IEntityCommon definition) => _definitions[definition.Handle] = definition;
 
     /// <summary>
     /// Safe[r] TryGet method to retrieve an Entity Definition *OR* Template using a reference id.

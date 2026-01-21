@@ -80,6 +80,14 @@ public record SKEntity : IEntityCommon
     {
     }
 
+    public SKEntity(EntityYaml yaml, Dictionary<Type, object> components)
+    {
+        Handle = yaml.ReferenceId;
+        NameKey = yaml.Name;
+        DescriptionKey = yaml.Description;
+        DefaultComponents = components;
+    }
+
     protected SKEntity(int count, string handle, string name, string description, int? id)
     {
         Handle = handle;
