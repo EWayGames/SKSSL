@@ -50,7 +50,7 @@ public static class RecordExtensions
     /// Creates a shallow clone of the given entity, and type-casts it.
     /// Calls <see cref="CloneEntity"/> for entity clone that's type-casted.
     /// </summary>
-    /// <typeparam name="T">Public record type this object is casted to.</typeparam>
+    /// <typeparam name="T">Public record type this object is cast to.</typeparam>
     /// <param name="original">The existing record instance to clone.</param>
     /// <returns>A new instance with all properties copied, or null if type cast T wasn't successful.</returns>
     public static object? CloneEntityAs<T>(this SKEntity original) where T : SKEntity => CloneEntity(original) as T;

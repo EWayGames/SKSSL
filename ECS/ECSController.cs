@@ -1,5 +1,7 @@
 using Microsoft.Xna.Framework;
 using SKSSL.Scenes;
+using static SKSSL.ECS.EntityManager;
+
 // ReSharper disable UnusedMember.Local
 
 namespace SKSSL.ECS;
@@ -34,7 +36,6 @@ public class ECSController
         _world = world;
     }
 
-
     private List<SKEntity> ActiveEntities
         => _entityManager?.AllEntities.ToList() ?? throw new InvalidOperationException(
             "Entity manager is null. Did you forget to Initialize the ECS?");
@@ -46,7 +47,8 @@ public class ECSController
     /// <summary>
     /// Required method to initialize all ECS systems.
     /// </summary>
-    public void Initialize()
+    /// <param name="useRawEntities"></param>
+    public void Initialize(bool useRawEntities = DefaultUseRawEntities)
     {
         if (Initialized)
         {
@@ -62,7 +64,7 @@ public class ECSController
         _componentRegistry = new ComponentRegistry();
         _componentRegistry.InitializeComponents();
         
-        _entityManager = new EntityManager(ref _componentRegistry, _world);
+        _entityManager = new EntityManager(ref _componentRegistry, _world, useRawEntities);
         
         // Assign entity context for reflective purposes.
         EntityContext = new EntityContext(_entityManager, _componentRegistry);
