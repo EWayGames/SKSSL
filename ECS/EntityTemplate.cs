@@ -4,11 +4,21 @@ using SKSSL.ECS;
 namespace SKSSL.YAML;
 
 #pragma warning disable CS8618
-public record EntityTemplate
+
+/// Pseudo-abstract entity definition used to initialize new entities.
+/// Best used for systems where entities are complex and require templating.
+public record EntityTemplate : IEntityCommon
 {
-    public string ReferenceId { get; init; }
-    public string NameKey { get; init; }
-    public string DescriptionKey { get; init; }
+    /// <inheritdoc/>
+    public string Handle { get; init; }
+
+    /// <inheritdoc/>
+    public string NameKey { get; set; }
+    
+    /// <inheritdoc/>
+    public string DescriptionKey { get; set; }
+    
+    /// <inheritdoc/>
     public IReadOnlyDictionary<Type, object> DefaultComponents { get; init; }
     
     /// <summary>
@@ -17,7 +27,7 @@ public record EntityTemplate
     public virtual Type EntityType => typeof(SKEntity);
     protected EntityTemplate(EntityYaml yaml, IReadOnlyDictionary<Type, object> components)
     {
-        ReferenceId = yaml.ReferenceId;
+        Handle = yaml.ReferenceId;
         NameKey = yaml.Name;
         DescriptionKey = yaml.Description;
         DefaultComponents = components;

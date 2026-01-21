@@ -1,8 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using SKSSL.Localization;
 using SKSSL.Scenes;
-using SKSSL.Space;
 using SKSSL.YAML;
 
 // ReSharper disable ClassNeverInstantiated.Global
@@ -13,24 +11,40 @@ namespace SKSSL.ECS;
 /// Instanced Entity representing an object present within game memory. Entities are contained within a
 /// <see cref="World"/>, and contain <see cref="ComponentIndices"/> for pointing to component arrays.
 /// </summary>
-public record SKEntity
+public record SKEntity : IEntityCommon
 {
-    #region IDs
+    /// <summary>
+    /// Can be overwritten to allow for safe type-casting.
+    /// </summary>
+    public virtual Type EntityType => typeof(SKEntity);
+
+    #region Fields
 
     /// <summary>
-    /// Static ID of this particular entry to a template reference.
+    /// Static Reference ID of this particular entry to a template reference.
     /// </summary>
-    internal string ReferenceId { get; init; } = null!;
+    public string Handle { get; init; } = null!;
 
     /// <summary>
     /// Unique runtime ID (only set on spawned instances, -1 on templates)
     /// </summary>
-    public int RuntimeId { get; } = -1;
+    public int RuntimeId { get; private set; } = -1;
 
-    /// <summary>
+    /// Manually assign runtime ID for if entity is created manually.
+    /// Should NOT be called outside of <see cref="EntityManager"/>.
+    protected internal void SetRuntimeId(int id) => RuntimeId = id;
+
     /// Defers back to the <see cref="RuntimeId"/> for compatability reasons between projects.
-    /// </summary>
     public int Id => RuntimeId;
+
+    /// <inheritdoc/>
+    public string NameKey { get; set; }
+
+    /// <inheritdoc/>
+    public string DescriptionKey { get; set; }
+
+    /// <inheritdoc/>
+    public IReadOnlyDictionary<Type, object> DefaultComponents { get; init; }
 
     #endregion
 
@@ -47,22 +61,7 @@ public record SKEntity
     /// </summary>
     public IWorld World;
 
-    #region Localization Properties
-
-    /// <summary>
-    /// Localization for name.
-    /// </summary>
-    internal string NameKey { get; set; } = null!;
-
-    /// <summary>
-    /// Localization for description.
-    /// </summary>
-    internal string DescriptionKey { get; set; } = null!;
-
-    public void GetName() => Loc.Get(NameKey);
-    public void GetDescription() => Loc.Get(DescriptionKey);
-
-    #endregion
+    private IEntityCommon _entityCommonImplementation;
 
     /// <summary>
     /// Default required constructor. Inheritance-entities may use inherited template types to fill certain details in
@@ -72,12 +71,25 @@ public record SKEntity
     /// <param name="count">Number of component indices in the game.</param>
     /// <param name="template">Provided template. Uses base <see cref="EntityTemplate"/> by default.</param>
     protected SKEntity(int id, int count, EntityTemplate template)
+        : this(count: count,
+            handle: template.Handle,
+            name: template.NameKey,
+            description:
+            template.DescriptionKey,
+            id)
     {
-        ReferenceId = template.ReferenceId;
-        NameKey = template.NameKey;
-        DescriptionKey = template.DescriptionKey;
+    }
 
-        RuntimeId = id;
+    protected SKEntity(int count, string handle, string name, string description, int? id)
+    {
+        Handle = handle;
+        NameKey = name;
+        DescriptionKey = description;
+
+        // For raw definitions, which do not have runtime IDs.
+        if (id.HasValue)
+            RuntimeId = id.Value;
+
         ComponentIndices = new int[count];
         Array.Fill(ComponentIndices, -1); // ← All slots start as "missing"
     }
