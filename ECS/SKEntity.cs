@@ -108,10 +108,12 @@ public record SKEntity : AEntityCommon
 
     #region Constructors (Raw Definition / Pseudo-Template)
 
+    /// Construct raw definition using YAML and Default Components.
     protected internal SKEntity(EntityYaml yaml, IReadOnlyDictionary<Type, object> components) : base(yaml, components)
     {
     }
 
+    /// Constructor for flat "empty" Entity. NOT recommended without special handling for Entity's fields. 
     protected internal SKEntity() : base()
     {
     }
