@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
-using SKSSL.Utilities;
+using SKSSL.Extensions;
 using static SKSSL.DustLogger;
 using static SKSSL.Textures.TextureLoader.MaterialRegistry;
 

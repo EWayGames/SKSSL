@@ -1,4 +1,4 @@
-namespace KBSL.Definitions.Networking;
+namespace SKSSL;
 
 /// <summary>
 /// 

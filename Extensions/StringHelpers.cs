@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace SKSSL.Utilities;
+namespace SKSSL.Extensions;
 
 public static class StringHelpers
 {

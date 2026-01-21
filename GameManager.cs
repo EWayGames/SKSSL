@@ -1,5 +1,3 @@
-using SKSSL.Scenes;
-
 namespace SKSSL;
 
 /// <summary>

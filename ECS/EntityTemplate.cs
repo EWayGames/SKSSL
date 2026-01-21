@@ -1,7 +1,7 @@
 using System.Reflection;
-using SKSSL.ECS;
+using SKSSL.YAML;
 
-namespace SKSSL.YAML;
+namespace SKSSL.ECS;
 
 #pragma warning disable CS8618
 

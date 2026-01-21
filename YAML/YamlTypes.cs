@@ -1,6 +1,5 @@
 using System.Drawing;
 using RenderingLibrary.Graphics;
-using SKSSL.ECS;
 using YamlDotNet.Serialization;
 using Color = Microsoft.Xna.Framework.Color;
 // ReSharper disable PropertyCanBeMadeInitOnly.Global

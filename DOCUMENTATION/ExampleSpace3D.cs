@@ -1,7 +1,8 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using SKSSL.Space;
 
-namespace SKSSL.Space;
+namespace SKSSL.DOCUMENTATION;
 
 /// <summary>
 /// Exemplary class for implementing a 3D space.

@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
+using SKSSL.Space;
 
-namespace SKSSL.Space;
+namespace SKSSL.DOCUMENTATION;
 
 /// A two-dimensional space that can be interacted with. This is not supposed to be for game menus.
 /// <seealso cref="RenderableSpace"/>
