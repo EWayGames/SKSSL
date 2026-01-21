@@ -75,5 +75,5 @@ public class ECSController
     public void Draw(GameTime gameTime) => _systemManager?.Draw(gameTime);
 
     /// Ensures that this world instance is safely deleted before being replaced.
-    public void Destroy() => _entityManager?.WipeAllEntities();
+    public void Destroy() => _entityManager?.MassacreAllEntities();
 }
