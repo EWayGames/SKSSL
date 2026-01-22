@@ -54,6 +54,25 @@ public static class YamlLoader
     
     #region Loading
 
+    public static T LoadSingle<T>(string filePath)
+    {
+        ArgumentNullException.ThrowIfNull(filePath);
+        
+        if (!File.Exists(filePath))
+            throw new FileNotFoundException("File not found", filePath);
+
+        try
+        {
+            using var reader = new StreamReader(filePath);
+            return Deserializer.Deserialize<T>(reader);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                $"YAML deserialization failed for {filePath}: {ex.Message}", ex);
+        }
+    }
+   
     /// <summary>
     /// Loads YAML files from a folder or a single file and returns a list of deserialized objects.
     /// This requires the user to know precisely what type is in which folder.
