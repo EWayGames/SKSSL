@@ -18,6 +18,22 @@ public class ConsQJsonLoader
         File.WriteAllText(path, json);
     }
 
+
+    /// Load multiple files containing identical types in a directory.
+    /// Expects all files in the directory to be the same general type.
+    public static List<T> LoadDirectory<T>(string directory)
+    {
+        var files = Directory.GetFiles(directory, "*.json", SearchOption.AllDirectories);
+        List<T> result = [];
+        foreach (var file in files)
+        {
+            var obj = LoadAmbiguous<T>(file);
+            result.AddRange(obj);
+        }
+
+        return result;
+    }
+
     /// <summary>
     /// Loads json file at path and returns a list of objects, even if there is only one entry.
     /// </summary>
@@ -47,26 +63,5 @@ public class ConsQJsonLoader
         return objects;
     }
 
-    /// Load multiple files containing identical types in a directory.
-    /// Expects all files in the directory to be the same general type.
-    public static List<T> LoadDirectory<T>(string directory)
-    {
-        var files = Directory.GetFiles(directory, "*.json", SearchOption.AllDirectories);
-        List<T> result = [];
-        foreach (var file in files)
-        {
-            var obj = LoadAmbiguous<T>(file);
-            result.AddRange(obj);
-        }
-        return result;
-    }
-
-    /// Load data from individual file with expected Type T.
-    /// If the file contains multiple entries and T is NOT a List of type T, it will not function.
-    /// Use <see cref="LoadAmbiguous{T}"/> instead.
-    public static T? Load<T>(string path)
-    {
-        var json = File.ReadAllText(path);
-        return JsonSerializer.Deserialize<T>(json);
-    }
+    private static T? Load<T>(string json) => JsonSerializer.Deserialize<T>(json);
 }
