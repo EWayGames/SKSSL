@@ -15,10 +15,15 @@ public static class RNG
     /// </summary>
     /// <param name="max">Maximum value to generate. This is inclusive.</param>
     /// <returns></returns>
-    public static int RN(int max)
-    {
-        return Uniform.NewInclusive(0, max).Sample(RANDOM_NUMBER_GENERATOR);
-    }
+    public static int RN(int max) => RN(0, max);
+
+    /// <summary>
+    /// A simple function just to get a random number for testing.
+    /// </summary>
+    /// <param name="min">Minimum value. This is inclusive.</param>
+    /// <param name="max">Maximum value to generate. This is inclusive.</param>
+    /// <returns></returns>
+    public static int RN(int min, int max) => Uniform.NewInclusive(min, max).Sample(RANDOM_NUMBER_GENERATOR);
 
     /// <summary>
     /// An assisting Extension function designed to get a random value from an Enumerable.
