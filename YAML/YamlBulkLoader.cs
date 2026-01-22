@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.RegularExpressions;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -46,49 +47,81 @@ public static partial class YamlBulkLoader
     /// <summary>
     /// Reads files once and dispatches entries to correct types.
     /// </summary>
-    public static Dictionary<Type, List<object>> LoadAllTypes(
-        IEnumerable<Type> knownTypes, string? specificPath = null, params string[] filePatterns)
+    public static Dictionary<Type, List<object>>
+        LoadAllTypes(IEnumerable<Type> knownTypes, string directoryPath = "", params string[] filePatterns)
     {
+        // Using all Type data provided, attempt load.
         var types = knownTypes as Type[] ?? knownTypes.ToArray();
+
+        // Assign proper types to a new dictionary.
         var results = types.ToDictionary(t => t, _ => new List<object>());
+        
+        // Get all files
+        var files = GetFiles(filePatterns, directoryPath);
 
-        var files = GetFiles(filePatterns, specificPath);
-
+        // Process every file with expected types.
         foreach (var file in files)
         {
-            string[] lines = File.ReadAllLines(file);
-            var entries = SplitIntoYamlEntries(lines);
+            // Get file output and put to dictionary.
+            var fileOutput = LoadFile(file, types);
+            foreach (var data in fileOutput)
+                results.Add(data.Key, data.Value);
+        }
 
-            foreach (var entryLines in entries)
+        return results;
+    }
+
+    /// <summary>
+    /// Reflective overload of LoadFile call that requires expected types. Gets all types in assembly and feeds.
+    /// </summary>
+    /// <param name="file"></param>
+    /// <returns></returns>
+    public static Dictionary<Type, List<object>> LoadFile(string file)
+    {
+        var allTypes = Assembly.GetExecutingAssembly().GetTypes();
+        return LoadFile(file, allTypes);
+    }
+
+    /// <summary>
+    /// Attempt to extract yaml data with limited defined types.
+    /// </summary>
+    public static Dictionary<Type, List<object>> LoadFile(string file, params Type[] expectedTypes)
+    {
+        Dictionary<Type, List<object>> results = new();
+        string[] lines = File.ReadAllLines(file);
+        var entries = SplitIntoYamlEntries(lines);
+
+        foreach (var entryLines in entries)
+        {
+            // WARN: The ExtractTypeTag below limits the parser to only one type per file.
+            //  A file CANNOT have mixed types, despite that being the initial intention. This isn't super game-breaking,
+            //  But it IS an issue.
+            // Extract "- type:" tag
+            string? typeTag = ExtractTypeTag(entryLines);
+            if (typeTag == null) continue;
+            // Strip any "Base...Yaml" [pre]/[suf]fixes.
+            typeTag = StripBaseAndYaml(typeTag);
+
+            // Find which known type matches the tag.
+            Type? targetType = expectedTypes.FirstOrDefault
+                (type => string.Equals(StripBaseAndYaml(type.Name), typeTag, StringComparison.OrdinalIgnoreCase));
+            if (targetType == null) continue;
+
+            string yamlBlock = string.Join("\n", entryLines);
+            try
             {
-                // WARN: The ExtractTypeTag below limits the parser to only one type per file.
-                //  A file CANNOT have mixed types, despite that being the initial intention. This isn't super game-breaking,
-                //  But it IS an issue.
-                string? typeTag = ExtractTypeTag(entryLines);
-                if (typeTag == null) continue;
+                // Always deserialize as a list – handles single or multiple entries, with or without '-'
+                Type listType = typeof(List<>).MakeGenericType(targetType);
 
-                string coreName = StripBaseAndYaml(typeTag);
-
-                // Find which known type matches this core name
-                Type? targetType = types.FirstOrDefault(t =>
-                    string.Equals(StripBaseAndYaml(t.Name), coreName, StringComparison.OrdinalIgnoreCase));
-
-                if (targetType == null) continue;
-                string yamlBlock = string.Join("\n", entryLines);
-                try
-                {
-                    // Always deserialize as a list – handles single or multiple entries, with or without '-'
-                    Type listType = typeof(List<>).MakeGenericType(targetType);
-                    var list = _deserializer.Deserialize(yamlBlock, listType);
-
-                    if (list is IEnumerable<object> items)
-                        foreach (var item in items)
-                            results[targetType].Add(item);
-                }
-                catch (Exception ex)
-                {
-                    Log($"Failed to deserialize {typeTag} in {file}: {ex.Message}", LOG.FILE_ERROR);
-                }
+                // Get list of all entries.
+                var yamlList = _deserializer.Deserialize(yamlBlock, listType);
+                if (yamlList is IEnumerable<object> items)
+                    foreach (var item in items)
+                        results[targetType].Add(item);
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to deserialize {typeTag} in {file}: {ex.Message}", LOG.FILE_ERROR);
             }
         }
 
@@ -96,7 +129,7 @@ public static partial class YamlBulkLoader
     }
 
     #region YAML Data Parsing Helpers
-    
+
     // Helper used by LoadAll<T> for efficiency when calling multiple times
     private static IEnumerable<T> GetAllMatching<T>(string[] filePatterns) where T : class
     {
@@ -129,6 +162,9 @@ public static partial class YamlBulkLoader
         return list;
     }
 
+    /// <summary>
+    /// Remove "Base" from the beginning of a name, and "Yaml" from the end, if present.
+    /// </summary>
     private static string StripBaseAndYaml(string name)
     {
         if (name.StartsWith("Base", StringComparison.OrdinalIgnoreCase))
@@ -162,6 +198,7 @@ public static partial class YamlBulkLoader
                 entries.Add(current.ToArray());
                 current.Clear();
             }
+
             current.Add(line);
         }
 
@@ -180,7 +217,7 @@ public static partial class YamlBulkLoader
             i++;
 
         // Must be exactly at the start (i == 0) and begin with '-', followed by space or end
-        if (i >= line.Length || i != 0) return false;  // Ensures that any indentation = not top-level
+        if (i >= line.Length || i != 0) return false; // Ensures that any indentation = not top-level
 
         if (line[i] != '-') return false;
 
@@ -197,10 +234,13 @@ public static partial class YamlBulkLoader
     /// <param name="patterns">File patterns (e.g., "*.cs", "src/**/*.txt", "logs/error.log")</param>
     /// <param name="baseDirectory">Optional base directory to resolve relative patterns against. If null, uses current directory.</param>
     /// <returns>Distinct file paths (case-insensitive comparison on Windows)</returns>
-    private static IEnumerable<string> GetFiles(IEnumerable<string> patterns, string? baseDirectory = null)
+    private static IEnumerable<string> GetFiles(IEnumerable<string> patterns, string baseDirectory = "")
     {
         var files = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        baseDirectory ??= Directory.GetCurrentDirectory();
+
+        // Force base directory to current directory of application if none is provided.
+        if (string.IsNullOrWhiteSpace(baseDirectory))
+            baseDirectory = Directory.GetCurrentDirectory();
 
         foreach (var pattern in patterns)
         {
