@@ -181,6 +181,7 @@ public partial class EntityManager
                 throw new Exception($"Failed to create entity template using handle {handle}");
             entity = CreateEntity(definition!);
         }
+
         // Initialize the entity.
         entity.Initialize();
 

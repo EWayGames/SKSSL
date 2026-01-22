@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using MemoryPack;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SKSSL.Scenes;
@@ -42,7 +43,7 @@ public record SKEntity : AEntityCommon
     protected internal void SetRuntimeId(int id) => RuntimeId = id;
 
     /// Defers back to the <see cref="RuntimeId"/> for compatability reasons between projects.
-    [YamlIgnore, JsonIgnore]
+    [MemoryPackIgnore, YamlIgnore, JsonIgnore]
     public int Id => RuntimeId;
 
     /// <inheritdoc/>
@@ -67,8 +68,8 @@ public record SKEntity : AEntityCommon
     /// <summary>
     /// Reverse-reference back to the world that this entity inhabits.
     /// </summary>
-    [YamlIgnore, JsonIgnore]
-    public virtual IWorld? World { get; set; }
+    [MemoryPackIgnore, YamlIgnore, JsonIgnore]
+    public IWorld? World { get; set; }
 
     #endregion
 
@@ -124,7 +125,7 @@ public record SKEntity : AEntityCommon
     }
 
     /// Constructor for flat "empty" Entity. NOT recommended without special handling for Entity's fields.
-    [JsonConstructor]
+    [JsonConstructor, MemoryPackConstructor]
     protected internal SKEntity() : base()
     {
     }
