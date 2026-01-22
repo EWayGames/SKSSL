@@ -34,6 +34,10 @@ public record EntityTemplate : AEntityCommon
     {
     }
 
+    protected EntityTemplate()
+    {
+    }
+
     /// <summary>
     /// Dynamic constructor factory — works with any depth of inheritance
     /// </summary>
