@@ -25,7 +25,7 @@ public record SKEntity : AEntityCommon
     public virtual Type EntityType => typeof(SKEntity);
 
     #region Fields
-    
+
     /// <summary>
     /// Static Reference ID of this particular entry to a template reference.
     /// </summary>
@@ -47,9 +47,11 @@ public record SKEntity : AEntityCommon
     public int Id => RuntimeId;
 
     /// <inheritdoc/>
+    [YamlMember(Alias = "name"), JsonInclude, JsonPropertyName("Name")]
     public override string NameKey { get; set; }
 
     /// <inheritdoc/>
+    [YamlMember(Alias = "description"), JsonInclude, JsonPropertyName("Description")]
     public override string DescriptionKey { get; set; }
 
     /// <inheritdoc/>
