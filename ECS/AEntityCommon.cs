@@ -1,5 +1,6 @@
 using SKSSL.Localization;
 using SKSSL.YAML;
+using YamlDotNet.Serialization;
 
 // ReSharper disable MemberCanBeProtected.Global
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
@@ -13,18 +14,27 @@ namespace SKSSL.ECS;
 public abstract record AEntityCommon
 {
     /// <summary>
+    /// For direct raw-serialization of entities. Completely unused if prioritizing yaml templates.
+    /// </summary>
+    [YamlMember(Alias = "type")]
+    public string YamlType { get; set; }
+    
+    /// <summary>
     /// Definition's Reference ID to later refer-to when making copies.
     /// </summary>
+    [YamlMember(Alias = "id")]
     public abstract string Handle { get; init; }
 
     /// <summary>
     /// Localization for name.
     /// </summary>
+    [YamlMember(Alias = "name")]
     public abstract string NameKey { get; set; }
 
     /// <summary>
     /// Localization for description.
     /// </summary>
+    [YamlMember(Alias = "description")]
     public abstract string DescriptionKey { get; set; }
 
     /// <returns>Localized name from Name Key.</returns>
