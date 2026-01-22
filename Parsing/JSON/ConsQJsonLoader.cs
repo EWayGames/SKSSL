@@ -12,10 +12,15 @@ namespace SKSSL.Parsing.JSON;
 public class ConsQJsonLoader
 {
     /// Save object as JSON.
-    public static void Save<T>(string path, T obj)
+    public static void Save<T>(string directory, string fileName, T obj)
     {
+        // Ensure path exists.
+        string fullDir = Path.GetFullPath(directory);
+        Directory.CreateDirectory(fullDir);
+
+        // Finally write to file.
         var json = JsonSerializer.Serialize(obj, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(path, json);
+        File.WriteAllText(Path.Combine(fullDir, fileName), json);
     }
 
 
