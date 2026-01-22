@@ -118,12 +118,10 @@ public static partial class YamlBulkLoader
 
                 // If it's a list with exactly one item → return that single item
                 var list = (System.Collections.IList)yamlList!;
-                if (list.Count == 1)
-                    results[listType].Add(list[0]!);
-                else
-                    foreach (var item in list)
-                        results[targetType].Add(item);
+                foreach (var item in list)
+                    results[targetType].Add(item);
 
+                // [obsolete]
                 //if (yamlList is IEnumerable<object> items)
                 //    foreach (var item in items)
                 //        results[targetType].Add(item);
@@ -133,7 +131,7 @@ public static partial class YamlBulkLoader
                 // Fallback attempt to deserialize individual item from block instead.
                 try
                 {
-                    results[targetType] = [_deserializer.Deserialize(yamlBlock, targetType)!];
+                    results[targetType].Add(_deserializer.Deserialize(yamlBlock, targetType)!);
                 }
                 catch (Exception innerEx)
                 {
@@ -142,6 +140,7 @@ public static partial class YamlBulkLoader
                         "Input appears to be a YAML sequence (- item), so List<T> is usually required.\n" +
                         $"Inner error: {innerEx.Message}", innerEx);
                 }
+
                 Log($"Failed to deserialize {typeTag} in {file}: {ex.Message}", LOG.FILE_ERROR);
             }
         }
