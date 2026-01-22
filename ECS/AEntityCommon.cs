@@ -17,7 +17,7 @@ public abstract record AEntityCommon
     /// For direct raw-serialization of entities. Completely unused if prioritizing yaml templates.
     /// </summary>
     [YamlMember(Alias = "type")]
-    public string RawType { get; set; }
+    public virtual string RawType { get; set; }
     
     /// <summary>
     /// Definition's Reference ID to later refer-to when making copies.
