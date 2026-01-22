@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SKSSL.Scenes;
 using SKSSL.YAML;
+using YamlDotNet.Serialization;
 
 // ReSharper disable RedundantBaseConstructorCall
 
@@ -18,18 +19,21 @@ public record SKEntity : AEntityCommon
     /// <summary>
     /// Can be overwritten to allow for safe type-casting.
     /// </summary>
+    [YamlIgnore]
     public virtual Type EntityType => typeof(SKEntity);
 
     #region Fields
-
+    
     /// <summary>
     /// Static Reference ID of this particular entry to a template reference.
     /// </summary>
+    [YamlMember(Alias = "id")]
     public override string Handle { get; init; } = null!;
 
     /// <summary>
     /// Unique runtime ID (only set on spawned instances, -1 on templates)
     /// </summary>
+    [YamlIgnore]
     public int RuntimeId { get; private set; } = -1;
 
     /// Manually assign runtime ID for if entity is created manually.
@@ -37,6 +41,7 @@ public record SKEntity : AEntityCommon
     protected internal void SetRuntimeId(int id) => RuntimeId = id;
 
     /// Defers back to the <see cref="RuntimeId"/> for compatability reasons between projects.
+    [YamlIgnore]
     public int Id => RuntimeId;
 
     /// <inheritdoc/>
@@ -55,11 +60,13 @@ public record SKEntity : AEntityCommon
     /// For every index, there is a unique component type.
     /// <seealso cref="ComponentArray{T}"/>
     /// </summary>
+    [YamlIgnore]
     public readonly int[] ComponentIndices;
 
     /// <summary>
     /// Reverse-reference back to the world that this entity inhabits.
     /// </summary>
+    [YamlIgnore]
     public IWorld? World;
 
     #endregion
