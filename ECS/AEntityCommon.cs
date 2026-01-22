@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using SKSSL.Localization;
 using SKSSL.YAML;
 using YamlDotNet.Serialization;
@@ -16,25 +17,25 @@ public abstract record AEntityCommon
     /// <summary>
     /// For direct raw-serialization of entities. Completely unused if prioritizing yaml templates.
     /// </summary>
-    [YamlMember(Alias = "type")]
+    [YamlMember(Alias = "type"), JsonInclude]
     public virtual string RawType { get; set; }
     
     /// <summary>
     /// Definition's Reference ID to later refer-to when making copies.
     /// </summary>
-    [YamlMember(Alias = "id")]
+    [YamlMember(Alias = "id"), JsonInclude]
     public abstract string Handle { get; init; }
 
     /// <summary>
     /// Localization for name.
     /// </summary>
-    [YamlMember(Alias = "name")]
+    [YamlMember(Alias = "name"), JsonInclude]
     public abstract string NameKey { get; set; }
 
     /// <summary>
     /// Localization for description.
     /// </summary>
-    [YamlMember(Alias = "description")]
+    [YamlMember(Alias = "description"), JsonInclude]
     public abstract string DescriptionKey { get; set; }
 
     /// <returns>Localized name from Name Key.</returns>
@@ -58,6 +59,7 @@ public abstract record AEntityCommon
 
     /// Blank constructor for Common Entity root. Avoid using this unless absolutely necessary.
     /// Used for creating active <see cref="SKEntity"/> instances in the ECS, where properties are set elsewhere.
+    [JsonConstructor]
     protected AEntityCommon()
     {
     }
