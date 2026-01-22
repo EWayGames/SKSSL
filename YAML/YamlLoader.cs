@@ -24,6 +24,36 @@ public static class YamlLoader
 
     private const string YamlFileExtension = "*.yml*";
 
+    #region Saving
+
+    public static void SerializeAndSave(string path, object obj)
+    {
+        var data = Serialize(obj);
+        Save(path, data);
+    }
+    
+    public static string Serialize(object obj)
+    {
+        using var writer = new StringWriter();
+        Serializer.Serialize(writer, obj);
+        string yaml = writer.ToString();
+        return yaml;
+    }
+
+    /// <summary>
+    /// Deletes file at provided path and writes contents.
+    /// </summary>
+    public static void Save(string path, string contents)
+    {
+        if (File.Exists(path))
+            File.Delete(path);
+        File.WriteAllText(path, contents);
+    }
+
+    #endregion
+    
+    #region Loading
+
     /// <summary>
     /// Loads YAML files from a folder or a single file and returns a list of deserialized objects.
     /// This requires the user to know precisely what type is in which folder.
@@ -200,4 +230,6 @@ public static class YamlLoader
             }
         }
     }
+
+    #endregion
 }
