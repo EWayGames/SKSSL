@@ -62,7 +62,7 @@ public record SKEntity : AEntityCommon
     /// For every index, there is a unique component type.
     /// <seealso cref="ComponentArray{T}"/>
     /// </summary>
-    [YamlIgnore, JsonIgnore]
+    [MemoryPackIgnore, YamlIgnore, JsonIgnore]
     public readonly int[] ComponentIndices;
 
     /// <summary>
