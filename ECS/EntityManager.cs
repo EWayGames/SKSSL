@@ -221,13 +221,18 @@ public partial class EntityManager
         }
     }
 
+    /// Assumes that yaml provided is of EntityYaml type.<br/>
+    /// Calls <see cref="RegisterTemplate{TYaml, TTemplate}"/>
+    public void RegisterTemplate<TTemplate>(EntityYaml yaml) where TTemplate : EntityTemplate
+        => RegisterTemplate<EntityYaml, TTemplate>(yaml);
+
     /// <summary>
     /// Creates copyable entity template from a provided Yaml file, and Template type.
     /// </summary>
-    /// <param name="yaml"></param>
-    /// <typeparam name="TYaml"></typeparam>
-    /// <typeparam name="TTemplate"></typeparam>
-    /// <exception cref="YamlException"></exception>
+    /// <param name="yaml">Yaml instance to process.</param>
+    /// <typeparam name="TYaml">Yaml Class</typeparam>
+    /// <typeparam name="TTemplate">Template Class</typeparam>
+    /// <exception cref="YamlException">Thrown when ReferenceId / Handle not provided in YAML.</exception>
     public void RegisterTemplate<TYaml, TTemplate>(TYaml yaml)
         where TYaml : EntityYaml
         where TTemplate : EntityTemplate
