@@ -22,11 +22,11 @@ public abstract class ExampleSpace3D : RenderableSpace
     public override void Initialize(GraphicsDeviceManager graphics)
     {
         Camera = new SK3DCamera();
-        Camera.Default(base._graphics);
+        Camera.Default(_graphics);
         Camera.ResetPosition();
         
         // Shader / Rendering
-        _effect = new BasicEffect(base._graphics.GraphicsDevice);
+        _effect = new BasicEffect(_graphics.GraphicsDevice);
         _effect.EnableDefaultLighting();
         _effect.LightingEnabled = true;
         _effect.AmbientLightColor = new Vector3(0.3f);

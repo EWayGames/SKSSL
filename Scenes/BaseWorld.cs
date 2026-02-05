@@ -11,7 +11,7 @@ namespace SKSSL.Scenes;
 /// </summary>
 public interface IWorld
 {
-    RenderableSpace? WorldSpace { get; }
+    RenderableSpace? Space { get; }
     void Initialize(GraphicsDeviceManager graphics);
     void Update(GameTime gameTime);
     void Draw(GameTime gameTime);
@@ -23,9 +23,8 @@ public interface IWorld
 /// </summary>
 public abstract class BaseWorld : IWorld
 {
+    public RenderableSpace? Space { get; protected set; }
     protected bool IsInitialized { get; private set; }
-
-    public RenderableSpace? WorldSpace { get; protected set; }
 
     /// Most worlds use ECS — this is opt-out instead of opt-in
     protected virtual bool UsesECS => false;
@@ -35,13 +34,17 @@ public abstract class BaseWorld : IWorld
 
     public ECSController? ECS { get; private set; }
 
+    /// Assign Rendered space field with provided space definition.
+    public void SetSpace(RenderableSpace worldSpace) => Space = worldSpace;
+
     protected BaseWorld()
     {
         // ReSharper disable once VirtualMemberCallInConstructor
         if (UsesECS)
             ECS = new ECSController(this);
     }
-
+    
+    /// Calls ECS Init() (if enabled) and Spacial Initialization.
     public virtual void Initialize(GraphicsDeviceManager? graphics)
     {
         // Avoid re-initializing what already has been initialized.
@@ -54,28 +57,28 @@ public abstract class BaseWorld : IWorld
 
         // Initialize WorldSpace assuming graphics provided + exception.
         if (graphics != null)
-            WorldSpace?.Initialize(graphics);
-        else if (WorldSpace == null && graphics != null)
+            Space?.Initialize(graphics);
+        else if (Space == null && graphics != null)
             throw new NullReferenceException("Attempted to initialize WorldSpace with null GraphicsDeviceManager");
     }
 
     public virtual void Update(GameTime gameTime)
     {
         ECS?.Update(gameTime);
-        WorldSpace?.Update(gameTime);
+        Space?.Update(gameTime);
     }
 
     public virtual void Draw(GameTime gameTime)
     {
         ECS?.Draw(gameTime);
-        WorldSpace?.Draw(gameTime);
+        Space?.Draw(gameTime);
     }
 
     public virtual void Destroy()
     {
         ECS?.Destroy();
-        WorldSpace?.Destroy();
-        WorldSpace = null;
+        Space?.Destroy();
+        Space = null;
         ECS = null;
         IsInitialized = false;
     }
@@ -90,8 +93,8 @@ public abstract class BaseWorld<TSpace> : BaseWorld
     // Strongly-typed access for derived classes
     public new TSpace? WorldSpace
     {
-        get => base.WorldSpace as TSpace;
-        protected set => base.WorldSpace = value;
+        get => base.Space as TSpace;
+        protected set => base.Space = value;
     }
 
     protected BaseWorld()

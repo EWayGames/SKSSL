@@ -17,13 +17,19 @@ public abstract class RenderableSpace
     internal GraphicsDeviceManager _graphics = null!;
     private SpriteBatch _renderableSpriteBatch = null!;
 
+    /// Initializes Renderable Space with provided graphics device.
     public virtual void Initialize(GraphicsDeviceManager graphics)
     {
         _graphics = graphics;
         _renderableSpriteBatch = new SpriteBatch(_graphics.GraphicsDevice);
     }
+
+    /// Overwritten Draw() call for Space Contents.
     public abstract void Draw(GameTime gameTime);
 
+    /// Overwritten Update() call for Space objects.
     public abstract void Update(GameTime gameTime);
+
+    /// Overwritten Destroy() call for data-clearing.
     public abstract void Destroy();
 }
