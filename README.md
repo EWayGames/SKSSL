@@ -22,6 +22,7 @@ This is all a massive work-in-progress, but don't wait for releases! When I find
 ## Licensing and References
 - Best accomodate projects using the [Gum](https://github.com/vchelaru/Gum?tab=MIT-1-ov-file) Framework. [MIT]
 - Explicitely Used In [Monogame](https://github.com/MonoGame/MonoGame) Projects. [Ms-Pl / MIT]
+- [VYaml](https://github.com/hadashiA/VYaml) [MIT]
 
 This library was made by LukeZurg22, All Rights are Reserved. Under the current license you are permitted to fork and develop it under the conditions that you both accredit me, and maintain your fork's public status. This license may change with time.
 
