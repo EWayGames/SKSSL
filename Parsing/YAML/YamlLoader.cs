@@ -213,7 +213,6 @@ public static partial class YamlLoader
     /// Gets all files in directory, searches every file, searches every in said file for provided type.
     /// If the first entry contains it, then an attempt to parse the entire file as a list is made.
     /// This was replaced by the YAML Bulk Loader.
-    /// <seealso cref="YamlBulkLoader"/>
     /// </summary>
     /// <param name="directory"></param>
     /// <typeparam name="T"></typeparam>
