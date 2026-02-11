@@ -52,26 +52,22 @@ public static partial class YamlLoader
 
     #region Saving
 
-    public static void SerializeAndSave<T>(string path, T obj) where T : class
+    /// Serialize provided object and save to specific file path. Overrides existing file if present.
+    public static void SerializeAndSave<T>(string path, T obj, bool @override = true) where T : class
     {
         var data = Serialize(obj);
-        Save(path, data);
-    }
-
-    public static string Serialize<T>(T obj) where T : class
-    {
-        return YamlSerializer.SerializeToString(obj);
+        // If override, write over. Otherwise, will create one if it doesn't exist.
+        if (@override || !File.Exists(path))
+            File.WriteAllText(path, data);
     }
 
     /// <summary>
-    /// Deletes file at provided path and writes contents.
+    /// 
     /// </summary>
-    public static void Save(string path, string contents)
-    {
-        if (File.Exists(path))
-            File.Delete(path);
-        File.WriteAllText(path, contents);
-    }
+    /// <param name="obj"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static string Serialize<T>(T obj) where T : class => YamlSerializer.SerializeToString(obj);
 
     #endregion
 
@@ -448,7 +444,7 @@ public static partial class YamlLoader
                 if (typeTag == null || !string.Equals(StripBaseAndYaml(typeTag), expectedCore,
                         StringComparison.OrdinalIgnoreCase))
                     continue; // Short-circuit.
-                
+
                 // TODO: Convert this to VYaml parser instead of the Deserializer, here.
                 string yamlBlock = string.Join("\n", entryLines);
                 var obj = Deserializer.Deserialize<T>(yamlBlock);
