@@ -37,4 +37,5 @@ Below is a non-exhaustive list of references the project uses, coupled with the 
 - "Microsoft.Testing.Platform" (Logger)
 - "Microsoft.TestPlatform.TestHost" (Logger)
 - "RandN" (random number generation)
-- "YamlDotNet" (yaml parsing)
+- "YamlDotNet" (yaml parsing) (being phased-out)
+- "VYaml" (yaml parsing)
