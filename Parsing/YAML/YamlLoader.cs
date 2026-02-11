@@ -56,12 +56,12 @@ public static partial class YamlLoader
     public static void SerializeAndSave<T>(string path, T obj, bool @override = true) where T : class
     {
         var data = Serialize(obj);
-        
+
         // Create directory if needed.
         var dir = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
             Directory.CreateDirectory(dir);
-        
+
         // If override, write over. Otherwise, will create one if it doesn't exist.
         if (@override || !File.Exists(path))
             File.WriteAllText(path, data);
@@ -187,7 +187,7 @@ public static partial class YamlLoader
     /// </code>
     /// </summary>
     /// <returns>Enumerable amount of deserialized objects of type 'T'</returns>
-    public static IEnumerable<T> Load<T>(string path, Action<T> postProcess)
+    public static IEnumerable<T> Load<T>(string path, Action<T>? postProcess)
     {
         var files = Directory.Exists(path)
             ? Directory.GetFiles(path, YamlFileExtension, SearchOption.AllDirectories)
@@ -207,21 +207,47 @@ public static partial class YamlLoader
     /// <summary>
     /// Loads all entries of type T from the given file patterns. Files are read once.
     /// </summary>
-    public static List<T> LoadAll<T>(params string[] patterns) where T : class
+    public static List<T> PatternLoad<T>(params string[] patterns) where T : class
     {
-        var result = LoadByFilePatterns<T>(patterns);
-        return result.ToList(); // Return copy if you want immutability
+        Type targetType = typeof(T);
+        if (_cache.TryGetValue(targetType, out var cached))
+            return (List<T>)cached;
+
+        var files = GetFiles(patterns);
+        var list = new List<T>();
+        string expectedCore = StripBaseAndYaml(targetType.Name);
+
+        foreach (var file in files)
+        {
+            string[] lines = File.ReadAllLines(file);
+            var entries = SplitIntoYamlEntries(lines);
+
+            foreach (var entryLines in entries)
+            {
+                string? typeTag = ExtractTypeTag(entryLines);
+                if (typeTag == null
+                    || !string.Equals(StripBaseAndYaml(typeTag), expectedCore, StringComparison.OrdinalIgnoreCase))
+                    continue; // Short-circuit.
+
+                // TODO: Convert this to VYaml parser instead of the Deserializer, here.
+                string yamlBlock = string.Join("\n", entryLines);
+                var obj = Deserializer.Deserialize<T>(yamlBlock);
+                list.Add(obj);
+            }
+        }
+
+        _cache[targetType] = list; // Cache for future calls
+        return list.ToList(); // Return copy of list.
     }
 
     /// <summary>
     /// Gets all files in directory, searches every file, searches every in said file for provided type.
     /// If the first entry contains it, then an attempt to parse the entire file as a list is made.
-    /// This was replaced by the YAML Bulk Loader.
     /// </summary>
-    /// <param name="directory"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    public static IEnumerable<T> LoadFolderPicky<T>(string directory)
+    /// <param name="directory">Directory path to load.</param>
+    /// <typeparam name="T">Entry type in files</typeparam>
+    [Obsolete("Use an alternative Load method instead.")]
+    public static IEnumerable<T> LoadDirectory<T>(string directory)
     {
         // Loop over every YAML file.
         var files = Directory.GetFiles(directory, searchPattern: YamlFileExtension, SearchOption.AllDirectories);
@@ -273,8 +299,8 @@ public static partial class YamlLoader
     ///   - ...
     /// </code>
     /// </summary>
-    public static Dictionary<TKey, TValue> LoadDictionary<TKey, TValue>(
-        string folderOrFile, Func<TValue, TKey> keySelector, Action<TValue> postProcess) where TKey : notnull
+    public static Dictionary<TKey, TValue> LoadAsDictionary<TKey, TValue>(
+        string folderOrFile, Func<TValue, TKey> keySelector, Action<TValue>? postProcess = null) where TKey : notnull
     {
         var dict = new Dictionary<TKey, TValue>();
         foreach (TValue item in Load(folderOrFile, postProcess))
@@ -427,40 +453,6 @@ public static partial class YamlLoader
     #endregion
 
     #region YAML Data Parsing Helpers
-
-    /// Helper used by LoadAll&lt;T&gt; for efficiency when calling multiple times
-    private static IEnumerable<T> LoadByFilePatterns<T>(string[] filePatterns) where T : class
-    {
-        Type targetType = typeof(T);
-        if (_cache.TryGetValue(targetType, out var cached))
-            return (List<T>)cached;
-
-        var files = GetFiles(filePatterns);
-        var list = new List<T>();
-        string expectedCore = StripBaseAndYaml(targetType.Name);
-
-        foreach (var file in files)
-        {
-            string[] lines = File.ReadAllLines(file);
-            var entries = SplitIntoYamlEntries(lines);
-
-            foreach (var entryLines in entries)
-            {
-                string? typeTag = ExtractTypeTag(entryLines);
-                if (typeTag == null || !string.Equals(StripBaseAndYaml(typeTag), expectedCore,
-                        StringComparison.OrdinalIgnoreCase))
-                    continue; // Short-circuit.
-
-                // TODO: Convert this to VYaml parser instead of the Deserializer, here.
-                string yamlBlock = string.Join("\n", entryLines);
-                var obj = Deserializer.Deserialize<T>(yamlBlock);
-                list.Add(obj);
-            }
-        }
-
-        _cache[targetType] = list; // Cache for future calls
-        return list;
-    }
 
     /// <summary>
     /// Remove "Base" from the beginning of a name, and "Yaml" from the end, if present.
