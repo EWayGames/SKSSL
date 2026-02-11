@@ -1,6 +1,6 @@
 using System.Drawing;
 using RenderingLibrary.Graphics;
-using YamlDotNet.Serialization;
+using VYaml.Annotations;
 using Color = Microsoft.Xna.Framework.Color;
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 
@@ -23,7 +23,8 @@ namespace SKSSL.YAML;
 ///   id: (string)
 /// </code>
 /// </summary>
-public record BaseYamlEntry
+[YamlObject]
+public partial record BaseYamlEntry
 {
     /// <summary>
     /// Explicit type definition for this entry.
@@ -33,7 +34,7 @@ public record BaseYamlEntry
     /// <summary>
     /// Searchable, indexable ID.
     /// </summary>
-    [YamlMember(Alias = "id")]
+    [YamlMember(name: "id")]
     public string ReferenceId { get; set; }
 }
 
@@ -45,7 +46,8 @@ public record BaseYamlEntry
 ///   description: (localization)
 /// </code>
 /// </summary>
-public record BaseLocalizedYamlEntry : BaseYamlEntry
+[YamlObject]
+public partial record BaseLocalizedYamlEntry : BaseYamlEntry
 {
     /// <summary>
     /// UNLOCALIZED name. Localization should be implemented elsewhere.
@@ -62,12 +64,13 @@ public record BaseLocalizedYamlEntry : BaseYamlEntry
 ///   color: "#RRGGBB"
 /// </code>
 /// </summary>
-public record BaseLocalizedColorableYamlEntry : BaseLocalizedYamlEntry
+[YamlObject]
+public partial record BaseLocalizedColorableYamlEntry : BaseLocalizedYamlEntry
 {
     /// <summary>
     /// Raw HTML (#RRGGBB) color when viewed on the map or in graphs.
     /// </summary>
-    [YamlMember(Alias = "color")]
+    [YamlMember(name: "color")]
     public string YamlColor { get; set; }
 
     private Color? _color;
@@ -88,10 +91,11 @@ public record BaseLocalizedColorableYamlEntry : BaseLocalizedYamlEntry
     }
 }
 
+
 public class ComponentYaml
 {
     // e.g., "RenderableComponent" but named "Renderable"; it's stripped of the "Component" suffix.
-    [YamlMember(Alias = "type")] public string Type { get; set; }
+    [YamlMember(name: "type")] public string Type { get; set; }
 
     // Dictionary for flexible fields (for varied components)
     /// <summary>
@@ -117,11 +121,12 @@ public class ComponentYaml
 /// # (Note: Component fields vary between component type.)
 /// </code>
 /// </summary>
-public record EntityYaml : BaseLocalizedYamlEntry
+[YamlObject]
+public partial record EntityYaml : BaseLocalizedYamlEntry
 {
     /// <summary>
     /// Optional field for <see cref="EntityYaml"/> which is exclusively for entities.
     /// </summary>
-    [YamlMember(Alias = "components")]
+    [YamlMember(name: "components")]
     public List<ComponentYaml> Components { get; set; } = [];
 }
