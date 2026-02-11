@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -51,13 +52,13 @@ public static partial class YamlLoader
 
     #region Saving
 
-    public static void SerializeAndSave(string path, object obj)
+    public static void SerializeAndSave<T>(string path, T obj) where T : class
     {
         var data = Serialize(obj);
         Save(path, data);
     }
 
-    public static string Serialize(object obj)
+    public static string Serialize<T>(T obj) where T : class
     {
         return YamlSerializer.SerializeToString(obj);
     }
@@ -98,8 +99,9 @@ public static partial class YamlLoader
 
     /// <summary>
     /// Attempt to extract yaml data with limited defined types.
+    /// Entries are expected to begin with "- type: example"
     /// </summary>
-    public static Dictionary<Type, List<object>> LoadFile(string file, params Type[] expectedTypes)
+    public static Dictionary<Type, List<object>> LoadFileWithTags(string file, params Type[] expectedTypes)
     {
         Dictionary<Type, List<object>> results = new();
         string[] lines = File.ReadAllLines(file);
@@ -301,7 +303,7 @@ public static partial class YamlLoader
         foreach (var file in files)
         {
             // Get file output and put to dictionary.
-            var fileOutput = LoadFile(file, types);
+            var fileOutput = LoadFileWithTags(file, types);
             foreach (var data in fileOutput)
                 results.Add(data.Key, data.Value);
         }
