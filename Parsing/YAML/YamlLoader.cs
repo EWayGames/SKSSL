@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -39,18 +38,12 @@ public static partial class YamlLoader
     // Cache deserialized entries per type (optional, for repeated queries)
     private static readonly Dictionary<Type, object> _cache = new();
 
-    private static readonly Regex TypeRegex = RegexSpaceTypeBaseYaml();
-
-    [GeneratedRegex(@"\btype\s*:\s*(Base)?([A-Za-z0-9_]+)(Yaml)?\b",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
-    private static partial Regex RegexSpaceTypeBaseYaml();
-
     private static readonly MethodInfo VYamlDeserializer = typeof(YamlSerializer)
         .GetMethods().First(m => m.Name == "Deserialize" && m.IsGenericMethod && m.GetParameters().Length == 1);
 
     private const string YamlFileExtension = "*.yml*";
 
-    #region Saving
+    #region Serialization
 
     /// Serialize provided object and save to specific file path. Overrides existing file if present.
     public static void SerializeAndSave<T>(string path, T obj, bool @override = true) where T : class
@@ -472,8 +465,11 @@ public static partial class YamlLoader
         foreach (var line in entryLines)
         {
             Match match = TypeRegex.Match(line);
-            if (match.Success)
-                return match.Groups[2].Value; // The core name part
+            return match.Success switch
+            {
+                false => null,
+                true => match.Groups[2].Value // core name
+            };
         }
 
         return null;
@@ -520,4 +516,10 @@ public static partial class YamlLoader
     }
 
     #endregion
+    
+    private static readonly Regex TypeRegex = RegexSpaceTypeBaseYaml();
+
+    [GeneratedRegex(@"\btype\s*:\s*(Base)?([A-Za-z0-9_]+)(Yaml)?\b",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
+    private static partial Regex RegexSpaceTypeBaseYaml();
 }
