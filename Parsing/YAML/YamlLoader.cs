@@ -205,7 +205,7 @@ public static partial class YamlLoader
     /// </summary>
     public static List<T> LoadAll<T>(params string[] patterns) where T : class
     {
-        var result = GetAllMatching<T>(patterns);
+        var result = LoadByFilePatterns<T>(patterns);
         return result.ToList(); // Return copy if you want immutability
     }
 
@@ -372,6 +372,7 @@ public static partial class YamlLoader
     /// <param name="typeAnno2Plural">Plural of type2 annotation subversive entry. (Ex: raceS)</param>
     /// <typeparam name="Type1">Contains a list of Type2.</typeparam>
     /// <typeparam name="Type2">Has a pointer to Type1, but is isolated in its own instances.</typeparam>
+    [Obsolete("VYaml handles mixed non-primitive types, so long as it is not recursive. Use Load() if possible.")]
     public static void LoadMixedContainers<Type1, Type2>(
         string yamlText, string typeAnno1, string typeAnno2, string typeAnno2Plural,
         Action<Type2, Type1?> handleFunction)
@@ -425,7 +426,7 @@ public static partial class YamlLoader
     #region YAML Data Parsing Helpers
 
     /// Helper used by LoadAll&lt;T&gt; for efficiency when calling multiple times
-    private static IEnumerable<T> GetAllMatching<T>(string[] filePatterns) where T : class
+    private static IEnumerable<T> LoadByFilePatterns<T>(string[] filePatterns) where T : class
     {
         Type targetType = typeof(T);
         if (_cache.TryGetValue(targetType, out var cached))
@@ -446,6 +447,8 @@ public static partial class YamlLoader
                 if (typeTag == null || !string.Equals(StripBaseAndYaml(typeTag), expectedCore,
                         StringComparison.OrdinalIgnoreCase))
                     continue; // Short-circuit.
+                
+                // TODO: Convert this to VYaml parser instead of the Deserializer, here.
                 string yamlBlock = string.Join("\n", entryLines);
                 var obj = Deserializer.Deserialize<T>(yamlBlock);
                 list.Add(obj);
