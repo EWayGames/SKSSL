@@ -56,6 +56,12 @@ public static partial class YamlLoader
     public static void SerializeAndSave<T>(string path, T obj, bool @override = true) where T : class
     {
         var data = Serialize(obj);
+        
+        // Create directory if needed.
+        var dir = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            Directory.CreateDirectory(dir);
+        
         // If override, write over. Otherwise, will create one if it doesn't exist.
         if (@override || !File.Exists(path))
             File.WriteAllText(path, data);
