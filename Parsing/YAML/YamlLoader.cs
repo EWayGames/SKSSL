@@ -464,7 +464,7 @@ public static partial class YamlLoader
     {
         foreach (var line in entryLines)
         {
-            Match match = TypeRegex.Match(line);
+            Match match = RegexSpaceTypeBaseYaml().Match(line);
             return match.Success switch
             {
                 false => null,
