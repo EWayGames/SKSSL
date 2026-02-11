@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SKSSL.Scenes;
 using SKSSL.YAML;
-using YamlDotNet.Serialization;
+using VYaml.Annotations;
 
 // ReSharper disable RedundantBaseConstructorCall
 
@@ -29,7 +29,7 @@ public record SKEntity : AEntityCommon
     /// <summary>
     /// Static Reference ID of this particular entry to a template reference.
     /// </summary>
-    [YamlMember(Alias = "id"), JsonInclude]
+    [YamlMember(name: "id"), JsonInclude]
     public override string Handle { get; init; } = null!;
 
     /// <summary>
@@ -47,11 +47,11 @@ public record SKEntity : AEntityCommon
     public int Id => RuntimeId;
 
     /// <inheritdoc/>
-    [YamlMember(Alias = "name"), JsonInclude, JsonPropertyName("Name")]
+    [YamlMember(name: "name"), JsonInclude, JsonPropertyName("Name")]
     public override string NameKey { get; set; }
 
     /// <inheritdoc/>
-    [YamlMember(Alias = "description"), JsonInclude, JsonPropertyName("Description")]
+    [YamlMember(name: "description"), JsonInclude, JsonPropertyName("Description")]
     public override string DescriptionKey { get; set; }
 
     /// <inheritdoc/>
