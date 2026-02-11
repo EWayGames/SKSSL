@@ -402,7 +402,7 @@ public static partial class YamlLoader
     /// <param name="typeAnno2Plural">Plural of type2 annotation subversive entry. (Ex: raceS)</param>
     /// <typeparam name="Type1">Contains a list of Type2.</typeparam>
     /// <typeparam name="Type2">Has a pointer to Type1, but is isolated in its own instances.</typeparam>
-    [Obsolete("VYaml handles mixed non-primitive types, so long as it is not recursive. Use Load() if possible.")]
+    [Obsolete("VYaml handles mixed non-primitive types, so long as it is not recursive. Use LoadFile() if possible.")]
     public static void LoadMixedContainers<Type1, Type2>(
         string yamlText, string typeAnno1, string typeAnno2, string typeAnno2Plural,
         Action<Type2, Type1?> handleFunction)
