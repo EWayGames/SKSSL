@@ -177,7 +177,7 @@ public static partial class YamlLoader
     #region Loading (Bulk)
 
     /// <summary>
-    /// Loads YAML files from a folder or a single file, before invoking a post-process action on every entry.
+    /// Loads YAML files from a folder, before invoking a post-process action on every entry.
     /// Presumes that all entries in a folder are of the same homogenous type.
     /// <code>
     /// #(In YAML)
@@ -187,11 +187,12 @@ public static partial class YamlLoader
     /// </code>
     /// </summary>
     /// <returns>Enumerable amount of deserialized objects of type 'T'</returns>
-    public static IEnumerable<T> Load<T>(string path, Action<T>? postProcess)
+    public static IEnumerable<T> LoadFolder<T>(string directory, Action<T>? postProcess = null)
     {
-        var files = Directory.Exists(path)
-            ? Directory.GetFiles(path, YamlFileExtension, SearchOption.AllDirectories)
-            : [path];
+        if (!Directory.Exists(directory))
+            yield break;
+
+        var files = Directory.GetFiles(directory, YamlFileExtension, SearchOption.AllDirectories);
 
         foreach (var file in files)
         {
@@ -303,7 +304,7 @@ public static partial class YamlLoader
         string folderOrFile, Func<TValue, TKey> keySelector, Action<TValue>? postProcess = null) where TKey : notnull
     {
         var dict = new Dictionary<TKey, TValue>();
-        foreach (TValue item in Load(folderOrFile, postProcess))
+        foreach (TValue item in LoadFolder(folderOrFile, postProcess))
         {
             TKey key = keySelector(item);
             dict[key] = item; // overwrite duplicates silently
