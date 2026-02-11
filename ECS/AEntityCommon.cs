@@ -12,7 +12,9 @@ namespace SKSSL.ECS;
 /// Common abstraction for <see cref="SKEntity"/> and <see cref="EntityTemplate"/> objects.
 /// Allows ECS to store one of either type in its definitions, depending on use-case.
 /// </summary>
-public abstract record AEntityCommon
+[YamlObject]
+[YamlObjectUnion("!SKEntity", typeof(SKEntity))]
+public abstract partial record AEntityCommon
 {
     /// <summary>
     /// For direct raw-serialization of entities. Completely unused if prioritizing yaml templates.

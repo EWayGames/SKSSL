@@ -16,7 +16,8 @@ namespace SKSSL.ECS;
 /// Instanced Entity representing an object present within game memory. Entities are contained within a
 /// <see cref="World"/>, and contain <see cref="ComponentIndices"/> for pointing to component arrays.
 /// </summary>
-public record SKEntity : AEntityCommon
+[YamlObject]
+public partial record SKEntity : AEntityCommon
 {
     /// <summary>
     /// Can be overwritten to allow for safe type-casting.
@@ -127,7 +128,7 @@ public record SKEntity : AEntityCommon
     }
 
     /// Constructor for flat "empty" Entity. NOT recommended without special handling for Entity's fields.
-    [JsonConstructor, MemoryPackConstructor]
+    [MemoryPackConstructor, JsonConstructor, YamlConstructor]
     protected internal SKEntity() : base()
     {
     }
