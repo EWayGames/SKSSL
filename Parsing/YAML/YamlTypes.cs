@@ -26,14 +26,10 @@ namespace SKSSL.YAML;
 [YamlObject]
 public partial record BaseYamlEntry
 {
-    /// <summary>
     /// Explicit type definition for this entry.
-    /// </summary>
     public string Type { get; set; }
 
-    /// <summary>
     /// Searchable, indexable ID.
-    /// </summary>
     [YamlMember(name: "id")]
     public string ReferenceId { get; set; }
 }
@@ -49,11 +45,10 @@ public partial record BaseYamlEntry
 [YamlObject]
 public partial record BaseLocalizedYamlEntry : BaseYamlEntry
 {
-    /// <summary>
-    /// UNLOCALIZED name. Localization should be implemented elsewhere.
-    /// </summary>
+    /// Non-localized name key.
     public string Name { get; set; }
 
+    /// Non-localized description key.
     public string Description { get; set; }
 }
 
