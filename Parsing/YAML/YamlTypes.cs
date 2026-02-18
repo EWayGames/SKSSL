@@ -3,6 +3,7 @@ using RenderingLibrary.Graphics;
 using VYaml.Annotations;
 using Color = Microsoft.Xna.Framework.Color;
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
+// ReSharper disable UnusedMember.Global
 
 // ReSharper disable NullableWarningSuppressionIsUsed
 
@@ -21,6 +22,8 @@ namespace SKSSL.YAML;
 /// Yaml Entry Example:
 /// - type: (string)
 ///   id: (string)
+///   name: (string)
+///   description (string)
 /// </code>
 /// </summary>
 [YamlObject]
@@ -32,35 +35,23 @@ public partial record BaseYamlEntry
     /// Searchable, indexable ID.
     [YamlMember(name: "id")]
     public string ReferenceId { get; set; }
+    
+    /// Non-localized name key.
+    public virtual string? Name { get; set; }
+
+    /// Non-localized description key.
+    public virtual string? Description { get; set; }
 }
 
 /// <summary>
 /// <inheritdoc cref="BaseYamlEntry"/>
 /// <code>
 /// In Addition To:
-///   name: (localization)
-///   description: (localization)
-/// </code>
-/// </summary>
-[YamlObject]
-public partial record BaseLocalizedYamlEntry : BaseYamlEntry
-{
-    /// Non-localized name key.
-    public string Name { get; set; }
-
-    /// Non-localized description key.
-    public string Description { get; set; }
-}
-
-/// <summary>
-/// <inheritdoc cref="BaseLocalizedYamlEntry"/>
-/// <code>
-/// In Addition To:
 ///   color: "#RRGGBB"
 /// </code>
 /// </summary>
 [YamlObject]
-public partial record BaseLocalizedColorableYamlEntry : BaseLocalizedYamlEntry
+public partial record BaseColorableYamlEntry : BaseYamlEntry
 {
     /// <summary>
     /// Raw HTML (#RRGGBB) color when viewed on the map or in graphs.
@@ -105,7 +96,7 @@ public class ComponentYaml
 }
 
 /// <summary>
-/// <inheritdoc cref="BaseLocalizedYamlEntry"/>
+/// <inheritdoc cref="BaseYamlEntry"/>
 /// <code>
 /// In Addition To:
 ///   components: (Component Yaml Entries)
@@ -117,7 +108,7 @@ public class ComponentYaml
 /// </code>
 /// </summary>
 [YamlObject]
-public partial record EntityYaml : BaseLocalizedYamlEntry
+public partial record EntityYaml : BaseYamlEntry
 {
     /// <summary>
     /// Optional field for <see cref="EntityYaml"/> which is exclusively for entities.
