@@ -179,7 +179,7 @@ public partial class EntityManager
     /// <remarks>
     /// Provided that the Derived Type T is an EntityTemplate or SKEntity, will either call a direct  
     /// Calls <see cref="RegisterTemplate{TYaml}"/> but defaults <see cref="EntityYaml"/> type,
-    /// or <see cref="RegisterDefinition{TYaml}"/> to register an entity directly.
+    /// or <see cref="RegisterRawEntity{TYaml}"/> to register an entity directly.
     /// 
     /// When registering specialized templates, use <see cref="RegisterTemplate{TYaml}"/> instead.
     /// </remarks>
@@ -195,7 +195,7 @@ public partial class EntityManager
         // Register raw entity
         if (typeof(SKEntity).IsAssignableFrom(derivedType))
         {
-            RegisterDefinition(yaml, derivedType);
+            RegisterRawEntity(yaml, derivedType);
         }
         // Attempt register of template
         else if (typeof(EntityTemplate).IsAssignableFrom(derivedType))
@@ -250,7 +250,7 @@ public partial class EntityManager
     /// <typeparam name="TYaml"></typeparam>
     /// <param name="derivedType"></param>
     /// <exception cref="YamlException"></exception>
-    public void RegisterDefinition<TYaml>(TYaml yaml, Type derivedType)
+    private void RegisterRawEntity<TYaml>(TYaml yaml, Type derivedType)
         where TYaml : EntityYaml
     {
         var components = BuildComponentsFromYaml(yaml);
