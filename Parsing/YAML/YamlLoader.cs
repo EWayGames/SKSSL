@@ -2,7 +2,6 @@ using System.Collections;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using SKSSL.Extensions;
 using VYaml.Serialization;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -30,10 +29,11 @@ public static partial class YamlLoader
 {
     private static readonly IDeserializer Deserializer = new DeserializerBuilder()
         .WithNamingConvention(UnderscoredNamingConvention.Instance)
+        .IgnoreUnmatchedProperties()
         .Build();
 
     private static readonly ISerializer Serializer = new SerializerBuilder()
-        .WithNamingConvention(CamelCaseNamingConvention.Instance)
+        .WithNamingConvention(UnderscoredNamingConvention.Instance)
         .Build();
 
     // Cache deserialized entries per type (optional, for repeated queries)
@@ -117,33 +117,28 @@ public static partial class YamlLoader
             if (targetType == null) continue;
 
             string yamlBlock = string.Join("\n", entryLines);
-            byte[] yamlBytes = Encoding.Default.GetBytes(yamlBlock);
+            byte[] yamlBytes = Encoding.Default.GetBytes(yamlBlock); // Using yaml block, convert to Bytes.
             try
             {
                 // Always deserialize as a list – handles single or multiple entries, with or without '-'
-                Type typeOfList = typeof(List<>).MakeGenericType(targetType);
                 if (!results.TryGetValue(targetType, out var deserializedEntries))
                 {
                     deserializedEntries = [];
                     results.Add(targetType, deserializedEntries);
                 }
 
-                var output = Teast(targetType, yamlBytes);
+                var output = DeserializeList(yamlBytes, targetType);
+                if (output == null) continue; // Precautionary. Error reporting already done earlier.
 
-
-                // Using yaml block, convert to Bytes.
-                if (output == null) // Safety check.
-                    throw new NullReferenceException(
-                        "Output deserialized YAML data returned null from generic invocation!");
-
-                // Make sure that the output is a list. It shall always be a list, even if theres one entry in there!
-                var list = (IList)output;
-                foreach (var item in list)
-                    deserializedEntries.Add(item);
+                // Output entries into deserialized entries.
+                foreach (var item in (IEnumerable)output)
+                    deserializedEntries.Add(Convert.ChangeType(item, targetType));
             }
             catch (Exception ex)
             {
                 // Fallback attempt to deserialize individual item from block instead.
+                // ERR: This is hot garbage. Should frankly be gutted since YamlDotNet was purged a while ago.
+                //  Everything in this catch statement isn't great.
                 try
                 {
                     results[targetType].Add(Deserializer.Deserialize(yamlBlock, targetType)!);
@@ -151,8 +146,8 @@ public static partial class YamlLoader
                 catch (Exception innerEx)
                 {
                     throw new InvalidOperationException(
-                        "Failed to deserialize as either List<T> or single T.\n" +
-                        "Input appears to be a YAML sequence (- item), so List<T> is usually required.\n" +
+                        //"Failed to deserialize as either List<T> or single T.\n" +
+                        //"Input appears to be a YAML sequence (- item), so List<T> is usually required.\n" +
                         $"Inner error: {ex.Message}", innerEx);
                 }
 
@@ -163,47 +158,40 @@ public static partial class YamlLoader
         return results;
     }
 
-    private static IList Teast(Type type, byte[] yamlBytes)
+    // Generic helper method
+    private static List<T> DeserializeListOf<T>(byte[] yamlBytes)
     {
-        var rawList = YamlSerializer.Deserialize<List<object>>(yamlBytes);
-        var typedList = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(type))!;
-        foreach (var obj in rawList)
+        try
         {
-            if (obj is not Dictionary<object, object> dict) continue;
+            return YamlSerializer.Deserialize<List<T>>(yamlBytes);
+        }
+        catch
+        {
+            Log("There is a fatal flat in the yaml file's format. " +
+                "This may be due to Class type changes, a minor spacing issue, or demonic forces at play holding you back. " +
+                "Whatever it may be, the Deserializer is probably fine, and it's your file that needs fixing! " +
+                "Because of this tiny mistake, this file was returned as empty, and the entries will not be loaded properly.",
+                LOG.FILE_ERROR);
+            return [];
+        }
+    }
 
-            // Create instance of targetType
-            var ctor = type.GetConstructor(Type.EmptyTypes);
-            if (ctor == null) throw new InvalidOperationException($"No parameterless constructor for {type}");
+    private static object? DeserializeList(byte[] bytes, Type elementType)
+    {
+        MethodInfo? openMethod =
+            typeof(YamlLoader).GetMethod(nameof(DeserializeListOf),
+                BindingFlags.NonPublic | BindingFlags.Static);
 
-            var instance = ctor.Invoke(null);
-
-            // Map entire yaml block as KVPs
-            foreach (var yamlBlockInstance in dict)
-            {
-                // Get every property in target type
-                foreach (PropertyInfo p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                {
-                    // They should all have a yaml member attribute
-                    var attr = p.GetCustomAttribute<VYaml.Annotations.YamlMemberAttribute>();
-                    
-                    // Ensure working on valid attribute and writable property
-                    if (attr?.Name == null || !p.CanWrite)
-                        continue;
-                    
-                    // Check for yaml attribute assigned "name", or that the property matches with the block key 
-                    if (attr.Name.Equals(yamlBlockInstance.Key) || yamlBlockInstance.Key.Equals(p.Name.ToCamelCase()))
-                    {
-                        
-                    }
-                    p.SetValue(instance, Convert.ChangeType(yamlBlockInstance.Value, p.PropertyType));
-                }
-            }
-
-            typedList.Add(instance);
+        if (openMethod == null)
+        {
+            Log("Failed to load yaml bytes. The generic openMethod wasn't found in this YamlLoader.", LOG.SYSTEM_ERROR);
+            return null;
         }
 
+        // Make Generic as if <T>()
+        MethodInfo closedMethod = openMethod.MakeGenericMethod(elementType);
 
-        return typedList;
+        return closedMethod.Invoke(null, [bytes])!;
     }
 
     #endregion
@@ -367,8 +355,9 @@ public static partial class YamlLoader
         {
             // Get file output and put to dictionary.
             var fileOutput = LoadFileWithTags(file, types);
-            foreach (var data in fileOutput)
-                results.Add(data.Key, data.Value);
+            foreach (var fileData in fileOutput)
+            foreach (var yamlEntry in fileData.Value)
+                results[fileData.Key].Add(yamlEntry);
         }
 
         return results;
