@@ -20,30 +20,18 @@ public partial class EntityManager
     internal readonly ComponentRegistry _componentRegistry;
     private readonly IWorld _world;
 
-    /// One-time toggle to use raw entity-class definitions OR entity templates.
-    /// For complex entity types that have multiple levels of inheritance and varying data structures,
-    /// Entity Templates are highly suggested.
-    private readonly bool _useRawEntities;
-
-    /// Global default toggle for development purposes.
-    /// Used in multiple parts "up-the-chain"
-    public const bool DefaultUseRawEntities = true;
-
     /// <inheritdoc cref="EntityManager"/>
-    public EntityManager(
-        ref ComponentRegistry componentRegistry,
-        IWorld world,
-        bool useRawEntities = DefaultUseRawEntities)
+    public EntityManager(ref ComponentRegistry componentRegistry, IWorld world)
     {
         _componentRegistry = componentRegistry;
         _world = world;
-        _useRawEntities = useRawEntities;
     }
 
     /// Get all Active entities present in the game.
     /// <seealso cref="Definitions"/>
     public IReadOnlyList<SKEntity> AllEntities => _allEntities;
 
+    // ReSharper disable once UnusedMember.Global
     /// All inactive Entity Definitions, which ubiquitously inherit <see cref="AEntityCommon"/>.
     public static IReadOnlyDictionary<string, AEntityCommon> Definitions => _definitions;
 
@@ -93,18 +81,14 @@ public partial class EntityManager
         entity = GetEntity(handle);
         return entity != null;
     }
-
+    
     /// <summary>
     /// Create entity using existing raw <see cref="SKEntity"/> definition. Assumes definition is valid.
     /// </summary>
     /// <param name="definition">Existing entity definition contained in the manager</param>
     /// <returns></returns>
-    /// <exception cref="InvalidOperationException">Thrown when <see cref="_useRawEntities"/> is false.</exception>
     private SKEntity CreateEntity(SKEntity definition)
     {
-        if (!_useRawEntities)
-            throw new InvalidOperationException("Attempted to create entity without Raw Entity definitions enabled!");
-
         Debug.Assert(definition != null, nameof(definition) + " != null");
 
         // Create a copy of this entity.
@@ -164,23 +148,14 @@ public partial class EntityManager
     /// <returns>Spawned entity for later use.</returns>
     public SKEntity Spawn(string handle)
     {
-        // No matter what, an entity should be made.
+        if (!TryGetDefinition(handle, out AEntityCommon? definition) || definition is null)
+            throw new Exception($"Failed to create entity copy using handle {handle}");
         // TODO: Nullability fallbacks may be needed from here and "up the chain" of calls.
-        SKEntity entity;
-        // If using raw entities, get definition and attempt to create a direct copy.
-        if (_useRawEntities)
-        {
-            if (!TryGetDefinition(handle, out SKEntity? definition) && definition != null)
-                throw new Exception($"Failed to create entity-definition copy using handle {handle}");
-            entity = CreateEntity(definition!);
-        }
-        // If not using raw entities, attempt to grab a template from definitions and create using that overload.
-        else
-        {
-            if (!TryGetDefinition(handle, out EntityTemplate? definition) && definition != null)
-                throw new Exception($"Failed to create entity template using handle {handle}");
-            entity = CreateEntity(definition!);
-        }
+
+        // Create entity regardless of how it's stored.
+        SKEntity entity = definition.GetType() == typeof(SKEntity)
+            ? CreateEntity((definition as SKEntity)!)
+            : CreateEntity((definition as EntityTemplate)!);
 
         // Initialize the entity.
         entity.Initialize();
@@ -207,16 +182,12 @@ public partial class EntityManager
         if (typeof(T) == typeof(SKEntity))
         {
             // Error handling - don't use raw entities whilst it's disabled!
-            if (!_useRawEntities)
-                throw new InvalidCastException("Attempted to create Raw Entity whilst UseRawEntities = false!");
             RegisterDefinition<EntityYaml, SKEntity>(yaml);
         }
         // Attempt register of template
         else if (typeof(T) == typeof(EntityTemplate))
         {
             // Error handling - don't use entity templates whilst raw entities are enabled!
-            if (_useRawEntities)
-                throw new InvalidCastException("Attempted to create Entity Template whilst UseRawEntities = true!");
             RegisterTemplate<EntityYaml, EntityTemplate>(yaml);
         }
     }
@@ -329,8 +300,15 @@ public partial class EntityManager
     /// <returns>True if a template was found. False if one was not. The output is also Null if one was not found.</returns>
     public static bool TryGetDefinition<T>(string referenceId, out T? definition) where T : AEntityCommon
     {
-        var gotValue = _definitions.TryGetValue(referenceId, out AEntityCommon? entityCommon);
-        definition = (T)entityCommon!;
+        var gotValue = _definitions.TryGetValue(referenceId, out AEntityCommon? _);
+
+        if (_definitions[referenceId] is T typed)
+        {
+            definition = typed;
+            return true;
+        }
+        
+        definition = null;
         return gotValue;
     }
 
