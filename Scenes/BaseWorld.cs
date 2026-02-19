@@ -53,7 +53,7 @@ public abstract class BaseWorld : IWorld
 
         // Enable ECS if toggled-on.
         if (UsesECS)
-            ECS?.Initialize(UseECSRawEntities);
+            ECS?.Initialize();
 
         // Initialize WorldSpace assuming graphics provided + exception.
         if (graphics != null)
