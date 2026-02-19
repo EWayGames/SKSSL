@@ -81,7 +81,7 @@ public partial class EntityManager
         entity = GetEntity(handle);
         return entity != null;
     }
-    
+
     /// <summary>
     /// Create entity using existing raw <see cref="SKEntity"/> definition. Assumes definition is valid.
     /// </summary>
@@ -170,54 +170,77 @@ public partial class EntityManager
 
     private static readonly Dictionary<string, AEntityCommon> _definitions = new();
 
+
+    public void RegisterEntity<T>(EntityYaml yaml) where T : AEntityCommon => RegisterEntity<T, EntityYaml>(yaml);
+
     /// <summary>
-    /// Calls <see cref="RegisterTemplate{TYaml, TTemplate}"/> with a default to the <see cref="EntityYaml"/> type.
+    /// Handles registration of entity ambiguously between SKEntity and EntityTemplate derivations.
     /// </summary>
+    /// <remarks>
+    /// Provided that the Derived Type T is an EntityTemplate or SKEntity, will either call a direct  
+    /// Calls <see cref="RegisterTemplate{TYaml}"/> but defaults <see cref="EntityYaml"/> type,
+    /// or <see cref="RegisterDefinition{TYaml}"/> to register an entity directly.
+    /// 
+    /// When registering specialized templates, use <see cref="RegisterTemplate{TYaml}"/> instead.
+    /// </remarks>
     /// <param name="yaml">The yaml file of the template.</param>
-    /// <typeparam name="T">Type of template being registered. Forces inheritance.</typeparam>
-    /// <exception cref="ArgumentException"></exception>
-    public void RegisterEntity<T>(EntityYaml yaml) where T : AEntityCommon
+    /// <typeparam name="T">Derived Type of entity intermediate type registered. Forces inheritance.</typeparam>
+    /// <typeparam name="Y"></typeparam>
+    public void RegisterEntity<T, Y>(Y yaml)
+        where T : AEntityCommon
+        where Y : EntityYaml
     {
+        Type derivedType = typeof(T);
+
         // Register raw entity
-        if (typeof(T) == typeof(SKEntity))
+        if (typeof(SKEntity).IsAssignableFrom(derivedType))
         {
-            // Error handling - don't use raw entities whilst it's disabled!
-            RegisterDefinition<EntityYaml, SKEntity>(yaml);
+            RegisterDefinition(yaml, derivedType);
         }
         // Attempt register of template
-        else if (typeof(T) == typeof(EntityTemplate))
+        else if (typeof(EntityTemplate).IsAssignableFrom(derivedType))
         {
-            // Error handling - don't use entity templates whilst raw entities are enabled!
-            RegisterTemplate<EntityYaml, EntityTemplate>(yaml);
+            RegisterTemplate(yaml, derivedType);
+        }
+        else
+        {
+            throw new InvalidOperationException("Unknown type for registration");
         }
     }
 
-    /// Assumes that yaml provided is of EntityYaml type.<br/>
-    /// Calls <see cref="RegisterTemplate{TYaml, TTemplate}"/>
-    public void RegisterTemplate<TTemplate>(EntityYaml yaml) where TTemplate : EntityTemplate
-        => RegisterTemplate<EntityYaml, TTemplate>(yaml);
 
     /// <summary>
     /// Creates copyable entity template from a provided Yaml file, and Template type.
     /// </summary>
     /// <param name="yaml">Yaml instance to process.</param>
+    /// <param name="derivedType">Assumed derived type from EntityTemplate</param>
     /// <typeparam name="TYaml">Yaml Class</typeparam>
-    /// <typeparam name="TTemplate">Template Class</typeparam>
     /// <exception cref="YamlException">Thrown when ReferenceId / Handle not provided in YAML.</exception>
-    public void RegisterTemplate<TYaml, TTemplate>(TYaml yaml)
+    public void RegisterTemplate<TYaml>(TYaml yaml, Type derivedType)
         where TYaml : EntityYaml
-        where TTemplate : EntityTemplate
     {
-        // Get components.
+        // Build components
         var components = BuildComponentsFromYaml(yaml);
 
-        // Call dynamic constructors instead.
-        var template = EntityTemplate.CreateFromYaml<TTemplate>(yaml, components);
+        // Get dynamic template constructor.
+        ConstructorInfo? ctor = derivedType.GetConstructor(
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            binder: null,
+            types: [yaml.GetType(), components.GetType()],
+            modifiers: null);
+        if (ctor == null)
+            throw new InvalidOperationException($"Type {derivedType} has no matching constructor.");
+
+        // Call constructor
+        var templateObj = ctor.Invoke([yaml, components]);
+
+        if (templateObj is not EntityTemplate template)
+            throw new YamlException("Created template is not an EntityTemplate!");
 
         if (string.IsNullOrEmpty(template.Handle))
-            throw new YamlException("Template must have ReferenceId");
+            throw new YamlException("Invalid template!");
 
-        RegisterTemplate(template);
+        RegisterDefinition(template);
     }
 
     /// <summary>
@@ -225,20 +248,25 @@ public partial class EntityManager
     /// </summary>
     /// <param name="yaml"></param>
     /// <typeparam name="TYaml"></typeparam>
-    /// <typeparam name="TTemplate"></typeparam>
+    /// <param name="derivedType"></param>
     /// <exception cref="YamlException"></exception>
-    public void RegisterDefinition<TYaml, TTemplate>(TYaml yaml)
+    public void RegisterDefinition<TYaml>(TYaml yaml, Type derivedType)
         where TYaml : EntityYaml
-        where TTemplate : SKEntity
     {
-        // Get components.
         var components = BuildComponentsFromYaml(yaml);
 
-        var entity = new SKEntity(yaml, components);
-        if (entity is null)
-            throw new YamlException("SKEntity created was null!");
+        // Create instance dynamically
+        object? instance = Activator.CreateInstance(
+            derivedType, yaml, components // constructor parameters
+        );
 
-        RegisterTemplate(entity);
+        // Cast to the derived type
+        var entity = Convert.ChangeType(instance, derivedType);
+
+        if (entity is not SKEntity typedEntity)
+            throw new YamlException("Entity created was not of expected type!");
+
+        RegisterDefinition(typedEntity);
     }
 
     /// <summary>
@@ -292,7 +320,7 @@ public partial class EntityManager
     /// <summary>
     /// Register an entity Definition raw or template according to <see cref="AEntityCommon"/>.
     /// </summary>
-    private static void RegisterTemplate(AEntityCommon definition) => _definitions[definition.Handle] = definition;
+    private static void RegisterDefinition(AEntityCommon definition) => _definitions[definition.Handle] = definition;
 
     /// <summary>
     /// Safe[r] TryGet method to retrieve an Entity Definition *OR* Template using a reference id.
@@ -307,7 +335,7 @@ public partial class EntityManager
             definition = typed;
             return true;
         }
-        
+
         definition = null;
         return gotValue;
     }

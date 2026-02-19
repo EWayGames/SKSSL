@@ -48,7 +48,6 @@ public record EntityTemplate : AEntityCommon
     public static TTemplate CreateFromYaml<TTemplate>(
         EntityYaml yaml,
         Dictionary<Type, object> components)
-        where TTemplate : EntityTemplate
     {
         if (Activator.CreateInstance(
                 typeof(TTemplate),
