@@ -2,6 +2,7 @@ using System.Collections;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using SKSSL.Extensions;
 using VYaml.Serialization;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -37,9 +38,6 @@ public static partial class YamlLoader
 
     // Cache deserialized entries per type (optional, for repeated queries)
     private static readonly Dictionary<Type, object> _cache = new();
-
-    private static readonly MethodInfo VYamlDeserializer = typeof(YamlSerializer)
-        .GetMethods().First(m => m.Name == "Deserialize" && m.IsGenericMethod && m.GetParameters().Length == 1);
 
     private const string YamlFileExtension = "*.yml*";
 
@@ -130,10 +128,10 @@ public static partial class YamlLoader
                     results.Add(targetType, deserializedEntries);
                 }
 
-                // Using yaml block, convert to Bytes.
-                MethodInfo genericMethod = VYamlDeserializer.MakeGenericMethod(typeOfList);
-                var output = genericMethod.Invoke(null, [yamlBytes]);
+                var output = Teast(targetType, yamlBytes);
 
+
+                // Using yaml block, convert to Bytes.
                 if (output == null) // Safety check.
                     throw new NullReferenceException(
                         "Output deserialized YAML data returned null from generic invocation!");
@@ -155,7 +153,7 @@ public static partial class YamlLoader
                     throw new InvalidOperationException(
                         "Failed to deserialize as either List<T> or single T.\n" +
                         "Input appears to be a YAML sequence (- item), so List<T> is usually required.\n" +
-                        $"Inner error: {innerEx.Message}", innerEx);
+                        $"Inner error: {ex.Message}", innerEx);
                 }
 
                 Log($"Failed to deserialize {typeTag} in {file}: {ex.Message}", LOG.FILE_ERROR);
@@ -163,6 +161,49 @@ public static partial class YamlLoader
         }
 
         return results;
+    }
+
+    private static IList Teast(Type type, byte[] yamlBytes)
+    {
+        var rawList = YamlSerializer.Deserialize<List<object>>(yamlBytes);
+        var typedList = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(type))!;
+        foreach (var obj in rawList)
+        {
+            if (obj is not Dictionary<object, object> dict) continue;
+
+            // Create instance of targetType
+            var ctor = type.GetConstructor(Type.EmptyTypes);
+            if (ctor == null) throw new InvalidOperationException($"No parameterless constructor for {type}");
+
+            var instance = ctor.Invoke(null);
+
+            // Map entire yaml block as KVPs
+            foreach (var yamlBlockInstance in dict)
+            {
+                // Get every property in target type
+                foreach (PropertyInfo p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                {
+                    // They should all have a yaml member attribute
+                    var attr = p.GetCustomAttribute<VYaml.Annotations.YamlMemberAttribute>();
+                    
+                    // Ensure working on valid attribute and writable property
+                    if (attr?.Name == null || !p.CanWrite)
+                        continue;
+                    
+                    // Check for yaml attribute assigned "name", or that the property matches with the block key 
+                    if (attr.Name.Equals(yamlBlockInstance.Key) || yamlBlockInstance.Key.Equals(p.Name.ToCamelCase()))
+                    {
+                        
+                    }
+                    p.SetValue(instance, Convert.ChangeType(yamlBlockInstance.Value, p.PropertyType));
+                }
+            }
+
+            typedList.Add(instance);
+        }
+
+
+        return typedList;
     }
 
     #endregion
@@ -516,8 +557,6 @@ public static partial class YamlLoader
     }
 
     #endregion
-    
-    private static readonly Regex TypeRegex = RegexSpaceTypeBaseYaml();
 
     [GeneratedRegex(@"\btype\s*:\s*(Base)?([A-Za-z0-9_]+)(Yaml)?\b",
         RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
