@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace SKSSL.Extensions;
 
@@ -126,6 +127,21 @@ public static class StringHelpers
 
         // Default to string
         return line;
+    }
+    
+    /// Returns new string in camel_case.
+    public static string ToCamelCase(this string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return input;
+
+        // Remove non-alphanumeric characters and capitalize words
+        string result = Regex.Replace(input, @"[^a-zA-Z0-9]+", " ");
+        TextInfo textInfo = CultureInfo.InvariantCulture.TextInfo;
+        result = textInfo.ToTitleCase(result).Replace(" ", "");
+
+        // Lowercase first letter
+        return char.ToLower(result[0]) + result[1..];
     }
 
     /// <summary>
