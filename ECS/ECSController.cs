@@ -18,8 +18,12 @@ public readonly struct EntityContext
 }
 
 
+/// Primary Entity-Component system controller present in any given world. Contains static <see cref="EntityContext"/> 
 public class ECSController
 {
+    // WARN: This somewhat goes *against* the principle of a divided ECS. It's understandable that its controller needs
+    //  to be accessed quickly and conveniently outside of a world context, but still.
+    /// General context that which all entities are acting.
     public static EntityContext? EntityContext;
     public static EntityManager EntityManager => EntityContext!.Value.EntityManager;
     

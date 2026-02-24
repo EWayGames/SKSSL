@@ -60,7 +60,9 @@ public partial record SKEntity : AEntityCommon
     public override IReadOnlyDictionary<Type, object> DefaultComponents { get; init; } = new Dictionary<Type, object>();
 
     /// <summary>
-    /// Array of component indices. Index = ComponentTypeId&lt;T&gt;.Id, Value = slot in ComponentArray&lt;T&gt; (-1 if missing)
+    /// Array of component indices.<br/>
+    /// Index = ComponentTypeId&lt;T&gt;.Id,<br/>
+    /// Value = slot in ComponentArray&lt;T&gt; (-1 if missing)
     /// <br/><br/>
     /// For every index, there is a unique component type.
     /// <seealso cref="ComponentArray{T}"/>

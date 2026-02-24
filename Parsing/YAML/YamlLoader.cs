@@ -127,6 +127,7 @@ public static partial class YamlLoader
                     results.Add(targetType, deserializedEntries);
                 }
 
+                // TODO: Cache the Deserialize method call for efficiency's sake.
                 var output = DeserializeList(yamlBytes, targetType);
                 if (output == null) continue; // Precautionary. Error reporting already done earlier.
 
