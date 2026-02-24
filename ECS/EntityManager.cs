@@ -17,7 +17,7 @@ public partial class EntityManager
 {
     private static readonly IDIterator _nextId = new();
     private readonly List<SKEntity> _allEntities = [];
-    internal readonly ComponentRegistry _componentRegistry;
+    private static ComponentRegistry _componentRegistry = null!;
     private readonly IWorld _world;
 
     /// <inheritdoc cref="EntityManager"/>
@@ -171,7 +171,7 @@ public partial class EntityManager
     private static readonly Dictionary<string, AEntityCommon> _definitions = new();
 
 
-    public void RegisterEntity<T>(EntityYaml yaml) where T : AEntityCommon => RegisterEntity<T, EntityYaml>(yaml);
+    public static void RegisterEntity<T>(EntityYaml yaml) where T : AEntityCommon => RegisterEntity<T, EntityYaml>(yaml);
 
     /// <summary>
     /// Handles registration of entity ambiguously between SKEntity and EntityTemplate derivations.
@@ -186,7 +186,7 @@ public partial class EntityManager
     /// <param name="yaml">The yaml file of the template.</param>
     /// <typeparam name="T">Derived Type of entity intermediate type registered. Forces inheritance.</typeparam>
     /// <typeparam name="Y"></typeparam>
-    public void RegisterEntity<T, Y>(Y yaml)
+    public static void RegisterEntity<T, Y>(Y yaml)
         where T : AEntityCommon
         where Y : EntityYaml
     {
@@ -216,7 +216,7 @@ public partial class EntityManager
     /// <param name="derivedType">Assumed derived type from EntityTemplate</param>
     /// <typeparam name="TYaml">Yaml Class</typeparam>
     /// <exception cref="YamlException">Thrown when ReferenceId / Handle not provided in YAML.</exception>
-    public void RegisterTemplate<TYaml>(TYaml yaml, Type derivedType)
+    public static void RegisterTemplate<TYaml>(TYaml yaml, Type derivedType)
         where TYaml : EntityYaml
     {
         // Build components
@@ -250,7 +250,7 @@ public partial class EntityManager
     /// <typeparam name="TYaml"></typeparam>
     /// <param name="derivedType"></param>
     /// <exception cref="YamlException"></exception>
-    private void RegisterRawEntity<TYaml>(TYaml yaml, Type derivedType)
+    private static void RegisterRawEntity<TYaml>(TYaml yaml, Type derivedType)
         where TYaml : EntityYaml
     {
         var components = BuildComponentsFromYaml(yaml);
@@ -273,7 +273,7 @@ public partial class EntityManager
     /// Helper for extracting components from a yaml file. Should work with any kind that inherits <see cref="EntityYaml"/>.
     /// Does NOT support other yaml types that implement this. This is for the ECS ONLY
     /// </summary>
-    private Dictionary<Type, object> BuildComponentsFromYaml(EntityYaml yaml)
+    private static Dictionary<Type, object> BuildComponentsFromYaml(EntityYaml yaml)
     {
         var components = new Dictionary<Type, object>();
 
