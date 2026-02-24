@@ -12,14 +12,20 @@ namespace SKSSL.ECS;
 #region ComponentArray<> Definition
 
 /// <summary>
-/// Contains the component instances for each registered entity. This list is instantiated; it gets pretty complicated.
+/// Contains the component instances for each registered entity.
 /// </summary>
+/// <remarks>This list is instantiated. It gets pretty complicated, but is essentially used to store component type data.</remarks>
 /// <typeparam name="T">Type of components being stored in this particular list.</typeparam>
 /// <seealso cref="List"/>
 public class ComponentArray<T> : IComponentArray where T : struct, ISKComponent
 {
+    /// <summary>
+    /// Constructor of Component Array that creates empty array on instantiation.
+    /// </summary>
+    /// <param name="capacity">Number of items maximum this array can contain.</param>
     public ComponentArray(int capacity) => _items = new T[capacity];
 
+    /// Empty constructor that forces default capacity to 1024.
     public ComponentArray() : this(1024)
     {
     }
@@ -27,6 +33,9 @@ public class ComponentArray<T> : IComponentArray where T : struct, ISKComponent
     /// Private list of contained items.
     private T[] _items;
 
+    /// <summary>
+    /// Number of entries present within the component array.
+    /// </summary>
     public int Count { get; private set; } = 0;
 
     /// <summary>
@@ -114,6 +123,8 @@ public class ComponentRegistry
     private readonly Dictionary<Type, int> _typeToId = new();
     private readonly Dictionary<int, Type> _idToType = new();
     private readonly Dictionary<string, Type> _registeredComponents = new();
+
+    /// All registered component class-types contained in the system.
     public IReadOnlyDictionary<string, Type> RegisteredComponentTypesDictionary => _registeredComponents;
 
     /// <summary>
@@ -125,14 +136,14 @@ public class ComponentRegistry
     private static int _nextTypeId = 0;
     private static bool Initialized { get; set; } = false;
 
-    
+
     /// Number of Components registered in the registry. Gets next available Component ID.
     public static int Count => _nextTypeId;
 
     /// <param name="id">ID of Registered Component</param>
     /// <returns>Null or Type Definition based on provided ID.</returns>
     public Type? GetType(int id) => _idToType.GetValueOrDefault(id);
-    
+
     #region Component Registration and Assembly Checks
 
     /// <summary>
@@ -172,6 +183,24 @@ public class ComponentRegistry
         Log("Registered types:");
         foreach (Type type in _registeredComponents.Values)
             Log($"  {type.Name} -> ID {GetOrRegister(type)}");
+
+        return;
+
+        Type[] GetTypesSafe(Assembly asm)
+        {
+            try
+            {
+                return asm.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                return ex.Types.Where(t => t != null).ToArray()!;
+            }
+            catch
+            {
+                return [];
+            }
+        }
     }
 
     /// <summary>
@@ -195,23 +224,7 @@ public class ComponentRegistry
         return name.Contains("SKSSL") ||
                name.Contains("KBSL") ||
                name.Contains("Kuiperbilt");
-        // TODO: I should really add support for an additional user-defined assembly. Make a virtual call? A wrapper maybe?
-    }
-
-    private static Type[] GetTypesSafe(Assembly asm)
-    {
-        try
-        {
-            return asm.GetTypes();
-        }
-        catch (ReflectionTypeLoadException ex)
-        {
-            return ex.Types.Where(t => t != null).ToArray()!;
-        }
-        catch
-        {
-            return [];
-        }
+        // TODO: I should really add support for an additional user-defined assemblies. Make a virtual call? A wrapper maybe?
     }
 
     private static bool IsValidComponent(Type t) =>
@@ -437,7 +450,7 @@ public class ComponentRegistry
         // Basically returns a component placed in a slot equal to the index reference contained in the entity.
         return ref componentSlot;
     }
-    
+
     /// <summary>
     /// Adds a component of the specified runtime type and returns the new component boxed instance.
     /// </summary>
@@ -626,6 +639,9 @@ public class ComponentRegistry
     #endregion
 }
 
+/// <summary>
+/// Interface for indexable component array that stores Component IDs.
+/// </summary>
 public interface IComponentArray
 {
     object? this[int index] { get; }
