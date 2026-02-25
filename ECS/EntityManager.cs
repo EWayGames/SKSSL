@@ -4,7 +4,7 @@ using SKSSL.Extensions;
 using SKSSL.Scenes;
 using SKSSL.Utilities;
 using SKSSL.YAML;
-using YamlDotNet.Core;
+using VYaml.Emitter;
 using static SKSSL.DustLogger;
 
 namespace SKSSL.ECS;
@@ -215,7 +215,7 @@ public partial class EntityManager
     /// <param name="yaml">Yaml instance to process.</param>
     /// <param name="derivedType">Assumed derived type from EntityTemplate</param>
     /// <typeparam name="TYaml">Yaml Class</typeparam>
-    /// <exception cref="YamlException">Thrown when ReferenceId / Handle not provided in YAML.</exception>
+    /// <exception cref="YamlEmitterException">Thrown when ReferenceId / Handle not provided in YAML.</exception>
     public static void RegisterTemplate<TYaml>(TYaml yaml, Type derivedType)
         where TYaml : EntityYaml
     {
@@ -235,10 +235,10 @@ public partial class EntityManager
         var templateObj = ctor.Invoke([yaml, components]);
 
         if (templateObj is not EntityTemplate template)
-            throw new YamlException("Created template is not an EntityTemplate!");
+            throw new YamlEmitterException("Created template is not an EntityTemplate!");
 
         if (string.IsNullOrEmpty(template.Handle))
-            throw new YamlException("Invalid template!");
+            throw new YamlEmitterException("Invalid template!");
 
         RegisterDefinition(template);
     }
@@ -249,7 +249,7 @@ public partial class EntityManager
     /// <param name="yaml"></param>
     /// <typeparam name="TYaml"></typeparam>
     /// <param name="derivedType"></param>
-    /// <exception cref="YamlException"></exception>
+    /// <exception cref="YamlEmitterException"></exception>
     private static void RegisterRawEntity<TYaml>(TYaml yaml, Type derivedType)
         where TYaml : EntityYaml
     {
@@ -264,7 +264,7 @@ public partial class EntityManager
         var entity = Convert.ChangeType(instance, derivedType);
 
         if (entity is not SKEntity typedEntity)
-            throw new YamlException("Entity created was not of expected type!");
+            throw new YamlEmitterException("Entity created was not of expected type!");
 
         RegisterDefinition(typedEntity);
     }

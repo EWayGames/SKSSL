@@ -1,7 +1,7 @@
 using SKSSL.ECS;
 using SKSSL.YAML;
 using System.Reflection;
-using YamlDotNet.Serialization;
+using VYaml.Annotations;
 
 namespace SKSSL.Extensions;
 public static class ComponentYamlExtensions
