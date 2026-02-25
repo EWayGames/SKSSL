@@ -3,9 +3,8 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using VYaml.Serialization;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 using static SKSSL.DustLogger;
+// ReSharper disable ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator
 
 namespace SKSSL.YAML;
 
@@ -27,15 +26,6 @@ namespace SKSSL.YAML;
 /// </summary>
 public static partial class YamlLoader
 {
-    private static readonly IDeserializer Deserializer = new DeserializerBuilder()
-        .WithNamingConvention(UnderscoredNamingConvention.Instance)
-        .IgnoreUnmatchedProperties()
-        .Build();
-
-    private static readonly ISerializer Serializer = new SerializerBuilder()
-        .WithNamingConvention(UnderscoredNamingConvention.Instance)
-        .Build();
-
     // Cache deserialized entries per type (optional, for repeated queries)
     private static readonly Dictionary<Type, object> _cache = new();
 
@@ -100,11 +90,11 @@ public static partial class YamlLoader
         string[] lines = File.ReadAllLines(file);
         var entries = SplitIntoYamlEntries(lines);
 
-        foreach (var entryLines in entries)
+        foreach (string[] entryLines in entries)
         {
             // WARN: ExtractTypeTag() limits the parser to only one type per file.
             //  A file CANNOT have mixed types, despite that being the initial intention. This isn't super game-breaking,
-            //  But it IS an issue.
+            //  But it IS an issue. See Todo below.
             // Extract "- type:" tag
             string? typeTag = ExtractTypeTag(entryLines);
             if (typeTag == null) continue;
@@ -116,8 +106,7 @@ public static partial class YamlLoader
                 (type => string.Equals(StripBaseAndYaml(type.Name), typeTag, StringComparison.OrdinalIgnoreCase));
             if (targetType == null) continue;
 
-            string yamlBlock = string.Join("\n", entryLines);
-            byte[] yamlBytes = Encoding.Default.GetBytes(yamlBlock); // Using yaml block, convert to Bytes.
+            var yamlBlock = ConvertLinesToYamlBlockBytes(entryLines);
             try
             {
                 // Always deserialize as a list – handles single or multiple entries, with or without '-'
@@ -128,7 +117,7 @@ public static partial class YamlLoader
                 }
 
                 // TODO: Cache the Deserialize method call for efficiency's sake.
-                var output = DeserializeList(yamlBytes, targetType);
+                var output = DeserializeList(yamlBlock, targetType);
                 if (output == null) continue; // Precautionary. Error reporting already done earlier.
 
                 // Output entries into deserialized entries.
@@ -137,29 +126,16 @@ public static partial class YamlLoader
             }
             catch (Exception ex)
             {
-                // Fallback attempt to deserialize individual item from block instead.
-                // ERR: This is hot garbage. Should frankly be gutted since YamlDotNet was purged a while ago.
-                //  Everything in this catch statement isn't great.
-                try
-                {
-                    results[targetType].Add(Deserializer.Deserialize(yamlBlock, targetType)!);
-                }
-                catch (Exception innerEx)
-                {
-                    throw new InvalidOperationException(
-                        //"Failed to deserialize as either List<T> or single T.\n" +
-                        //"Input appears to be a YAML sequence (- item), so List<T> is usually required.\n" +
-                        $"Inner error: {ex.Message}", innerEx);
-                }
-
                 Log($"Failed to deserialize {typeTag} in {file}: {ex.Message}", LOG.FILE_ERROR);
+
+                // TODO: Add fallback attempt to deserialize individual item from block instead.
             }
         }
 
         return results;
     }
 
-    // Generic helper method
+    /// Generic helper method. Called via Reflection for generic typing.
     private static List<T> DeserializeListOf<T>(byte[] yamlBytes)
     {
         try
@@ -228,6 +204,14 @@ public static partial class YamlLoader
         }
     }
 
+    /// Convert a set of lines into a singular block of bytes representing one YAML Entry.
+    private static byte[] ConvertLinesToYamlBlockBytes(string[] entryLines)
+    {
+        string yamlBlock = string.Join("\n", entryLines);
+        byte[] yamlBytes = Encoding.Default.GetBytes(yamlBlock); // Using yaml block, convert to Bytes.
+        return yamlBytes;
+    }
+
     /// <summary>
     /// Loads all entries of type T from the given file patterns. Files are read once.
     /// </summary>
@@ -254,8 +238,8 @@ public static partial class YamlLoader
                     continue; // Short-circuit.
 
                 // TODO: Convert this to VYaml parser instead of the Deserializer, here.
-                string yamlBlock = string.Join("\n", entryLines);
-                var obj = Deserializer.Deserialize<T>(yamlBlock);
+                var yamlBlock = ConvertLinesToYamlBlockBytes(entryLines);
+                var obj = YamlSerializer.Deserialize<T>(yamlBlock);
                 list.Add(obj);
             }
         }
@@ -426,13 +410,23 @@ public static partial class YamlLoader
     /// <param name="typeAnno2Plural">Plural of type2 annotation subversive entry. (Ex: raceS)</param>
     /// <typeparam name="Type1">Contains a list of Type2.</typeparam>
     /// <typeparam name="Type2">Has a pointer to Type1, but is isolated in its own instances.</typeparam>
-    [Obsolete("VYaml handles mixed non-primitive types, so long as it is not recursive. Use LoadFile() if possible.")]
+    [Obsolete("VYaml handles mixed non-primitive types, so long as it is not recursive. Use LoadFile() if possible.\n" +
+              "This is the only method that uses YamlDotNet, and is the worst-case of the loader.")]
     public static void LoadMixedContainers<Type1, Type2>(
         string yamlText, string typeAnno1, string typeAnno2, string typeAnno2Plural,
         Action<Type2, Type1?> handleFunction)
         where Type1 : class
         where Type2 : class
     {
+        YamlDotNet.Serialization.IDeserializer Deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
+            .WithNamingConvention(YamlDotNet.Serialization.NamingConventions.UnderscoredNamingConvention.Instance)
+            .IgnoreUnmatchedProperties()
+            .Build();
+
+        YamlDotNet.Serialization.ISerializer Serializer = new YamlDotNet.Serialization.SerializerBuilder()
+            .WithNamingConvention(YamlDotNet.Serialization.NamingConventions.UnderscoredNamingConvention.Instance)
+            .Build();
+
         var entries = Deserializer.Deserialize<List<Dictionary<string, object>>>(yamlText);
         foreach (var entry in entries)
         {
@@ -458,7 +452,6 @@ public static partial class YamlLoader
                     if (prop != null && prop.GetValue(group) is IEnumerable<Type2> type2InstancesProp)
                         foreach (Type2 type2Instance in type2InstancesProp)
                             handleFunction(type2Instance, group);
-
                     break;
                 }
                 // (Example: if race entry)
@@ -506,11 +499,15 @@ public static partial class YamlLoader
         return null;
     }
 
+    /// Take a set of lines and turn them into yaml blocks, where each block is an entry.
     private static List<string[]> SplitIntoYamlEntries(string[] lines)
     {
         var entries = new List<string[]>();
         var current = new List<string>();
 
+        // TODO: Read tags and create dictionary of lists to allow parsing of multiple types per file.
+        
+        // For every line, if it begins with a '-' starting marker, it is the sign of a new block.
         foreach (var line in lines)
         {
             if (IsTopLevelEntryStart(line) && current.Count > 0)
