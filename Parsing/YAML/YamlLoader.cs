@@ -419,7 +419,8 @@ public static partial class YamlLoader
             {
                 // Short-circuit. Type is resolved during block parsing.
                 // IYamlBlock contains the list of expected types.
-                Log($"Tag \"{block.Tag}\" type is invalid on line {block.Index} in file {block.File}");
+                Log($"{(string.IsNullOrWhiteSpace(block.Tag) ? "blank" : block.Tag)} tag is invalid on line {block.Index} " +
+                    $"in file {block.File}", LOG.FILE_ERROR);
                 continue;
             }
 
