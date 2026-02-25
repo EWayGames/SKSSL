@@ -100,7 +100,7 @@ public static partial class YamlLoader
     /// Entries are expected to begin with "- type: example"
     /// </summary>
     /// <returns>A filled, partially filled, or empty dictionary of expected types with their corresponding yaml blocks.</returns>
-    public static void ExtractYamlData(string file, Type[] expectedTypes, out Dictionary<Type, List<object>> output)
+    private static void ExtractYamlData(string file, Type[] expectedTypes, out Dictionary<Type, List<object>> output)
     {
         // Read all lines, divide into blocks in accordance to expected types.
         var lines = File.ReadAllLines(file);
@@ -254,6 +254,9 @@ public static partial class YamlLoader
     /// </summary>
     public static Dictionary<Type, List<object>> LoadFile(Type[] types, string file)
     {
+        if (!File.Exists(file))
+            throw new FileNotFoundException("File not found", file);
+        
         // "You can tell it's conglomerate- because it's everywhere!"
         // All yaml entries sharing types between files are stored here. All supported types are instantiated wholesale.
         // Files should -not- have a type defined within them outside of the ones passed through here. If one somehow
