@@ -152,7 +152,7 @@ public static partial class YamlLoader
     /// </summary>
     /// <param name="directory">Directory path to load.</param>
     /// <typeparam name="T">Entry type in files</typeparam>
-    [Obsolete("Use an alternative Load method instead.")]
+    [Obsolete("Use the alternative non-generic LoadDirectory() instead.")]
     public static IEnumerable<T> LoadDirectory<T>(string directory)
     {
         // Loop over every YAML file.
