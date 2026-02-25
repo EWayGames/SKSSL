@@ -254,9 +254,6 @@ public static partial class YamlLoader
     /// </summary>
     public static Dictionary<Type, List<object>> LoadFile(Type[] types, string file)
     {
-        if (!File.Exists(file))
-            throw new FileNotFoundException("File not found", file);
-        
         // "You can tell it's conglomerate- because it's everywhere!"
         // All yaml entries sharing types between files are stored here. All supported types are instantiated wholesale.
         // Files should -not- have a type defined within them outside of the ones passed through here. If one somehow
@@ -265,6 +262,8 @@ public static partial class YamlLoader
 
         try
         {
+            if (!File.Exists(file))
+                throw new FileNotFoundException("File not found", file);
 
             // Get file output and put to dictionary.
             ExtractYamlData(file, types, out var output);
@@ -272,9 +271,13 @@ public static partial class YamlLoader
                 conglomerate[type].AddRange(entries);
 
         }
+        catch (FileNotFoundException)
+        {
+            Log("File path provided to Yaml Loader doesn't exist", LOG.FILE_ERROR);
+        }
         catch(Exception ex)
         {
-            Log(ex.Message);
+            Log(ex.Message, LOG.FILE_ERROR);
         }
         
         return conglomerate;
