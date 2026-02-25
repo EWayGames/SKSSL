@@ -241,7 +241,7 @@ public static partial class YamlLoader
             // Merging the file's conglomerate with our super conglomerate.
             var output = LoadFile(types, file);
             foreach ((Type type, var yamlData) in output)
-                conglomerate[type] = (List<object>)conglomerate[type].Concat(yamlData);
+                conglomerate[type] = conglomerate[type].Concat(yamlData).ToList();
         }
 
         return conglomerate;
