@@ -2,7 +2,6 @@ using System.Collections;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using VYaml.Emitter;
 using VYaml.Serialization;
 using static SKSSL.DustLogger;
 
@@ -31,21 +30,7 @@ public static partial class YamlLoader
 {
     private const string YamlFileExtension = "*.yml*";
 
-    /// Reflective method info for purpose of deserializing a list of generic types, reflectively.
-    private static MethodInfo? DeserializeListMethod;
-
     #region Serialization
-
-    static YamlLoader()
-    {
-        DeserializeListMethod =
-            typeof(YamlLoader).GetMethod(nameof(DeserializeListOf), BindingFlags.NonPublic | BindingFlags.Static);
-        if (DeserializeListMethod == null)
-        {
-            Log($"Failed to create {nameof(DeserializeListMethod)}. " +
-                $"The generic open_method could not be made the SKSSL Yaml Loader.", LOG.SYSTEM_ERROR);
-        }
-    }
 
     /// Serialize provided object and save to specific file path. Overrides existing file if present.
     public static void SerializeAndSave<T>(string path, T obj, bool @override = true) where T : class
@@ -57,7 +42,7 @@ public static partial class YamlLoader
         if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
             Directory.CreateDirectory(dir);
 
-        // If override, write over. Otherwise, will create one if it doesn't exist.
+        // If overridden, write over. Otherwise, will create one if it doesn't exist.
         if (@override || !File.Exists(path))
             File.WriteAllText(path, data);
     }
@@ -109,7 +94,7 @@ public static partial class YamlLoader
         // Creating intermediate dictionary where yaml blocks are amalgamated together.
         var combined = expectedTypes.ToDictionary(type => type, _ => Array.Empty<byte>());
         CombineYamlBlockBytes(yamlBlocks, combined);
-            output = FillDeserializedData(file, expectedTypes, combined);
+        output = FillDeserializedData(file, expectedTypes, combined);
     }
 
     #endregion
@@ -254,32 +239,28 @@ public static partial class YamlLoader
     /// </summary>
     public static Dictionary<Type, List<object>> LoadFile(Type[] types, string file)
     {
-        // "You can tell it's conglomerate- because it's everywhere!"
+        // "You can tell its conglomerate- because it's everywhere!"
         // All yaml entries sharing types between files are stored here. All supported types are instantiated wholesale.
-        // Files should -not- have a type defined within them outside of the ones passed through here. If one somehow
+        // Files should -not- have a type defined within them outside the ones passed through here. If one somehow
         //  gets passed, it's probably because of a test.
         var conglomerate = types.ToDictionary(type => type, _ => new List<object>());
-
+        if (!File.Exists(file))
+        {
+            Log($"File not found from file path {file}, it's being skipped entirely!");
+            return [];
+        }
         try
         {
-            if (!File.Exists(file))
-                throw new FileNotFoundException("File not found", file);
-
             // Get file output and put to dictionary.
             ExtractYamlData(file, types, out var output);
             foreach ((Type type, var entries) in output)
                 conglomerate[type].AddRange(entries);
+        }
+        catch (Exception ex)
+        {
+            Log($"{ex.Message} :: {ex.InnerException?.Message}", LOG.FILE_ERROR);
+        }
 
-        }
-        catch (FileNotFoundException)
-        {
-            Log("File path provided to Yaml Loader doesn't exist", LOG.FILE_ERROR);
-        }
-        catch(Exception ex)
-        {
-            Log(ex.Message, LOG.FILE_ERROR);
-        }
-        
         return conglomerate;
     }
 
@@ -459,9 +440,12 @@ public static partial class YamlLoader
             {
                 var deserializedTypeList = DeserializeBytesAsListOfType(combinedKVP.Value, combinedKVP.Key);
                 if (deserializedTypeList == null)
-                    throw new YamlEmitterException(
-                        $"Yaml Loader failed to deserialize file {Path.GetFileName(file)} as list of provided type!");
-
+                {
+                    // Do NOT throw an error here, as this particular deserialized list may not have been found in the
+                    //  file to begin with!
+                    continue;
+                }
+                    
                 // Iterate through the list and fill the output.
                 foreach (var yamlObject in (IEnumerable)deserializedTypeList)
                 {
@@ -470,7 +454,8 @@ public static partial class YamlLoader
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to deserialize: {combinedKVP.Key}: ", ex);
+                throw new Exception(
+                    $"Failed to deserialize {combinedKVP.Key.Name} type from \"{Path.GetFileName(file)}\".", ex);
             }
         }
 
@@ -502,29 +487,32 @@ public static partial class YamlLoader
     /// Generic helper method. Called via Reflection for generic typing.
     private static List<T> DeserializeListOf<T>(byte[] yamlBytes)
     {
-        try
-        {
-            return YamlSerializer.Deserialize<List<T>>(yamlBytes);
-        }
-        catch (Exception exception)
-        {
-            throw new Exception("Fatal error in the yaml file.\n " +
-                                $"{exception.Message}\n" +
-                                "Possible issues: Class Type changes, invalid spacing, demons. Fix your file.");
-        }
+        return YamlSerializer.Deserialize<List<T>>(yamlBytes);
     }
 
     /// Helper method used to deserialize bytes as a list of an element type.
     /// Requires the DeserializeListOf method to remain exactly as it is, as this converts a type parameter
     ///  into a generic one.
-    private static object? DeserializeBytesAsListOfType(byte[] bytes, Type elementType)
+    private static object? DeserializeBytesAsListOfType(byte[] bytes, Type genericType)
     {
-        if (DeserializeListMethod == null)
-            throw new EntryPointNotFoundException("Failed to find DeserializeList method.");
+        MethodInfo? openMethod = typeof(YamlLoader).GetMethod(nameof(DeserializeListOf),
+            BindingFlags.NonPublic | BindingFlags.Static);
+        if (openMethod == null)
+            throw new EntryPointNotFoundException(
+                $"Failed to create {nameof(DeserializeListOf)} in SKSSL Yaml Loader.");
 
         // Make Generic as if <T>()
-        MethodInfo closedMethod = DeserializeListMethod.MakeGenericMethod(elementType);
-        return closedMethod.Invoke(null, [bytes]);
+        MethodInfo closedMethod = openMethod.MakeGenericMethod(genericType);
+
+        try
+        {
+            return closedMethod.Invoke(null, [bytes]);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Fatal error in {nameof(DeserializeListOf)} call! " +
+                                $"Check class-type changes, invalid spacing, and values. :: {ex.InnerException?.Message}");
+        }
     }
 
     #endregion
