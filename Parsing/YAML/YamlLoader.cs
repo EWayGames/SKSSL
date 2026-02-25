@@ -109,7 +109,7 @@ public static partial class YamlLoader
         // Creating intermediate dictionary where yaml blocks are amalgamated together.
         var combined = expectedTypes.ToDictionary(type => type, _ => Array.Empty<byte>());
         CombineYamlBlockBytes(yamlBlocks, combined);
-        output = FillDeserializedData(file, expectedTypes, combined);
+            output = FillDeserializedData(file, expectedTypes, combined);
     }
 
     #endregion
@@ -263,11 +263,20 @@ public static partial class YamlLoader
         //  gets passed, it's probably because of a test.
         var conglomerate = types.ToDictionary(type => type, _ => new List<object>());
 
-        // Get file output and put to dictionary.
-        ExtractYamlData(file, types, out var output);
-        foreach ((Type type, var entries) in output)
-            conglomerate[type].AddRange(entries);
+        try
+        {
 
+            // Get file output and put to dictionary.
+            ExtractYamlData(file, types, out var output);
+            foreach ((Type type, var entries) in output)
+                conglomerate[type].AddRange(entries);
+
+        }
+        catch(Exception ex)
+        {
+            Log(ex.Message);
+        }
+        
         return conglomerate;
     }
 
@@ -456,15 +465,9 @@ public static partial class YamlLoader
                     yamlDict[combinedKVP.Key].Add(Convert.ChangeType(yamlObject, combinedKVP.Key));
                 }
             }
-            catch (EntryPointNotFoundException ex)
-            {
-                Log($"Failed to deserialize {combinedKVP.Key} " +
-                    $"due to the {nameof(DeserializeListOf)} not having been loaded correctly: " +
-                    $"{ex.Message}", LOG.GENERAL_ERROR);
-            }
             catch (Exception ex)
             {
-                Log($"Failed to deserialize {combinedKVP.Key}: {ex.Message}", LOG.GENERAL_ERROR);
+                throw new Exception($"Failed to deserialize for type {combinedKVP.Key}: ", ex);
             }
         }
 
