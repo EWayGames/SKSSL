@@ -138,7 +138,10 @@ public static partial class DustLogger
     public static void Log(string message, int level = 0, bool outputToFile = false)
     {
         var e = (LOG)level; // cast to internal enum
-        var exception = new Exception(message);
+        var exception = new Exception(message)
+        {
+            Source = "SKSSL"
+        };
         switch (e)
         {
             // Errors

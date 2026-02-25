@@ -2,7 +2,6 @@ using System.Collections;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using VYaml.Emitter;
 using VYaml.Serialization;
 using static SKSSL.DustLogger;
 
@@ -31,21 +30,7 @@ public static partial class YamlLoader
 {
     private const string YamlFileExtension = "*.yml*";
 
-    /// Reflective method info for purpose of deserializing a list of generic types, reflectively.
-    private static MethodInfo? DeserializeListMethod;
-
     #region Serialization
-
-    static YamlLoader()
-    {
-        DeserializeListMethod =
-            typeof(YamlLoader).GetMethod(nameof(DeserializeListOf), BindingFlags.NonPublic | BindingFlags.Static);
-        if (DeserializeListMethod == null)
-        {
-            Log($"Failed to create {nameof(DeserializeListMethod)}. " +
-                $"The generic open_method could not be made the SKSSL Yaml Loader.", LOG.SYSTEM_ERROR);
-        }
-    }
 
     /// Serialize provided object and save to specific file path. Overrides existing file if present.
     public static void SerializeAndSave<T>(string path, T obj, bool @override = true) where T : class
@@ -57,7 +42,7 @@ public static partial class YamlLoader
         if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
             Directory.CreateDirectory(dir);
 
-        // If override, write over. Otherwise, will create one if it doesn't exist.
+        // If overridden, write over. Otherwise, will create one if it doesn't exist.
         if (@override || !File.Exists(path))
             File.WriteAllText(path, data);
     }
@@ -109,42 +94,12 @@ public static partial class YamlLoader
         // Creating intermediate dictionary where yaml blocks are amalgamated together.
         var combined = expectedTypes.ToDictionary(type => type, _ => Array.Empty<byte>());
         CombineYamlBlockBytes(yamlBlocks, combined);
-            output = FillDeserializedData(file, expectedTypes, combined);
+        output = FillDeserializedData(file, expectedTypes, combined);
     }
 
     #endregion
 
     #region Loading (Bulk)
-
-    /// <summary>
-    /// Loads YAML files from a folder, before invoking a post-process action on every entry.
-    /// Presumes that all entries in a folder are of the same homogenous type.
-    /// <code>
-    /// #(In YAML)
-    /// - entry
-    /// - entry
-    /// - ...
-    /// </code>
-    /// </summary>
-    /// <returns>Enumerable amount of deserialized objects of type 'T'</returns>
-    [Obsolete("This method is deprecated. Use LoadDirectory() instead.")]
-    public static IEnumerable<T> LoadFolder<T>(string directory, Action<T>? postProcess = null)
-    {
-        if (!Directory.Exists(directory))
-            yield break;
-
-        var files = Directory.GetFiles(directory, YamlFileExtension, SearchOption.AllDirectories);
-
-        foreach (var file in files)
-        {
-            var items = LoadFileAsync<T>(file).Result;
-            foreach (T item in items)
-            {
-                postProcess?.Invoke(item);
-                yield return item;
-            }
-        }
-    }
 
     /// <summary>
     /// Gets all files in directory, searches every file, searches every in said file for provided type.
@@ -196,30 +151,6 @@ public static partial class YamlLoader
     }
 
     /// <summary>
-    /// Loads YAML into a dictionary keyed by a provided ID selector. This is the "Traditional" way of doing it.
-    /// <code>
-    /// #(In YAML)
-    /// list_name:
-    ///   - entry
-    ///   - entry
-    ///   - ...
-    /// </code>
-    /// </summary>
-    [Obsolete]
-    public static Dictionary<TKey, TValue> LoadAsDictionary<TKey, TValue>(
-        string folderOrFile, Func<TValue, TKey> keySelector, Action<TValue>? postProcess = null) where TKey : notnull
-    {
-        var dict = new Dictionary<TKey, TValue>();
-        foreach (TValue item in LoadFolder(folderOrFile, postProcess))
-        {
-            TKey key = keySelector(item);
-            dict[key] = item; // overwrite duplicates silently
-        }
-
-        return dict;
-    }
-
-    /// <summary>
     /// Searches a directory using provided type definitions and file patterns. Directory defaults to application's if
     /// not provided.
     /// </summary>
@@ -229,9 +160,9 @@ public static partial class YamlLoader
         // Get all yaml files.
         var files = GetFiles(patterns, directory);
 
-        // "You can tell it's conglomerate- because it's everywhere!"
+        // "You can tell its conglomerate- because it's everywhere!"
         // All yaml entries sharing types between files are stored here. All supported types are instantiated wholesale.
-        // Files should -not- have a type defined within them outside of the ones passed through here. If one somehow
+        // Files should -not- have a type defined within them outside the ones passed through here. If one somehow
         //  gets passed, it's probably because of a test.
         var conglomerate = types.ToDictionary(type => type, _ => new List<object>());
 
@@ -254,32 +185,28 @@ public static partial class YamlLoader
     /// </summary>
     public static Dictionary<Type, List<object>> LoadFile(Type[] types, string file)
     {
-        // "You can tell it's conglomerate- because it's everywhere!"
+        // "You can tell its conglomerate- because it's everywhere!"
         // All yaml entries sharing types between files are stored here. All supported types are instantiated wholesale.
-        // Files should -not- have a type defined within them outside of the ones passed through here. If one somehow
+        // Files should -not- have a type defined within them outside the ones passed through here. If one somehow
         //  gets passed, it's probably because of a test.
         var conglomerate = types.ToDictionary(type => type, _ => new List<object>());
-
+        if (!File.Exists(file))
+        {
+            Log($"File not found from file path {file}, it's being skipped entirely!");
+            return [];
+        }
         try
         {
-            if (!File.Exists(file))
-                throw new FileNotFoundException("File not found", file);
-
             // Get file output and put to dictionary.
             ExtractYamlData(file, types, out var output);
             foreach ((Type type, var entries) in output)
                 conglomerate[type].AddRange(entries);
+        }
+        catch (Exception ex)
+        {
+            Log($"{ex.Message} :: {ex.InnerException?.Message}", LOG.FILE_ERROR);
+        }
 
-        }
-        catch (FileNotFoundException)
-        {
-            Log("File path provided to Yaml Loader doesn't exist", LOG.FILE_ERROR);
-        }
-        catch(Exception ex)
-        {
-            Log(ex.Message, LOG.FILE_ERROR);
-        }
-        
         return conglomerate;
     }
 
@@ -342,7 +269,7 @@ public static partial class YamlLoader
         StringBuilder blockTextBuilder = new();
         int linesRead = 0;
         Type? previousType = null;
-        string tag = "";
+        string previousTag = "";
 
         // For every line, if it begins with a '-' starting marker, it is the sign of a new block.
         var index = 0;
@@ -354,15 +281,15 @@ public static partial class YamlLoader
             // Every new '-' primary entry begins a "store and reset"
             if (IsTopLevelEntryStart(line))
             {
-                tag = OutType(line, out Type? type);
                 string text = blockTextBuilder.ToString();
 
                 // Add block. ">0" avoids an edge-case wherein it's the start of the file.
                 if (linesRead > 0)
-                    entries.Add(new IYamlBlock(type, tag, text, Path.GetFileName(file), index));
+                    entries.Add(new IYamlBlock(previousType, previousTag, text, Path.GetFileName(file), index));
 
                 // Conduct a reset.
                 blockTextBuilder = new StringBuilder();
+                previousTag = OutType(line, out Type? type);
                 previousType = type;
                 linesRead = 0;
             }
@@ -375,7 +302,7 @@ public static partial class YamlLoader
         // If there are no more lines, but lines have been read, output the remainder as a Yaml Block.
         if (linesRead > 0)
         {
-            entries.Add(new IYamlBlock(previousType, tag, blockTextBuilder.ToString(), file, linesRead));
+            entries.Add(new IYamlBlock(previousType, previousTag, blockTextBuilder.ToString(), file, linesRead));
         }
 
         return entries;
@@ -459,9 +386,12 @@ public static partial class YamlLoader
             {
                 var deserializedTypeList = DeserializeBytesAsListOfType(combinedKVP.Value, combinedKVP.Key);
                 if (deserializedTypeList == null)
-                    throw new YamlEmitterException(
-                        $"Yaml Loader failed to deserialize file {Path.GetFileName(file)} as list of provided type!");
-
+                {
+                    // Do NOT throw an error here, as this particular deserialized list may not have been found in the
+                    //  file to begin with!
+                    continue;
+                }
+                    
                 // Iterate through the list and fill the output.
                 foreach (var yamlObject in (IEnumerable)deserializedTypeList)
                 {
@@ -470,7 +400,8 @@ public static partial class YamlLoader
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to deserialize: {combinedKVP.Key}: ", ex);
+                throw new Exception(
+                    $"Failed to deserialize {combinedKVP.Key.Name} type from \"{Path.GetFileName(file)}\".", ex);
             }
         }
 
@@ -502,29 +433,32 @@ public static partial class YamlLoader
     /// Generic helper method. Called via Reflection for generic typing.
     private static List<T> DeserializeListOf<T>(byte[] yamlBytes)
     {
-        try
-        {
-            return YamlSerializer.Deserialize<List<T>>(yamlBytes);
-        }
-        catch (Exception exception)
-        {
-            throw new Exception("Fatal error in the yaml file.\n " +
-                                $"{exception.Message}\n" +
-                                "Possible issues: Class Type changes, invalid spacing, demons. Fix your file.");
-        }
+        return YamlSerializer.Deserialize<List<T>>(yamlBytes);
     }
 
     /// Helper method used to deserialize bytes as a list of an element type.
     /// Requires the DeserializeListOf method to remain exactly as it is, as this converts a type parameter
     ///  into a generic one.
-    private static object? DeserializeBytesAsListOfType(byte[] bytes, Type elementType)
+    private static object? DeserializeBytesAsListOfType(byte[] bytes, Type genericType)
     {
-        if (DeserializeListMethod == null)
-            throw new EntryPointNotFoundException("Failed to find DeserializeList method.");
+        MethodInfo? openMethod = typeof(YamlLoader).GetMethod(nameof(DeserializeListOf),
+            BindingFlags.NonPublic | BindingFlags.Static);
+        if (openMethod == null)
+            throw new EntryPointNotFoundException(
+                $"Failed to create {nameof(DeserializeListOf)} in SKSSL Yaml Loader.");
 
         // Make Generic as if <T>()
-        MethodInfo closedMethod = DeserializeListMethod.MakeGenericMethod(elementType);
-        return closedMethod.Invoke(null, [bytes]);
+        MethodInfo closedMethod = openMethod.MakeGenericMethod(genericType);
+
+        try
+        {
+            return closedMethod.Invoke(null, [bytes]);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Fatal error in {nameof(DeserializeListOf)} call! " +
+                                $"Check class-type changes, invalid spacing, and values. :: {ex.InnerException?.Message}");
+        }
     }
 
     #endregion
