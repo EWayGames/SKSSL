@@ -2,8 +2,11 @@ using System.Collections;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using VYaml.Emitter;
 using VYaml.Serialization;
 using static SKSSL.DustLogger;
+
+// ReSharper disable UnusedType.Global
 // ReSharper disable ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator
 
 namespace SKSSL.YAML;
@@ -26,12 +29,23 @@ namespace SKSSL.YAML;
 /// </summary>
 public static partial class YamlLoader
 {
-    // Cache deserialized entries per type (optional, for repeated queries)
-    private static readonly Dictionary<Type, object> _cache = new();
-
     private const string YamlFileExtension = "*.yml*";
 
+    /// Reflective method info for purpose of deserializing a list of generic types, reflectively.
+    private static MethodInfo? DeserializeListMethod;
+
     #region Serialization
+
+    static YamlLoader()
+    {
+        DeserializeListMethod =
+            typeof(YamlLoader).GetMethod(nameof(DeserializeListOf), BindingFlags.NonPublic | BindingFlags.Static);
+        if (DeserializeListMethod == null)
+        {
+            Log($"Failed to create {nameof(DeserializeListMethod)}. " +
+                $"The generic open_method could not be made the SKSSL Yaml Loader.", LOG.SYSTEM_ERROR);
+        }
+    }
 
     /// Serialize provided object and save to specific file path. Overrides existing file if present.
     public static void SerializeAndSave<T>(string path, T obj, bool @override = true) where T : class
@@ -61,7 +75,8 @@ public static partial class YamlLoader
     #region Loading (Single)
 
     /// Loads a file containing more than one entry of type T. Entries are a consecutive list beginning with '-' each.
-    public static async Task<List<T>> LoadFile<T>(string path)
+    [Obsolete("This method is deprecated. Use LoadFile() instead.")]
+    public static async Task<List<T>> LoadFileAsync<T>(string path)
     {
         ArgumentNullException.ThrowIfNull(path);
 
@@ -84,91 +99,17 @@ public static partial class YamlLoader
     /// Attempt to extract yaml data with limited defined types.
     /// Entries are expected to begin with "- type: example"
     /// </summary>
-    public static Dictionary<Type, List<object>> LoadFileWithTags(string file, params Type[] expectedTypes)
+    /// <returns>A filled, partially filled, or empty dictionary of expected types with their corresponding yaml blocks.</returns>
+    public static void ExtractYamlData(string file, Type[] expectedTypes, out Dictionary<Type, List<object>> output)
     {
-        Dictionary<Type, List<object>> results = new();
-        string[] lines = File.ReadAllLines(file);
-        var entries = SplitIntoYamlEntries(lines);
+        // Read all lines, divide into blocks in accordance to expected types.
+        var lines = File.ReadAllLines(file);
+        var yamlBlocks = ConvertLinesToYamlBlocks(lines, expectedTypes, file);
 
-        foreach (string[] entryLines in entries)
-        {
-            // WARN: ExtractTypeTag() limits the parser to only one type per file.
-            //  A file CANNOT have mixed types, despite that being the initial intention. This isn't super game-breaking,
-            //  But it IS an issue. See Todo below.
-            // Extract "- type:" tag
-            string? typeTag = ExtractTypeTag(entryLines);
-            if (typeTag == null) continue;
-            // Strip any "Base...Yaml" [pre]/[suf]fixes.
-            typeTag = StripBaseAndYaml(typeTag);
-
-            // Find which known type matches the tag.
-            Type? targetType = expectedTypes.FirstOrDefault
-                (type => string.Equals(StripBaseAndYaml(type.Name), typeTag, StringComparison.OrdinalIgnoreCase));
-            if (targetType == null) continue;
-
-            var yamlBlock = ConvertLinesToYamlBlockBytes(entryLines);
-            try
-            {
-                // Always deserialize as a list – handles single or multiple entries, with or without '-'
-                if (!results.TryGetValue(targetType, out var deserializedEntries))
-                {
-                    deserializedEntries = [];
-                    results.Add(targetType, deserializedEntries);
-                }
-
-                // TODO: Cache the Deserialize method call for efficiency's sake.
-                var output = DeserializeList(yamlBlock, targetType);
-                if (output == null) continue; // Precautionary. Error reporting already done earlier.
-
-                // Output entries into deserialized entries.
-                foreach (var item in (IEnumerable)output)
-                    deserializedEntries.Add(Convert.ChangeType(item, targetType));
-            }
-            catch (Exception ex)
-            {
-                Log($"Failed to deserialize {typeTag} in {file}: {ex.Message}", LOG.FILE_ERROR);
-
-                // TODO: Add fallback attempt to deserialize individual item from block instead.
-            }
-        }
-
-        return results;
-    }
-
-    /// Generic helper method. Called via Reflection for generic typing.
-    private static List<T> DeserializeListOf<T>(byte[] yamlBytes)
-    {
-        try
-        {
-            return YamlSerializer.Deserialize<List<T>>(yamlBytes);
-        }
-        catch
-        {
-            Log("There is a fatal flat in the yaml file's format. " +
-                "This may be due to Class type changes, a minor spacing issue, or demonic forces at play holding you back. " +
-                "Whatever it may be, the Deserializer is probably fine, and it's your file that needs fixing! " +
-                "Because of this tiny mistake, this file was returned as empty, and the entries will not be loaded properly.",
-                LOG.FILE_ERROR);
-            return [];
-        }
-    }
-
-    private static object? DeserializeList(byte[] bytes, Type elementType)
-    {
-        MethodInfo? openMethod =
-            typeof(YamlLoader).GetMethod(nameof(DeserializeListOf),
-                BindingFlags.NonPublic | BindingFlags.Static);
-
-        if (openMethod == null)
-        {
-            Log("Failed to load yaml bytes. The generic openMethod wasn't found in this YamlLoader.", LOG.SYSTEM_ERROR);
-            return null;
-        }
-
-        // Make Generic as if <T>()
-        MethodInfo closedMethod = openMethod.MakeGenericMethod(elementType);
-
-        return closedMethod.Invoke(null, [bytes])!;
+        // Creating intermediate dictionary where yaml blocks are amalgamated together.
+        var combined = expectedTypes.ToDictionary(type => type, _ => Array.Empty<byte>());
+        CombineYamlBlockBytes(yamlBlocks, combined);
+        output = FillDeserializedData(file, expectedTypes, combined);
     }
 
     #endregion
@@ -186,6 +127,7 @@ public static partial class YamlLoader
     /// </code>
     /// </summary>
     /// <returns>Enumerable amount of deserialized objects of type 'T'</returns>
+    [Obsolete("This method is deprecated. Use LoadDirectory() instead.")]
     public static IEnumerable<T> LoadFolder<T>(string directory, Action<T>? postProcess = null)
     {
         if (!Directory.Exists(directory))
@@ -195,57 +137,13 @@ public static partial class YamlLoader
 
         foreach (var file in files)
         {
-            var items = LoadFile<T>(file).Result;
+            var items = LoadFileAsync<T>(file).Result;
             foreach (T item in items)
             {
                 postProcess?.Invoke(item);
                 yield return item;
             }
         }
-    }
-
-    /// Convert a set of lines into a singular block of bytes representing one YAML Entry.
-    private static byte[] ConvertLinesToYamlBlockBytes(string[] entryLines)
-    {
-        string yamlBlock = string.Join("\n", entryLines);
-        byte[] yamlBytes = Encoding.Default.GetBytes(yamlBlock); // Using yaml block, convert to Bytes.
-        return yamlBytes;
-    }
-
-    /// <summary>
-    /// Loads all entries of type T from the given file patterns. Files are read once.
-    /// </summary>
-    public static List<T> PatternLoad<T>(params string[] patterns) where T : class
-    {
-        Type targetType = typeof(T);
-        if (_cache.TryGetValue(targetType, out var cached))
-            return (List<T>)cached;
-
-        var files = GetFiles(patterns);
-        var list = new List<T>();
-        string expectedCore = StripBaseAndYaml(targetType.Name);
-
-        foreach (var file in files)
-        {
-            string[] lines = File.ReadAllLines(file);
-            var entries = SplitIntoYamlEntries(lines);
-
-            foreach (var entryLines in entries)
-            {
-                string? typeTag = ExtractTypeTag(entryLines);
-                if (typeTag == null
-                    || !string.Equals(StripBaseAndYaml(typeTag), expectedCore, StringComparison.OrdinalIgnoreCase))
-                    continue; // Short-circuit.
-
-                // TODO: Convert this to VYaml parser instead of the Deserializer, here.
-                var yamlBlock = ConvertLinesToYamlBlockBytes(entryLines);
-                var obj = YamlSerializer.Deserialize<T>(yamlBlock);
-                list.Add(obj);
-            }
-        }
-
-        _cache[targetType] = list; // Cache for future calls
-        return list.ToList(); // Return copy of list.
     }
 
     /// <summary>
@@ -291,14 +189,14 @@ public static partial class YamlLoader
             if (!typeFound)
                 continue;
 
-            var yaml = LoadFile<T>(file).Result;
+            var yaml = LoadFileAsync<T>(file).Result;
             foreach (T entry in yaml)
                 yield return entry;
         }
     }
 
     /// <summary>
-    /// Loads YAML into a dictionary keyed by a provided ID selector.
+    /// Loads YAML into a dictionary keyed by a provided ID selector. This is the "Traditional" way of doing it.
     /// <code>
     /// #(In YAML)
     /// list_name:
@@ -307,6 +205,7 @@ public static partial class YamlLoader
     ///   - ...
     /// </code>
     /// </summary>
+    [Obsolete]
     public static Dictionary<TKey, TValue> LoadAsDictionary<TKey, TValue>(
         string folderOrFile, Func<TValue, TKey> keySelector, Action<TValue>? postProcess = null) where TKey : notnull
     {
@@ -324,29 +223,58 @@ public static partial class YamlLoader
     /// Searches a directory using provided type definitions and file patterns. Directory defaults to application's if
     /// not provided.
     /// </summary>
-    public static Dictionary<Type, List<object>> LoadAll(
-        Type[] types,
-        string directory = "",
+    public static Dictionary<Type, List<object>> LoadDirectory(Type[] types, string directory = "",
         params string[] patterns)
     {
-        // Assign proper types to a new dictionary to organize all the different flavors of files.
-        var results = types.ToDictionary(t => t, _ => new List<object>());
-
         // Get all yaml files.
         var files = GetFiles(patterns, directory);
+
+        // "You can tell it's conglomerate- because it's everywhere!"
+        // All yaml entries sharing types between files are stored here. All supported types are instantiated wholesale.
+        // Files should -not- have a type defined within them outside of the ones passed through here. If one somehow
+        //  gets passed, it's probably because of a test.
+        var conglomerate = types.ToDictionary(type => type, _ => new List<object>());
 
         // Process every file with expected types.
         foreach (var file in files)
         {
-            // Get file output and put to dictionary.
-            var fileOutput = LoadFileWithTags(file, types);
-            foreach (var fileData in fileOutput)
-            foreach (var yamlEntry in fileData.Value)
-                results[fileData.Key].Add(yamlEntry);
+            // Merging the file's conglomerate with our super conglomerate.
+            var output = LoadFile(types, file);
+            foreach ((Type type, var yamlData) in output)
+                conglomerate[type] = (List<object>)conglomerate[type].Concat(yamlData);
         }
 
-        return results;
+        return conglomerate;
     }
+
+
+    /// <summary>
+    /// Searches a directory using provided type definitions and file patterns. Directory defaults to application's if
+    /// not provided.
+    /// </summary>
+    public static Dictionary<Type, List<object>> LoadFile(Type[] types, string file)
+    {
+        // "You can tell it's conglomerate- because it's everywhere!"
+        // All yaml entries sharing types between files are stored here. All supported types are instantiated wholesale.
+        // Files should -not- have a type defined within them outside of the ones passed through here. If one somehow
+        //  gets passed, it's probably because of a test.
+        var conglomerate = types.ToDictionary(type => type, _ => new List<object>());
+
+        // Get file output and put to dictionary.
+        ExtractYamlData(file, types, out var output);
+        foreach ((Type type, var entries) in output)
+            conglomerate[type].AddRange(entries);
+
+        return conglomerate;
+    }
+
+    #endregion
+
+    #region Helpers
+
+    [GeneratedRegex(@"\btype\s*:\s*(Base)?([A-Za-z0-9_]+)(Yaml)?\b",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
+    private static partial Regex RegexSpaceTypeBaseYaml();
 
     /// <summary>
     /// Returns a distinct set of file paths matching the given patterns, optionally restricted to a base directory.
@@ -388,105 +316,90 @@ public static partial class YamlLoader
         return files;
     }
 
-    /// <summary>
-    /// Handles the dynamic loading of Type1 and Type2 types, which the latter may reference back to Type1.
-    /// Both instances must begin with the "type" keyword, annotated by "typeAnnoX".
-    /// <code>
-    /// #(In YAML)
-    /// - group:
-    ///   id: group_name
-    ///   entries:
-    ///       - entry
-    ///       - entry
-    /// # Mixed but Related Entries
-    /// - entry:
-    ///   group: group_name
-    /// </code>
-    /// </summary>
-    /// <param name="handleFunction"/>
-    /// <param name="yamlText">Filepath to the text being parsed.</param>
-    /// <param name="typeAnno1">Type annotation for group entry. (Ex: racial_group)</param>
-    /// <param name="typeAnno2">Type annotation for subversive entry. (Ex: race)</param>
-    /// <param name="typeAnno2Plural">Plural of type2 annotation subversive entry. (Ex: raceS)</param>
-    /// <typeparam name="Type1">Contains a list of Type2.</typeparam>
-    /// <typeparam name="Type2">Has a pointer to Type1, but is isolated in its own instances.</typeparam>
-    [Obsolete("VYaml handles mixed non-primitive types, so long as it is not recursive. Use LoadFile() if possible.\n" +
-              "This is the only method that uses YamlDotNet, and is the worst-case of the loader.")]
-    public static void LoadMixedContainers<Type1, Type2>(
-        string yamlText, string typeAnno1, string typeAnno2, string typeAnno2Plural,
-        Action<Type2, Type1?> handleFunction)
-        where Type1 : class
-        where Type2 : class
+
+    /// Reads all lines in a file, and parses them into blocks.
+    public static List<IYamlBlock> ConvertLinesToYamlBlocks(string[] lines, Type[] expectedTypes, string? file = null)
     {
-        YamlDotNet.Serialization.IDeserializer Deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
-            .WithNamingConvention(YamlDotNet.Serialization.NamingConventions.UnderscoredNamingConvention.Instance)
-            .IgnoreUnmatchedProperties()
-            .Build();
+        var entries = new List<IYamlBlock>();
+        file ??= ""; // For reverse-tracing files.
 
-        YamlDotNet.Serialization.ISerializer Serializer = new YamlDotNet.Serialization.SerializerBuilder()
-            .WithNamingConvention(YamlDotNet.Serialization.NamingConventions.UnderscoredNamingConvention.Instance)
-            .Build();
+        // Text contained in the block, separated into individual lines for parsing.
+        StringBuilder blockTextBuilder = new();
+        int linesRead = 0;
+        Type? previousType = null;
+        string tag = "";
 
-        var entries = Deserializer.Deserialize<List<Dictionary<string, object>>>(yamlText);
-        foreach (var entry in entries)
+        // For every line, if it begins with a '-' starting marker, it is the sign of a new block.
+        var index = 0;
+        for (; index < lines.Length; index++)
         {
-            if (!entry.TryGetValue("type", out var typeObj))
-                continue;
+            if (string.IsNullOrEmpty(lines[index])) continue; // Skip empty lines.
+            string line = lines[index].Replace("\r", "").Replace("\n", ""); // Clean of Environment new-line characters.
 
-            var type = typeObj.ToString();
-
-            switch (type)
+            // Every new '-' primary entry begins a "store and reset"
+            if (IsTopLevelEntryStart(line))
             {
-                // (Example: if racial group)
-                case var _ when type == typeAnno1:
-                {
-                    // Serialize dictionary to YAML string first
-                    string yamlFragment = Serializer.Serialize(entry);
-                    var group = Deserializer.Deserialize<Type1>(yamlFragment);
+                tag = OutType(line, out Type? type);
+                string text = blockTextBuilder.ToString();
 
-                    // Get contained instances
-                    PropertyInfo? prop = typeof(Type1).GetProperty(typeAnno2Plural,
-                        BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                // Add block. ">0" avoids an edge-case wherein it's the start of the file.
+                if (linesRead > 0)
+                    entries.Add(new IYamlBlock(type, tag, text, Path.GetFileName(file), index));
 
-                    // Handling property without concern for case.
-                    if (prop != null && prop.GetValue(group) is IEnumerable<Type2> type2InstancesProp)
-                        foreach (Type2 type2Instance in type2InstancesProp)
-                            handleFunction(type2Instance, group);
-                    break;
-                }
-                // (Example: if race entry)
-                case var _ when type == typeAnno2:
-                {
-                    string yamlFragment = Serializer.Serialize(entry);
-                    var type2Instance = Deserializer.Deserialize<Type2>(yamlFragment);
-
-                    // Run function but exclaim that the thing meant to contain it, is null.
-                    handleFunction(type2Instance, null);
-                    break;
-                }
+                // Conduct a reset.
+                blockTextBuilder = new StringBuilder();
+                previousType = type;
+                linesRead = 0;
             }
+
+            // Add the current line
+            blockTextBuilder.AppendLine(line);
+            linesRead++;
         }
-    }
 
-    #endregion
+        // If there are no more lines, but lines have been read, output the remainder as a Yaml Block.
+        if (linesRead > 0)
+        {
+            entries.Add(new IYamlBlock(previousType, tag, blockTextBuilder.ToString(), file, linesRead));
+        }
 
-    #region YAML Data Parsing Helpers
+        return entries;
 
-    /// <summary>
-    /// Remove "Base" from the beginning of a name, and "Yaml" from the end, if present.
-    /// </summary>
-    private static string StripBaseAndYaml(string name)
-    {
-        if (name.StartsWith("Base", StringComparison.OrdinalIgnoreCase))
-            name = name[4..];
-        if (name.EndsWith("Yaml", StringComparison.OrdinalIgnoreCase))
-            name = name[..^4];
-        return name;
-    }
+        // Spits out a Type expected from a line containing it as a tag.
+        string OutType(string line, out Type? type)
+        {
+            // Extract "- type:" tag
+            var typeTag = ExtractTypeTag(line) ?? "";
 
-    private static string? ExtractTypeTag(string[] entryLines)
-    {
-        foreach (var line in entryLines)
+            // Short-circuits
+            if (string.IsNullOrEmpty(typeTag))
+            {
+                type = null;
+                return typeTag;
+            }
+
+            // Strip any "Base...Yaml" [pre]/[suf]fixes.
+            typeTag = StripBaseAndYaml(typeTag);
+
+            // Find which known type matches the tag.
+            Type? targetType = expectedTypes.FirstOrDefault
+                (type => string.Equals(StripBaseAndYaml(type.Name), typeTag, StringComparison.OrdinalIgnoreCase));
+            type = targetType;
+            return typeTag;
+        }
+
+        // Remove "Base" from the beginning of a name, and "Yaml" from the end, if present.
+        string StripBaseAndYaml(string name)
+        {
+            if (name.StartsWith("Base", StringComparison.OrdinalIgnoreCase))
+                name = name[4..];
+            if (name.EndsWith("Yaml", StringComparison.OrdinalIgnoreCase))
+                name = name[..^4];
+            return name;
+        }
+
+        // Extracts type tag from line.
+        string? ExtractTypeTag(string line)
         {
             Match match = RegexSpaceTypeBaseYaml().Match(line);
             return match.Success switch
@@ -496,56 +409,142 @@ public static partial class YamlLoader
             };
         }
 
-        return null;
+        // Helper Method to check if this is top-level entry
+        bool IsTopLevelEntryStart(string line)
+        {
+            // The line must start with '-' at column 0 (only whitespace before is OK, but typically none)
+            //  Also skips leading whitespace.
+            int i = 0;
+            while (i < line.Length && char.IsWhiteSpace(line[i]))
+                i++;
+
+            // Must be exactly at the start (i == 0) and begin with '-', followed by space or end
+            if (i >= line.Length || i != 0) return false; // Ensures that any indentation = not top-level
+
+            // Start of the line must begin with '-'
+            if (line[i] != '-') return false;
+
+            // Require space after '-' (remove this to allow "-type: x")
+            return 1 >= line.Length || char.IsWhiteSpace(line[1]);
+        }
     }
 
-    /// Take a set of lines and turn them into yaml blocks, where each block is an entry.
-    private static List<string[]> SplitIntoYamlEntries(string[] lines)
+    private static Dictionary<Type, List<object>> FillDeserializedData(
+        string file, Type[] expectedTypes, Dictionary<Type, byte[]> combined)
     {
-        var entries = new List<string[]>();
-        var current = new List<string>();
+        // Assign proper types to a new dictionary to organize all the different flavors of files.
+        // Because provided types are static, and that yaml blocks are later verified,
+        //  this should guarantee that a list within the dictionary is available for all types.
+        var yamlDict = expectedTypes.ToDictionary(type => type, _ => new List<object>());
 
-        // TODO: Read tags and create dictionary of lists to allow parsing of multiple types per file.
-        
-        // For every line, if it begins with a '-' starting marker, it is the sign of a new block.
-        foreach (var line in lines)
+        // For every combined pairing, deserialize.
+        foreach (var combinedKVP in combined)
         {
-            if (IsTopLevelEntryStart(line) && current.Count > 0)
+            try
             {
-                entries.Add(current.ToArray());
-                current.Clear();
-            }
+                var deserializedTypeList = DeserializeBytesAsListOfType(combinedKVP.Value, combinedKVP.Key);
+                if (deserializedTypeList == null)
+                    throw new YamlEmitterException(
+                        $"Yaml failed to deserialize as a List of provided type from file {Path.GetFileName(file)}!");
 
-            current.Add(line);
+                // Iterate through the list and fill the output.
+                foreach (var yamlObject in (IEnumerable)deserializedTypeList)
+                {
+                    yamlDict[combinedKVP.Key].Add(Convert.ChangeType(yamlObject, combinedKVP.Key));
+                }
+            }
+            catch (EntryPointNotFoundException ex)
+            {
+                Log($"Failed to deserialize {combinedKVP.Key} " +
+                    $"due to the {nameof(DeserializeListOf)} not having been loaded correctly: " +
+                    $"{ex.Message}", LOG.GENERAL_ERROR);
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to deserialize {combinedKVP.Key}: {ex.Message}", LOG.GENERAL_ERROR);
+            }
         }
 
-        if (current.Count > 0)
-            entries.Add(current.ToArray());
+        // TODO: Add fallback attempt to deserialize individual item from block instead.
 
-        return entries;
+        return yamlDict;
     }
 
-    private static bool IsTopLevelEntryStart(string line)
+    private static void CombineYamlBlockBytes(List<IYamlBlock> yamlBlocks, Dictionary<Type, byte[]> combined)
     {
-        // The line must start with '-' at column 0 (only whitespace before is OK, but typically none)
-        // Skip leading whitespace
-        int i = 0;
-        while (i < line.Length && char.IsWhiteSpace(line[i]))
-            i++;
+        // For every IYamlBlock that happens to have a valid type defined within it...
+        foreach (IYamlBlock block in yamlBlocks)
+        {
+            if (block.Type == null)
+            {
+                // Short-circuit. Type is resolved during block parsing.
+                // IYamlBlock contains the list of expected types.
+                Log($"Tag \"{block.Tag}\" type is invalid on line {block.Index} in file {block.File}");
+                continue;
+            }
 
-        // Must be exactly at the start (i == 0) and begin with '-', followed by space or end
-        if (i >= line.Length || i != 0) return false; // Ensures that any indentation = not top-level
+            // Get the bytes of the block and using the type, combined the bytes with the existing ones to effectively
+            //  merge the yaml entries into one.
+            var bytes = block.ToBytes();
+            combined[block.Type] = combined[block.Type].Concat(bytes).ToArray();
+        }
+    }
 
-        if (line[i] != '-') return false;
+    /// Generic helper method. Called via Reflection for generic typing.
+    private static List<T> DeserializeListOf<T>(byte[] yamlBytes)
+    {
+        try
+        {
+            return YamlSerializer.Deserialize<List<T>>(yamlBytes);
+        }
+        catch (Exception exception)
+        {
+            Log("Fatal error in the yaml file.\n " +
+                $"{exception.Message}\n" +
+                "Possible issues: Class Type changes, invalid spacing, demons. Fix your file.",
+                LOG.FILE_ERROR);
+            return [];
+        }
+    }
 
-        // Optional: require space after '-' (most common style)
-        // Remove this check if you want to allow "-type: recipe" (no space)
-        return i >= line.Length || char.IsWhiteSpace(line[i]);
+    /// Helper method used to deserialize bytes as a list of an element type.
+    /// Requires the DeserializeListOf method to remain exactly as it is, as this converts a type parameter
+    ///  into a generic one.
+    private static object? DeserializeBytesAsListOfType(byte[] bytes, Type elementType)
+    {
+        if (DeserializeListMethod == null)
+            throw new EntryPointNotFoundException("Failed to find DeserializeList method.");
+
+        // Make Generic as if <T>()
+        MethodInfo closedMethod = DeserializeListMethod.MakeGenericMethod(elementType);
+        return closedMethod.Invoke(null, [bytes]);
     }
 
     #endregion
+}
 
-    [GeneratedRegex(@"\btype\s*:\s*(Base)?([A-Za-z0-9_]+)(Yaml)?\b",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
-    private static partial Regex RegexSpaceTypeBaseYaml();
+/// A block of YAML text data that represents a single entry in a file, which is assumed to be a list of blocks.
+public readonly record struct IYamlBlock(Type? Type, string Tag, string Text, string File, int Index)
+{
+    /// Explicit representation of Type in Assembly that this block represents.
+    public readonly Type? Type = Type;
+
+    /// Type Tag that the block represents.
+    public readonly string Tag = Tag;
+
+    /// Text contained in the block.
+    public readonly string Text = Text;
+
+    /// Text contained in the block.
+    public readonly string File = File;
+
+    /// Index in the file that which this is defined .
+    public readonly int Index = Index;
+
+    /// Convert Text contained in this block to Bytes with [not] provided encoding.
+    public byte[] ToBytes(Encoding? encoding = null)
+        => encoding == null ? Encoding.UTF8.GetBytes(Text) : encoding.GetBytes(Text);
+
+    /// Returns Block <see cref="Text"/>.
+    public override string ToString() => Text;
 }
