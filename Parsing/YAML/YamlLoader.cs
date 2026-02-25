@@ -102,36 +102,6 @@ public static partial class YamlLoader
     #region Loading (Bulk)
 
     /// <summary>
-    /// Loads YAML files from a folder, before invoking a post-process action on every entry.
-    /// Presumes that all entries in a folder are of the same homogenous type.
-    /// <code>
-    /// #(In YAML)
-    /// - entry
-    /// - entry
-    /// - ...
-    /// </code>
-    /// </summary>
-    /// <returns>Enumerable amount of deserialized objects of type 'T'</returns>
-    [Obsolete("This method is deprecated. Use LoadDirectory() instead.")]
-    public static IEnumerable<T> LoadFolder<T>(string directory, Action<T>? postProcess = null)
-    {
-        if (!Directory.Exists(directory))
-            yield break;
-
-        var files = Directory.GetFiles(directory, YamlFileExtension, SearchOption.AllDirectories);
-
-        foreach (var file in files)
-        {
-            var items = LoadFileAsync<T>(file).Result;
-            foreach (T item in items)
-            {
-                postProcess?.Invoke(item);
-                yield return item;
-            }
-        }
-    }
-
-    /// <summary>
     /// Gets all files in directory, searches every file, searches every in said file for provided type.
     /// If the first entry contains it, then an attempt to parse the entire file as a list is made.
     /// </summary>
@@ -181,30 +151,6 @@ public static partial class YamlLoader
     }
 
     /// <summary>
-    /// Loads YAML into a dictionary keyed by a provided ID selector. This is the "Traditional" way of doing it.
-    /// <code>
-    /// #(In YAML)
-    /// list_name:
-    ///   - entry
-    ///   - entry
-    ///   - ...
-    /// </code>
-    /// </summary>
-    [Obsolete]
-    public static Dictionary<TKey, TValue> LoadAsDictionary<TKey, TValue>(
-        string folderOrFile, Func<TValue, TKey> keySelector, Action<TValue>? postProcess = null) where TKey : notnull
-    {
-        var dict = new Dictionary<TKey, TValue>();
-        foreach (TValue item in LoadFolder(folderOrFile, postProcess))
-        {
-            TKey key = keySelector(item);
-            dict[key] = item; // overwrite duplicates silently
-        }
-
-        return dict;
-    }
-
-    /// <summary>
     /// Searches a directory using provided type definitions and file patterns. Directory defaults to application's if
     /// not provided.
     /// </summary>
@@ -214,9 +160,9 @@ public static partial class YamlLoader
         // Get all yaml files.
         var files = GetFiles(patterns, directory);
 
-        // "You can tell it's conglomerate- because it's everywhere!"
+        // "You can tell its conglomerate- because it's everywhere!"
         // All yaml entries sharing types between files are stored here. All supported types are instantiated wholesale.
-        // Files should -not- have a type defined within them outside of the ones passed through here. If one somehow
+        // Files should -not- have a type defined within them outside the ones passed through here. If one somehow
         //  gets passed, it's probably because of a test.
         var conglomerate = types.ToDictionary(type => type, _ => new List<object>());
 
@@ -323,7 +269,7 @@ public static partial class YamlLoader
         StringBuilder blockTextBuilder = new();
         int linesRead = 0;
         Type? previousType = null;
-        string tag = "";
+        string previousTag = "";
 
         // For every line, if it begins with a '-' starting marker, it is the sign of a new block.
         var index = 0;
@@ -335,15 +281,15 @@ public static partial class YamlLoader
             // Every new '-' primary entry begins a "store and reset"
             if (IsTopLevelEntryStart(line))
             {
-                tag = OutType(line, out Type? type);
                 string text = blockTextBuilder.ToString();
 
                 // Add block. ">0" avoids an edge-case wherein it's the start of the file.
                 if (linesRead > 0)
-                    entries.Add(new IYamlBlock(type, tag, text, Path.GetFileName(file), index));
+                    entries.Add(new IYamlBlock(previousType, previousTag, text, Path.GetFileName(file), index));
 
                 // Conduct a reset.
                 blockTextBuilder = new StringBuilder();
+                previousTag = OutType(line, out Type? type);
                 previousType = type;
                 linesRead = 0;
             }
@@ -356,7 +302,7 @@ public static partial class YamlLoader
         // If there are no more lines, but lines have been read, output the remainder as a Yaml Block.
         if (linesRead > 0)
         {
-            entries.Add(new IYamlBlock(previousType, tag, blockTextBuilder.ToString(), file, linesRead));
+            entries.Add(new IYamlBlock(previousType, previousTag, blockTextBuilder.ToString(), file, linesRead));
         }
 
         return entries;
