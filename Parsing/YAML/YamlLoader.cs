@@ -460,7 +460,7 @@ public static partial class YamlLoader
                 var deserializedTypeList = DeserializeBytesAsListOfType(combinedKVP.Value, combinedKVP.Key);
                 if (deserializedTypeList == null)
                     throw new YamlEmitterException(
-                        $"Yaml failed to deserialize as a List of provided type from file {Path.GetFileName(file)}!");
+                        $"Yaml Loader failed to deserialize file {Path.GetFileName(file)} as list of provided type!");
 
                 // Iterate through the list and fill the output.
                 foreach (var yamlObject in (IEnumerable)deserializedTypeList)
@@ -470,7 +470,7 @@ public static partial class YamlLoader
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to deserialize for type {combinedKVP.Key}: ", ex);
+                throw new Exception($"Failed to deserialize: {combinedKVP.Key}: ", ex);
             }
         }
 
@@ -508,11 +508,9 @@ public static partial class YamlLoader
         }
         catch (Exception exception)
         {
-            Log("Fatal error in the yaml file.\n " +
-                $"{exception.Message}\n" +
-                "Possible issues: Class Type changes, invalid spacing, demons. Fix your file.",
-                LOG.FILE_ERROR);
-            return [];
+            throw new Exception("Fatal error in the yaml file.\n " +
+                                $"{exception.Message}\n" +
+                                "Possible issues: Class Type changes, invalid spacing, demons. Fix your file.");
         }
     }
 
