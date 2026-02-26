@@ -195,6 +195,7 @@ public static partial class YamlLoader
             Log($"File not found from file path {file}, it's being skipped entirely!");
             return [];
         }
+
         try
         {
             // Get file output and put to dictionary.
@@ -384,14 +385,14 @@ public static partial class YamlLoader
         {
             try
             {
-                var deserializedTypeList = DeserializeBytesAsListOfType(combinedKVP.Value, combinedKVP.Key);
+                var deserializedTypeList = DeserializeBytesAsListOfType(combinedKVP.Value, combinedKVP.Key, file);
                 if (deserializedTypeList == null)
                 {
                     // Do NOT throw an error here, as this particular deserialized list may not have been found in the
                     //  file to begin with!
                     continue;
                 }
-                    
+
                 // Iterate through the list and fill the output.
                 foreach (var yamlObject in (IEnumerable)deserializedTypeList)
                 {
@@ -405,8 +406,6 @@ public static partial class YamlLoader
             }
         }
 
-        // TODO: Add fallback attempt to deserialize individual item from block instead.
-
         return yamlDict;
     }
 
@@ -419,7 +418,8 @@ public static partial class YamlLoader
             {
                 // Short-circuit. Type is resolved during block parsing.
                 // IYamlBlock contains the list of expected types.
-                Log($"{(string.IsNullOrWhiteSpace(block.Tag) ? "blank" : block.Tag)} tag is invalid on line {block.Index} " +
+                Log(
+                    $"{(string.IsNullOrWhiteSpace(block.Tag) ? "blank" : block.Tag)} tag is invalid on line {block.Index} " +
                     $"in file {block.File}", LOG.FILE_ERROR);
                 continue;
             }
@@ -431,35 +431,39 @@ public static partial class YamlLoader
         }
     }
 
-    /// Generic helper method. Called via Reflection for generic typing.
-    private static List<T> DeserializeListOf<T>(byte[] yamlBytes)
-    {
-        return YamlSerializer.Deserialize<List<T>>(yamlBytes);
-    }
-
     /// Helper method used to deserialize bytes as a list of an element type.
     /// Requires the DeserializeListOf method to remain exactly as it is, as this converts a type parameter
     ///  into a generic one.
-    private static object? DeserializeBytesAsListOfType(byte[] bytes, Type genericType)
+    private static object? DeserializeBytesAsListOfType(byte[] bytes, Type genericType, string file)
     {
-        MethodInfo? openMethod = typeof(YamlLoader).GetMethod(nameof(DeserializeListOf),
-            BindingFlags.NonPublic | BindingFlags.Static);
-        if (openMethod == null)
+        Type listType = typeof(List<>).MakeGenericType(genericType);
+        MethodInfo? method = typeof(YamlSerializer).GetMethod(
+            "Deserialize",
+            1,
+            BindingFlags.Static | BindingFlags.Public,
+            null,
+            [typeof(ReadOnlyMemory<byte>), typeof(YamlSerializerOptions)],
+            null
+        );
+        if (method == null)
             throw new EntryPointNotFoundException(
-                $"Failed to create {nameof(DeserializeListOf)} in SKSSL Yaml Loader.");
+                $"Failed to create Deserializer method in SKSSL Yaml Loader. Likely library issue. caused in {file}");
 
-        // Make Generic as if <T>()
-        MethodInfo closedMethod = openMethod.MakeGenericMethod(genericType);
+        MethodInfo closed = method.MakeGenericMethod(listType);
 
         try
         {
-            return closedMethod.Invoke(null, [bytes]);
+            return closed.Invoke(null, [new ReadOnlyMemory<byte>(bytes), null]);
         }
         catch (Exception ex)
         {
-            throw new Exception($"Fatal error in {nameof(DeserializeListOf)} call! " +
-                                $"Check class-type changes, invalid spacing, and values. :: {ex.InnerException?.Message}");
+            Log($"Fatal error in {nameof(DeserializeBytesAsListOfType)} call!\n" +
+                $"Check class-type changes, invalid spacing, and values. Casted to list of {genericType} in {file}.\n" +
+                $"{ex.InnerException?.Message}", LOG.SYSTEM_ERROR);
         }
+        // TODO: Add fallback attempt.
+
+        return null;
     }
 
     #endregion
