@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGameGum;
+using SKSSL.ECS;
 using SKSSL.Localization;
 using SKSSL.Scenes;
 using SKSSL.Textures;
@@ -26,7 +27,8 @@ namespace SKSSL;
 /// </summary>
 public abstract class SSLGame : Game
 {
-    public readonly SceneManager SceneManager;
+    /// General context of the game dictated here.
+    public static SceneManager SceneManager = null!;
 
     internal readonly GraphicsDeviceManager _graphicsManager;
     internal readonly SpriteBatch _spriteBatch;

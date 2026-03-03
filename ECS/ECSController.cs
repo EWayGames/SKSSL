@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using SKSSL.Scenes;
+using static SKSSL.DustLogger;
 
 // ReSharper disable UnusedMember.Local
 
@@ -17,16 +18,9 @@ public readonly struct EntityContext
     }
 }
 
-
 /// Primary Entity-Component system controller present in any given world. Contains static <see cref="EntityContext"/> 
 public class ECSController
 {
-    // WARN: This somewhat goes *against* the principle of a divided ECS. It's understandable that its controller needs
-    //  to be accessed quickly and conveniently outside of a world context, but still.
-    /// General context that which all entities are acting.
-    public static EntityContext? EntityContext;
-    public static EntityManager EntityManager => EntityContext!.Value.EntityManager;
-    
     public bool Initialized { get; private set; } = false;
 
     private ComponentRegistry? _componentRegistry;
@@ -39,13 +33,51 @@ public class ECSController
         _world = world;
     }
 
+    private static ECSController? GetCurrentWorld()
+    {
+        return SSLGame.SceneManager.CurrentWorld is BaseWorld baseWorld ? baseWorld.ECS : null;
+    }
+
     private List<SKEntity> ActiveEntities
         => _entityManager?.AllEntities.ToList() ?? throw new InvalidOperationException(
             "Entity manager is null. Did you forget to Initialize the ECS?");
 
-    private SKEntity SpawnEntity(string referenceId)
-        => _entityManager?.Spawn(referenceId) ?? throw new InvalidOperationException(
-            "Entity manager is null. Did you forget to Initialize the ECS?");
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="referenceId">Reference ID of entity to spawn.</param>
+    /// <returns>Instant of that entity.</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public static SKEntity? SpawnEntity(string referenceId)
+    {
+        ECSController? controller = GetCurrentWorld();
+        if (controller == null)
+        {
+            Log(
+                $"Called {nameof(ECSController)}.{nameof(SpawnEntity)} to spawn {referenceId}, but the Current World's " +
+                $"ECS controller was not found! There is either no current world, or the current world does not have ECS enabled!");
+            return null;
+        }
+
+        if (controller._entityManager == null)
+        {
+            Log($"Called {nameof(ECSController)}.{nameof(SpawnEntity)} to spawn {referenceId}, but the controller's " +
+                $"entity manager was found!");
+            return null;
+        }
+
+        SKEntity? spawnedEntity = null;
+        try
+        {
+            spawnedEntity = controller._entityManager.Spawn(referenceId);
+        }
+        catch (Exception e)
+        {
+            Log($"Call to {nameof(SpawnEntity)} failed to spawn entity reference {referenceId}: {e.Message}");
+        }
+
+        return spawnedEntity;
+    }
 
     /// <summary>
     /// Required method to initialize all ECS systems.
@@ -54,7 +86,7 @@ public class ECSController
     {
         if (Initialized)
         {
-            DustLogger.Log("ECSController already initialized!");
+            Log("ECSController already initialized!");
             return;
         }
 
@@ -62,14 +94,11 @@ public class ECSController
 
         _systemManager = new SystemManager();
         _systemManager.RegisterAll();
-        
+
         _componentRegistry = new ComponentRegistry();
         _componentRegistry.InitializeComponents();
-        
+
         _entityManager = new EntityManager(ref _componentRegistry, _world, true);
-        
-        // Assign entity context for reflective purposes.
-        EntityContext = new EntityContext(_entityManager, _componentRegistry);
     }
 
     /// Calls system manager update calls.

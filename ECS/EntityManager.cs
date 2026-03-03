@@ -172,7 +172,6 @@ public partial class EntityManager
 
     private static readonly Dictionary<string, AEntityCommon> _definitions = new();
 
-
     public static void RegisterEntity<T>(EntityYaml yaml) where T : AEntityCommon =>
         RegisterEntity<T, EntityYaml>(yaml);
 
