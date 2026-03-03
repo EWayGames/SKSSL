@@ -2,9 +2,16 @@ using static SKSSL.DustLogger;
 
 namespace SKSSL.ECS;
 
+/// <summary>
+/// Intermediate struct designed to provide interface-like methods to call instanced <see cref="EntityManager"/> methods
+/// likewise in addition to other systems.
+/// </summary>
 public readonly struct EntityContext
 {
+    /// <inheritdoc cref="SKSSL.ECS.EntityManager"/>
     public readonly EntityManager EntityManager;
+
+    /// <inheritdoc cref="SKSSL.ECS.ComponentRegistry"/>
     public readonly ComponentRegistry Components;
 
     public EntityContext(EntityManager entityManager, ComponentRegistry componentRegistry)
@@ -23,7 +30,8 @@ public readonly struct EntityContext
         if (ec == null)
         {
             throw new NullReferenceException(
-                "Attempted to create Entity Context in Blank Constructor from an Entity Context that doesn't exist!");
+                "Attempted to create Entity Context in Blank Constructor from an Entity Context that doesn't exist! " +
+                "Is ECS enabled?");
         }
 
         EntityManager = ec.Value.EntityManager;
@@ -36,14 +44,23 @@ public readonly struct EntityContext
         Components = ecs.ComponentRegistry;
     }
 
-    /* Below are Proxy-Methods, that is to say functions designed to be called remotely that which call internal methods
-     * inside the Entity Manager, and Component Registry.
+    /*
+     * Below are Proxy-Methods, that is to say functions designed to be called remotely that which call internal
+     * methods inside the Entity Manager, and Component Registry.
+     *
+     * Documentation is inherited from the functions-called.
+     * \\TODO: Add more intermediate calls for further convenient interactions w. manager.
+     *      All of the vital methods are still accessible, just from the "long way" and without the safety that an
+     *      "upper-layer" try-catch would offer.
      */
 
-    #region Proxxy Methods
+    #region Proxy-Methods
 
+    /// <inheritdoc cref="SKSSL.ECS.EntityManager.AllEntities"/>
     public List<SKEntity> ActiveEntities => EntityManager.AllEntities.ToList();
-    
+
+    /// <seealso cref="EntityManager"/>
+    /// <seealso cref="EntityManager.Spawn"/>
     public SKEntity? SpawnEntity(string referenceId)
     {
         SKEntity? spawnedEntity = null;
@@ -55,7 +72,7 @@ public readonly struct EntityContext
         {
             Log($"{nameof(EntityContext)}.{nameof(SpawnEntity)} call failed to spawn {referenceId}: {e.Message}");
         }
-        
+
         return spawnedEntity;
     }
 
