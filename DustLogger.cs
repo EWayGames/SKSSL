@@ -117,7 +117,7 @@ public static partial class DustLogger
                 options.TimestampFormat = "HH:mm:ss ";
             })); // Should work with console.
 
-        logger = loggerFactory.CreateLogger<Program>();
+        logger = loggerFactory.CreateLogger("SKSSL");
     }
 
     /// <inheritdoc cref="Log(string,SKSSL.DustLogger.LOG,bool)"/>
