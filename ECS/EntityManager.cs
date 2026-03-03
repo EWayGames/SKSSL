@@ -277,6 +277,11 @@ public partial class EntityManager
     {
         var components = new Dictionary<Type, object>();
 
+        if (yaml.Components == null)
+        {
+            yaml.Components = [];
+            return components;
+        }
         foreach (ComponentYaml yamlComponent in yaml.Components)
         {
             if (!_componentRegistry.RegisteredComponentTypesDictionary
@@ -307,7 +312,7 @@ public partial class EntityManager
                 }
                 catch
                 {
-                    Log($"Failed to set {field.Key} on {componentType.Name}", LOG.FILE_WARNING);
+                    Log($"Failed to change type {field.Key} on {componentType.Name}", LOG.FILE_WARNING);
                 }
             }
 

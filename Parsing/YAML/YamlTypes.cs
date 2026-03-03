@@ -77,8 +77,9 @@ public partial record BaseColorableYamlEntry : BaseYamlEntry
     }
 }
 
-
-public class ComponentYaml
+/// Structure for component information contained in YAML files.
+[YamlObject]
+public partial class ComponentYaml
 {
     // e.g., "RenderableComponent" but named "Renderable"; it's stripped of the "Component" suffix.
     [YamlMember(name: "type")] public string Type { get; set; }
@@ -114,5 +115,5 @@ public partial record EntityYaml : BaseYamlEntry
     /// Optional field for <see cref="EntityYaml"/> which is exclusively for entities.
     /// </summary>
     [YamlMember(name: "components")]
-    public List<ComponentYaml> Components { get; set; } = [];
+    public List<ComponentYaml>? Components { get; set; } = [];
 }
