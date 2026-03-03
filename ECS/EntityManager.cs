@@ -173,7 +173,8 @@ public partial class EntityManager
     private static readonly Dictionary<string, AEntityCommon> _definitions = new();
 
 
-    public static void RegisterEntity<T>(EntityYaml yaml) where T : AEntityCommon => RegisterEntity<T, EntityYaml>(yaml);
+    public static void RegisterEntity<T>(EntityYaml yaml) where T : AEntityCommon =>
+        RegisterEntity<T, EntityYaml>(yaml);
 
     /// <summary>
     /// Handles registration of entity ambiguously between SKEntity and EntityTemplate derivations.
@@ -192,14 +193,14 @@ public partial class EntityManager
         where T : AEntityCommon
         where Y : EntityYaml
     {
-        Type derivedType = typeof(T);
-
         if (!_isInitialized)
         {
-            Log("Attempted to register entity without initializing Entity Manager!", LOG.SYSTEM_WARNING);
+            Log($"Attempted to register {yaml.Type} entity without initializing Entity Manager!", LOG.SYSTEM_WARNING);
             return;
         }
-        
+
+        Type derivedType = typeof(T);
+
         // Register raw entity
         if (typeof(SKEntity).IsAssignableFrom(derivedType))
         {
@@ -224,15 +225,14 @@ public partial class EntityManager
     /// <param name="derivedType">Assumed derived type from EntityTemplate</param>
     /// <typeparam name="TYaml">Yaml Class</typeparam>
     /// <exception cref="YamlEmitterException">Thrown when ReferenceId / Handle not provided in YAML.</exception>
-    public static void RegisterTemplate<TYaml>(TYaml yaml, Type derivedType)
-        where TYaml : EntityYaml
+    public static void RegisterTemplate<TYaml>(TYaml yaml, Type derivedType) where TYaml : EntityYaml
     {
         if (!_isInitialized)
         {
-            Log("Attempted to register entity without initializing Entity Manager!", LOG.SYSTEM_WARNING);
+            Log($"Attempted to register {yaml.Type} entity without initializing Entity Manager!", LOG.SYSTEM_WARNING);
             return;
         }
-        
+
         // Build components
         var components = BuildComponentsFromEntityYaml(yaml);
 
@@ -296,6 +296,7 @@ public partial class EntityManager
             yaml.Components = [];
             return components;
         }
+
         foreach (ComponentYaml yamlComponent in yaml.Components)
         {
             if (!_componentRegistry.RegisteredComponentTypesDictionary
