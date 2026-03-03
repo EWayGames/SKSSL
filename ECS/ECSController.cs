@@ -38,9 +38,6 @@ public class ECSController
         Initialized = true;
 
         _systemManager.RegisterAll();
-
-        ComponentRegistry.InitializeComponents();
-
     }
 
     /// Calls system manager update calls.

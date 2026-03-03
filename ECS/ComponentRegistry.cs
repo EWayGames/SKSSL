@@ -146,10 +146,8 @@ public class ComponentRegistry
 
     #region Component Registration and Assembly Checks
 
-    /// <summary>
     /// Uses reflection to get all defined components in the (relevant) assemblies, and initializes them.
-    /// </summary>
-    public void InitializeComponents()
+    public ComponentRegistry()
     {
         if (Initialized) return;
         Initialized = true;
