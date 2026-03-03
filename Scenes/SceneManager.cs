@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Media;
 using MonoGameGum;
+using SKSSL.ECS;
 
 namespace SKSSL.Scenes;
 
@@ -23,7 +24,7 @@ public class SceneManager
     protected internal IWorld? CurrentWorld;
 
     protected BaseScene? _currentScene;
-
+    
     public SceneManager(GraphicsDeviceManager graphics, SpriteBatch gameMainSpriteBatch)
     {
         _gameMainSpriteBatch = gameMainSpriteBatch;

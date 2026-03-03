@@ -31,7 +31,7 @@ public partial class EntityManager
 
     /// Get all Active entities present in the game.
     /// <seealso cref="Definitions"/>
-    public IReadOnlyList<SKEntity> AllEntities => _allEntities;
+    internal IReadOnlyList<SKEntity> AllEntities => _allEntities;
 
     // ReSharper disable once UnusedMember.Global
     /// All inactive Entity Definitions, which ubiquitously inherit <see cref="AEntityCommon"/>.
@@ -148,7 +148,7 @@ public partial class EntityManager
     /// </summary>
     /// <param name="handle">Reference id to template stored in registry.</param>
     /// <returns>Spawned entity for later use.</returns>
-    public SKEntity Spawn(string handle)
+    internal SKEntity Spawn(string handle)
     {
         if (!TryGetDefinition(handle, out AEntityCommon? definition) || definition is null)
             throw new Exception($"Failed to create entity copy using handle {handle}");

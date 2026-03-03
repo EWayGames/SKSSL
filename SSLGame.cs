@@ -8,6 +8,7 @@ using SKSSL.ECS;
 using SKSSL.Localization;
 using SKSSL.Scenes;
 using SKSSL.Textures;
+using static SKSSL.DustLogger;
 
 // ReSharper disable VirtualMemberCallInConstructor
 // ReSharper disable NotAccessedField.Local
@@ -30,6 +31,31 @@ public abstract class SSLGame : Game
     /// General context of the game dictated here.
     public static SceneManager SceneManager = null!;
 
+    /// <remarks>
+    /// In order to Spawn, Remove, or generally interact with entities in an ECS, a context is required. This context
+    /// varies between scenes.
+    /// //WARN: In the system's current limitations, it is difficult to interact with entities
+    ///    across different scenes.
+    /// </remarks>
+    /// <returns>Scene Manager's Current World's Entity Context.</returns>
+    public static EntityContext? ECS()
+    {
+        if (SceneManager.CurrentWorld is not BaseWorld world)
+        {
+            Log("Failed to get Entity Context from current (null) world in Scene Manager!", LOG.SYSTEM_WARNING);
+            return null;
+        }
+
+        if (world.ECS is null)
+        {
+            Log("Failed to get Entity Context for a (null) ECS Controller!", LOG.SYSTEM_WARNING);
+            return null;
+        }
+        
+        var entityContext = new EntityContext(world.ECS);
+        return entityContext;
+    }
+
     internal readonly GraphicsDeviceManager _graphicsManager;
     internal readonly SpriteBatch _spriteBatch;
 
@@ -38,7 +64,7 @@ public abstract class SSLGame : Game
 
     /// Registries and services belonging to the game.
     private readonly IServiceProvider GameServices;
-    
+
     /// <summary>
     /// An array of Tuple paths assigned to an ID. These are loaded into the game's pather, and should
     /// NEVER change. General examples include game texture and yaml prototypes folders.
@@ -70,10 +96,10 @@ public abstract class SSLGame : Game
         currentScreenGue.UpdateLayout(); // UI Behaviour when dragged
 
         if (string.IsNullOrEmpty(gumFile))
-            DustLogger.Log($"Provided gum project file is empty! {title}, {nameof(SSLGame)}", 3);
+            Log($"Provided gum project file is empty! {title}, {nameof(SSLGame)}", 3);
         else
             GumFile = gumFile;
-        
+
         var services = new ServiceCollection();
         LoadServices(services);
         GameServices = services.BuildServiceProvider();
@@ -140,7 +166,7 @@ public abstract class SSLGame : Game
             validModTextures);
 
         #endregion
-        
+
         // Continue
         base.Initialize();
     }
@@ -151,7 +177,7 @@ public abstract class SSLGame : Game
         base.LoadContent();
         PostLoad();
     }
-    
+
     /// <summary>
     /// Custom user-defined load operation. After most LoadContent() has been loaded, but before Update calls.
     /// </summary>
@@ -164,7 +190,8 @@ public abstract class SSLGame : Game
     public void Quit() => throw new NotImplementedException("Quit is not implemented, really. Let's crash, instead.");
 
     /// Resets the game.
-    public void ResetGame() => throw new NotImplementedException("ResetGame is not implemented, really. Let's crash, instead.");
+    public void ResetGame() =>
+        throw new NotImplementedException("ResetGame is not implemented, really. Let's crash, instead.");
 
     /// <inheritdoc />
     protected override void Draw(GameTime gameTime)
