@@ -19,7 +19,8 @@ public interface IWorld
 }
 
 /// <summary>
-/// Non-generic base class with common infrastructure
+/// Overridable inherited dictation of how a World, its <see cref="RenderableSpace"/>, and its systems.
+/// <see cref="UsesECS"/> toggled override will permit automatic updating of underlying systems.
 /// </summary>
 public abstract class BaseWorld : IWorld
 {
