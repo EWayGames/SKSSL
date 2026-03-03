@@ -66,7 +66,7 @@ public class ECSController
         _componentRegistry = new ComponentRegistry();
         _componentRegistry.InitializeComponents();
         
-        _entityManager = new EntityManager(ref _componentRegistry, _world);
+        _entityManager = new EntityManager(ref _componentRegistry, _world, true);
         
         // Assign entity context for reflective purposes.
         EntityContext = new EntityContext(_entityManager, _componentRegistry);

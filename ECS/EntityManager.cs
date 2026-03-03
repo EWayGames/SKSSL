@@ -19,12 +19,14 @@ public partial class EntityManager
     private readonly List<SKEntity> _allEntities = [];
     private static ComponentRegistry _componentRegistry = null!;
     private readonly IWorld _world;
+    private static bool _isInitialized = false;
 
     /// <inheritdoc cref="EntityManager"/>
-    public EntityManager(ref ComponentRegistry componentRegistry, IWorld world)
+    public EntityManager(ref ComponentRegistry componentRegistry, IWorld world, bool isInitialized = false)
     {
         _componentRegistry = componentRegistry;
         _world = world;
+        _isInitialized = isInitialized;
     }
 
     /// Get all Active entities present in the game.
@@ -192,6 +194,12 @@ public partial class EntityManager
     {
         Type derivedType = typeof(T);
 
+        if (!_isInitialized)
+        {
+            Log("Attempted to register entity without initializing Entity Manager!", LOG.SYSTEM_WARNING);
+            return;
+        }
+        
         // Register raw entity
         if (typeof(SKEntity).IsAssignableFrom(derivedType))
         {
@@ -219,8 +227,14 @@ public partial class EntityManager
     public static void RegisterTemplate<TYaml>(TYaml yaml, Type derivedType)
         where TYaml : EntityYaml
     {
+        if (!_isInitialized)
+        {
+            Log("Attempted to register entity without initializing Entity Manager!", LOG.SYSTEM_WARNING);
+            return;
+        }
+        
         // Build components
-        var components = BuildComponentsFromYaml(yaml);
+        var components = BuildComponentsFromEntityYaml(yaml);
 
         // Get dynamic template constructor.
         ConstructorInfo? ctor = derivedType.GetConstructor(
@@ -253,7 +267,7 @@ public partial class EntityManager
     private static void RegisterRawEntity<TYaml>(TYaml yaml, Type derivedType)
         where TYaml : EntityYaml
     {
-        var components = BuildComponentsFromYaml(yaml);
+        var components = BuildComponentsFromEntityYaml(yaml);
 
         // Create instance dynamically
         object? instance = Activator.CreateInstance(
@@ -273,7 +287,7 @@ public partial class EntityManager
     /// Helper for extracting components from a yaml file. Should work with any kind that inherits <see cref="EntityYaml"/>.
     /// Does NOT support other yaml types that implement this. This is for the ECS ONLY
     /// </summary>
-    private static Dictionary<Type, object> BuildComponentsFromYaml(EntityYaml yaml)
+    private static Dictionary<Type, object> BuildComponentsFromEntityYaml(EntityYaml yaml)
     {
         var components = new Dictionary<Type, object>();
 
@@ -293,7 +307,7 @@ public partial class EntityManager
 
             object component = Activator.CreateInstance(componentType)
                                ?? throw new InvalidOperationException(
-                                   $"Cannot create {componentType.Name} in {nameof(BuildComponentsFromYaml)}");
+                                   $"Cannot create {componentType.Name} in {nameof(BuildComponentsFromEntityYaml)}");
 
             // Handle component variables.
             foreach (var field in yamlComponent.Fields)
