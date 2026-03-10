@@ -51,7 +51,7 @@ public abstract class SSLGame : Game
             Log("Failed to get Entity Context for a (null) ECS Controller!", LOG.SYSTEM_WARNING);
             return null;
         }
-        
+
         var entityContext = new EntityContext(world.ECS);
         return entityContext;
     }
@@ -117,7 +117,7 @@ public abstract class SSLGame : Game
 
     // WARN: I have no idea how to do networking. This needs work. Set False as Default, for now.
     public bool IsNetworkSupported { get; set; } = false;
-    
+
     /// Title of game window.
     public string Title { get; set; }
 
@@ -154,20 +154,29 @@ public abstract class SSLGame : Game
         // Initialize all static paths, which the developer must have defined!
         StaticGameLoader.Initialize(StaticPaths);
 
-        #region Modding
+        // Below handles the Initialization (/preloading) of all game data.
+        // Also includes mods. This is a trick that will come in handy later~
+        // TODO: Implement load order.
+        List<string> workingDirectories = [];
+        var allDirectories = StaticGameLoader.GetAllGameDirectories();
+        foreach (var directory in allDirectories)
+        {
+            string texturesFolder = Path.Combine(directory, "textures");
 
-        // Get the mods in the game. This is a trick that will come in handy later~
-        var mods = StaticGameLoader.GetAllModDirectories();
-        var validModTextures = StaticGameLoader.GetDirectoriesWithSubPathAndAppend(mods, "textures");
+            // If there is no textures folder, don't load it!
+            if (!Directory.Exists(texturesFolder))
+                continue;
+
+            workingDirectories.Add(texturesFolder);
+        }
 
         // Must be after Hard-coded assets, or there will be problems.
         TextureLoader.Initialize(
             Content,
             GraphicsDevice,
-            // Get game mod directory, get all folders within it, and feed as list. These are mods!
-            validModTextures);
+            // Get directory, get all folders within it, and feed as list. These are mods!
+            workingDirectories);
 
-        #endregion
 
         // Continue
         base.Initialize();
