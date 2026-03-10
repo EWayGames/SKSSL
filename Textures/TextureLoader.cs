@@ -88,8 +88,8 @@ public abstract partial class TextureLoader
     private static bool IsInitialized { get; set; } = false;
 
 
-    /// <param name="alternativeLoader"></param>
-    public static void PreInitializeLoader(TextureLoader? alternativeLoader = null)
+    /// <param name="alternativeLoader">Class to load static instance by using mere instantiation.</param>
+    public TextureLoader(TextureLoader? alternativeLoader = null)
     {
         _instance = alternativeLoader ?? new BlankTextureLoader();
     }
