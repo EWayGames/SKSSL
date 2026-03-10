@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
+using static SKSSL.DustLogger;
+
 // ReSharper disable UnusedType.Global
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
@@ -13,7 +15,7 @@ namespace SKSSL.Localization;
 public static class Loc
 {
     private const string defaultLanguage = "en-US";
-    public static string CurrentLanguage = defaultLanguage; // TODO: Load this from settings
+    public static string CurrentLanguage; // TODO: Load this from settings
 
     /// <summary>
     /// The localization entries as stored in the game's per-language-culture folder.
@@ -85,7 +87,8 @@ public static class Loc
     /// <param name="localePath">Directory Path of the localization folder, which contains sub-folders based on language culture.</param>
     public static void Load(string? localePath = null)
     {
-        Localizations.Clear();
+        // Loading localizations should be clear on program init.
+        //Localizations.Clear();
 
         // Cautious handling that permits lazy initialization.
         switch (localePath)
@@ -115,31 +118,36 @@ public static class Loc
             languageFolder = Path.Combine(localePath, defaultLanguage);
         }
 
+        // Get all localization files and load them.
         var files = Directory.GetFiles(languageFolder, "*.ftl*", SearchOption.AllDirectories);
-        Parallel.ForEach(files, file =>
+        Parallel.ForEach(files, ReadFile);
+    }
+
+    /// Read all file contents and insert into dictionary.
+    private static void ReadFile(string file)
+    {
+        string[] contents = File.ReadAllLines(file);
+
+        foreach (string line in contents)
         {
-            string[] contents = File.ReadAllLines(file);
-            foreach (string line in contents)
+            // Skip empty lines
+            if (string.IsNullOrWhiteSpace(line))
+                continue;
+
+            // If the line begins with #, or there is no '=', then there's a problem!
+            int index = line.IndexOf('=');
+            if (index == -1 || line[0].Equals('#'))
             {
-                // Skip empty lines
-                if (string.IsNullOrWhiteSpace(line))
-                    continue;
-
-                // If the line begins with #, or there is no '=', then there's a problem!
-                int index = line.IndexOf('=');
-                if (index == -1 || line[0].Equals('#'))
-                {
-                    if (!line[0].Equals('#'))
-                        DustLogger.Log($"Invalid localization in file \"{file}\": {line}", 3);
-                    continue;
-                }
-
-                // Get left (key) and right (value) hand sides, and
-                //  add to localizations folder. Get() handles the rest.
-                string key = index >= 0 ? line[..index].Trim() : line;
-                string value = index >= 0 ? line[(index + 1)..].Trim() : key;
-                Localizations[key] = value;
+                if (!line[0].Equals('#'))
+                    Log($"Invalid localization in file \"{file}\": {line}", LOG.FILE_ERROR);
+                continue;
             }
-        });
+
+            // Get left (key) and right (value) hand sides, and
+            //  add to localizations folder. Get() handles the rest.
+            string key = index >= 0 ? line[..index].Trim() : line;
+            string value = index >= 0 ? line[(index + 1)..].Trim() : key;
+            Localizations[key] = value;
+        }
     }
 }
