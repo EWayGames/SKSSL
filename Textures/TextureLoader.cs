@@ -74,12 +74,12 @@ public abstract partial class TextureLoader
     /// <summary>
     /// Reference to Monogame's content manager for "base game" content.
     /// </summary>
-    private static ContentManager _vanillaContent = null!;
+    private static ContentManager _monoGameContent = null!;
 
     /// <summary>
     /// Mod Root folders. Operated upon with priority to recent "lower" mods over "older" ones. 
     /// </summary>
-    private static IEnumerable<string> _modFolders = null!;
+    private static IEnumerable<string> _folders = null!;
 
     private static readonly Dictionary<string, Texture2D> _cache = new();
 
@@ -95,11 +95,11 @@ public abstract partial class TextureLoader
     /// <br/><br/>
     /// It is IMPERATIVE that this be loaded before the base.Initialize() of the game's Initialize() method.
     /// </summary>
-    /// <param name="vanillaContent">Monogame content manager for "Vanilla' game content.</param>
+    /// <param name="contentManager">Monogame content manager for "Vanilla' game content.</param>
     /// <param name="graphicsDevice">Game's graphic device for rendering.</param>
     /// <param name="modFolders">All the root-level mod directory paths.</param>
     /// <exception cref="ArgumentNullException"></exception>
-    public static void Initialize(ContentManager vanillaContent, GraphicsDevice graphicsDevice, List<string> modFolders)
+    public static void Initialize(ContentManager contentManager, GraphicsDevice graphicsDevice, List<string> modFolders)
     {
         // If the texture loader has already been initialized by a "surface-level" class override,
         //  then that override is the one that shall be used and whatever is needed has already been initialized.
@@ -109,8 +109,8 @@ public abstract partial class TextureLoader
         // Load Custom Registries.
         _instance.InitializeRegistries();
 
-        _modFolders = modFolders;
-        _vanillaContent = vanillaContent ?? throw new ArgumentNullException(nameof(vanillaContent));
+        _folders = modFolders;
+        _monoGameContent = contentManager ?? throw new ArgumentNullException(nameof(contentManager));
         _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
         IsInitialized = true;
     }
@@ -123,7 +123,7 @@ public abstract partial class TextureLoader
 
     /// <summary>
     /// Loads a provided asset name as a <see cref="Texture2D"/>.
-    /// Assumes the mod folders within the TextureLoader are all texture folders for each mod.
+    /// Assumes the folders within the TextureLoader are all texture folders.
     /// Use <see cref="GetTexture"/> for external use.
     /// </summary>
     /// <param name="assetName">Name of the provided asset without extension. (e.g. "Textures/PlayerSprite")</param>
@@ -136,19 +136,19 @@ public abstract partial class TextureLoader
 
         Texture2D? texture;
 
-        // TODO: Add <mod_name>:<asset_name> support.
+        // TODO: Add <asset_name>_<mod_name> support.
 
         // Check mods for raw override
         // This makes sure that mod assets are loaded -before- vanilla assets.
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if (_modFolders is not null && _modFolders.Any())
+        if (_folders is not null && _folders.Any())
         {
-            foreach (var modFolder in _modFolders.Reverse()) // Reverse() last-mod-wins priority
+            foreach (var folder in _folders.Reverse()) // Reverse() last-mod-wins priority
             {
-                string modPath = Path.Combine(modFolder, assetName + ".png");
-                if (!File.Exists(modPath))
+                string asset = Path.Combine(folder, assetName + ".png");
+                if (!File.Exists(asset))
                     continue; // Short-circuit.
-                using FileStream stream = File.OpenRead(modPath);
+                using FileStream stream = File.OpenRead(asset);
                 texture = Texture2D.FromStream(_graphicsDevice, stream);
                 _cache[assetName] = texture;
                 return texture;
@@ -158,7 +158,7 @@ public abstract partial class TextureLoader
         // Try vanilla pipeline load (falls back if no .xnb exists)
         try
         {
-            texture = _vanillaContent.Load<Texture2D>(assetName);
+            texture = _monoGameContent.Load<Texture2D>(assetName);
             _cache[assetName] = texture;
             return texture;
         }
@@ -180,8 +180,7 @@ public abstract partial class TextureLoader
     protected abstract void InitializeRegistries();
 
    // Generic storage: category → texture name → texture object
-    private static readonly
-        ConcurrentDictionary<string, Dictionary<string, Texture2D>> _simpleTextures = new();
+    private static readonly ConcurrentDictionary<string, Dictionary<string, Texture2D>> _textures = new();
 
     private static readonly Dictionary<string, TextureCategoryConfig> _categories = new();
 
@@ -194,7 +193,7 @@ public abstract partial class TextureLoader
 
         // Material mapping is now handled in the Material Registry.
         if (!config.IsMultiTextureMap)
-            _simpleTextures[categoryName] = new Dictionary<string, Texture2D>();
+            _textures[categoryName] = new Dictionary<string, Texture2D>();
     }
 
     /// <summary>
@@ -202,7 +201,7 @@ public abstract partial class TextureLoader
     /// </summary>
     public static IReadOnlyDictionary<string, TTexture> GetCategory<TTexture>(string categoryName)
     {
-        if (_simpleTextures.TryGetValue(categoryName, out var dict))
+        if (_textures.TryGetValue(categoryName, out var dict))
         {
             return (IReadOnlyDictionary<string, TTexture>)dict;
         }
@@ -256,7 +255,7 @@ public abstract partial class TextureLoader
         }
 
         // Using KeyValuePair directly for single-entries. Treating it as a standard dictionary in this respect.
-        _simpleTextures[categoryName] = flatTextures;
+        _textures[categoryName] = flatTextures;
     }
 
     /// <summary>
@@ -352,10 +351,11 @@ public abstract partial class TextureLoader
     /// <summary>
     /// Safe accessor with error fallback and logging.
     /// </summary>
+    /// <returns>Texture2D instance in simple dictionary.</returns>
     public static Texture2D GetTexture(string category, string key)
     {
         // Attempting to retrieve a Texture2D.
-        if (_simpleTextures.TryGetValue(category, out var dict))
+        if (_textures.TryGetValue(category, out var dict))
             if (dict.TryGetValue(key, out Texture2D? value))
                 return value;
 
