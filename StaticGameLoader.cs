@@ -122,6 +122,18 @@ public static class StaticGameLoader
     public static string[] GetAllModDirectories() => Directory.GetDirectories(MPath());
 
     /// <summary>
+    /// Retrieves all directories in the game, including modded.
+    /// </summary>
+    /// <returns></returns>
+    public static IEnumerable<string> GetAllGameDirectories()
+    {
+        var game = GPath();
+        var mods = Directory.GetDirectories(MPath());
+        var all = mods.Prepend(game);
+        return all;
+    }
+
+    /// <summary>
     /// Initializes the game's two primary directories.
     /// </summary>
     public static void Initialize(params (string id, string path)[] paths)
