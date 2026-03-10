@@ -94,8 +94,8 @@ public abstract class BaseWorld<TSpace> : BaseWorld
     // Strongly-typed access for derived classes
     public new TSpace? WorldSpace
     {
-        get => base.Space as TSpace;
-        protected set => base.Space = value;
+        get => Space as TSpace;
+        protected set => Space = value;
     }
 
     protected BaseWorld()
