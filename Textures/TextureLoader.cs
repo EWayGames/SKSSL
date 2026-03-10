@@ -39,9 +39,10 @@ public enum TextureType : byte
     //GLOSSY,
 }
 
-// Default implementation
+/// Default implementation
 public class BlankTextureLoader : TextureLoader
 {
+    /// <inheritdoc />
     protected override void InitializeRegistries() =>
         throw new NotImplementedException(
             "Developer(s) MUST implement custom Registries Initialization, as registries may vary between projects.");
@@ -79,8 +80,6 @@ public abstract partial class TextureLoader
     /// <summary>
     /// Mod Root folders. Operated upon with priority to recent "lower" mods over "older" ones. 
     /// </summary>
-    private static IEnumerable<string> _folders = null!;
-
     private static readonly Dictionary<string, Texture2D> _cache = new();
 
     #region Initialization
@@ -97,9 +96,12 @@ public abstract partial class TextureLoader
     /// </summary>
     /// <param name="contentManager">Monogame content manager for "Vanilla' game content.</param>
     /// <param name="graphicsDevice">Game's graphic device for rendering.</param>
-    /// <param name="modFolders">All the root-level mod directory paths.</param>
+    /// <param name="gameContentDirectories"></param>
     /// <exception cref="ArgumentNullException"></exception>
-    public static void Initialize(ContentManager contentManager, GraphicsDevice graphicsDevice, List<string> modFolders)
+    public static void Initialize(
+        ContentManager contentManager,
+        GraphicsDevice graphicsDevice,
+        IEnumerable<GameContentDirectory> gameContentDirectories)
     {
         // If the texture loader has already been initialized by a "surface-level" class override,
         //  then that override is the one that shall be used and whatever is needed has already been initialized.
@@ -109,10 +111,56 @@ public abstract partial class TextureLoader
         // Load Custom Registries.
         _instance.InitializeRegistries();
 
-        _folders = modFolders;
         _monoGameContent = contentManager ?? throw new ArgumentNullException(nameof(contentManager));
         _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
         IsInitialized = true;
+
+        CompleteTextureInit(gameContentDirectories);
+    }
+
+    /// <summary>
+    /// Load all game textures into memory. This should be called by a Content Manager.
+    /// </summary>
+    /// <param name="gameContentDirectories"></param>
+    /// <remarks>
+    /// Due to how it is written, all texture categories must be registered.
+    /// I.e. "items" must have a dedicated "items" folder.
+    /// </remarks>
+    private static void CompleteTextureInit(IEnumerable<GameContentDirectory> gameContentDirectories)
+    {
+        // Below handles the Initialization (/preloading) of all game data.
+        // Also includes mods. This is a trick that will come in handy later~
+        // TODO: Implement load order.
+        List<string> textureFolders = [];
+        foreach (GameContentDirectory directory in gameContentDirectories)
+        {
+            string? texturesFolder = directory.TexturesFolder;
+            if (texturesFolder is not null)
+                textureFolders.Add(texturesFolder);
+        }
+
+        // Load all folders with registered textures.
+        foreach (var folder in textureFolders)
+        {
+            // Get all categorical texture folders.
+            var subFolders = Directory.GetDirectories(folder, "", SearchOption.TopDirectoryOnly)
+                .Select(Path.GetFileName)
+                .ToHashSet();
+
+            // Use registered asset paths to find dedicated folder, and load it.
+            foreach ((string category, TextureCategoryConfig config) in _categories)
+            {
+                if (!subFolders.Contains(config.AssetPathKey))
+                    // TODO: Add handling for "rogue" texture folders, who aren't registered.
+                    continue;
+
+                // Database for specific category, such as "Items" or "Entities", etc.
+                if (config.IsMultiTextureMap)
+                    LoadMaterialTextureCategory(folder, config, textureFolders);
+                else
+                    LoadSingleTextureCategory(category, folder, config, textureFolders);
+            }
+        }
     }
 
     #endregion
@@ -127,8 +175,9 @@ public abstract partial class TextureLoader
     /// Use <see cref="GetTexture"/> for external use.
     /// </summary>
     /// <param name="assetName">Name of the provided asset without extension. (e.g. "Textures/PlayerSprite")</param>
+    /// <param name="textureFolders"></param>
     /// <returns>Texture asset or Default Error Texture, instead.</returns>
-    private static Texture2D Load(string assetName)
+    private static Texture2D Load(string assetName, IEnumerable<string> textureFolders)
     {
         // Check cache first.
         if (_cache.TryGetValue(assetName, out Texture2D? cached))
@@ -141,9 +190,11 @@ public abstract partial class TextureLoader
         // Check mods for raw override
         // This makes sure that mod assets are loaded -before- vanilla assets.
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if (_folders is not null && _folders.Any())
+        var textureFoldersArray = textureFolders as string[] ?? textureFolders.ToArray();
+        if (textureFoldersArray.Length != 0)
         {
-            foreach (var folder in _folders.Reverse()) // Reverse() last-mod-wins priority
+            // TODO: This is part of priority organization. Reverse() call may not be needed here.. 
+            foreach (var folder in textureFoldersArray.Reverse()) // Reverse() last-mod-wins priority
             {
                 string asset = Path.Combine(folder, assetName + ".png");
                 if (!File.Exists(asset))
@@ -179,7 +230,7 @@ public abstract partial class TextureLoader
     /// <remarks>Registries are the dedicated names to the topmost folders containing textures.</remarks>
     protected abstract void InitializeRegistries();
 
-   // Generic storage: category → texture name → texture object
+    // Generic storage: category → texture name → texture object
     private static readonly ConcurrentDictionary<string, Dictionary<string, Texture2D>> _textures = new();
 
     private static readonly Dictionary<string, TextureCategoryConfig> _categories = new();
@@ -187,13 +238,13 @@ public abstract partial class TextureLoader
     /// <summary>
     /// Register a new texture category (e.g., objects, items).
     /// </summary>
-    public static void RegisterCategory(string categoryName, TextureCategoryConfig config)
+    public static void RegisterCategory(TextureCategoryConfig config)
     {
-        _categories[categoryName] = config;
+        _categories[config.AssetPathKey] = config;
 
         // Material mapping is now handled in the Material Registry.
         if (!config.IsMultiTextureMap)
-            _textures[categoryName] = new Dictionary<string, Texture2D>();
+            _textures[config.AssetPathKey] = new Dictionary<string, Texture2D>();
     }
 
     /// <summary>
@@ -209,37 +260,13 @@ public abstract partial class TextureLoader
         return new Dictionary<string, TTexture>().AsReadOnly();
     }
 
-    /// <summary>
-    /// Ambiguous current directory, which may be a game or mod directory.
-    /// </summary>
-    private static string _currentDirectory = string.Empty;
-
-    /// <summary>
-    /// Load all registered texture categories.
-    /// </summary>
-    public static void LoadAll(string currentDirectory)
+    private static void LoadSingleTextureCategory(
+        string categoryName,
+        string gameFolder,
+        TextureCategoryConfig config,
+        List<string> textureFolders)
     {
-        _currentDirectory = currentDirectory;
-        foreach ((string categoryName, TextureCategoryConfig config) in _categories)
-            LoadCategory(categoryName, config);
-    }
-
-    private static void LoadCategory(string categoryName, TextureCategoryConfig config)
-    {
-        // Database for specific category, such as "Items" or "Entities", etc.
-        if (config.IsMultiTextureMap)
-            LoadMaterialTextureCategory(config);
-        else
-            LoadSingleTextureCategory(categoryName, config);
-    }
-
-    private static void LoadSingleTextureCategory(string categoryName, TextureCategoryConfig config)
-    {
-        string dir = _currentDirectory;
-        if (config.AssetPathKey != null)
-            dir = Path.Combine(_currentDirectory, config.AssetPathKey);
-
-        var files = StaticGameLoader.GetGameFiles(dir);
+        var files = StaticGameLoader.GetGameFiles(gameFolder);
 
         Dictionary<string, Texture2D> flatTextures = new();
 
@@ -249,7 +276,7 @@ public abstract partial class TextureLoader
             string key = config.KeyTransform?.Invoke(fileName, file) ?? fileName.ToLower();
 
             // Error Reporting & Texture is automatically handled in the Load() call.
-            Texture2D texture = Load(fileName);
+            Texture2D texture = Load(fileName, textureFolders);
 
             flatTextures[key] = texture;
         }
@@ -261,14 +288,15 @@ public abstract partial class TextureLoader
     /// <summary>
     /// Handles materials entirely differently using a material registry.
     /// </summary>
+    /// <param name="gameFolder"></param>
     /// <param name="config"></param>
-    private static void LoadMaterialTextureCategory(TextureCategoryConfig config)
+    /// <param name="textureFolders"></param>
+    private static void LoadMaterialTextureCategory(string gameFolder, TextureCategoryConfig config,
+        List<string> textureFolders)
     {
-        string dir = _currentDirectory;
-        if (config.AssetPathKey != null)
-            dir = Path.Combine(_currentDirectory, config.AssetPathKey);
+        gameFolder = Path.Combine(gameFolder, config.AssetPathKey);
 
-        string[] directories = Directory.GetDirectories(dir);
+        string[] directories = Directory.GetDirectories(gameFolder);
         var materialGroups = new Dictionary<string, SKMaterial>(); // baseName → material
 
         foreach (var folder in directories)
@@ -289,9 +317,9 @@ public abstract partial class TextureLoader
                 // This will normally break for entries that have no subtype, as those are diffuse textures.
                 var subTypeName = fileName.GetUnderscoreEndingTag();
 
-                // If there is no sub-type (it must be a diffuse map, OR an unsupported texture)
+                // If there is no subtype (it must be a diffuse map, OR an unsupported texture)
                 //  So, the assumption is that clearly this must be a new diffuse entry! :D
-                //  Hacky, yes. However this supports "..._diffuse.png" as much as it supports "....png" 
+                //  Hacky, yes. However, this supports "..._diffuse.png" as much as it supports "....png" 
                 if (!Enum.TryParse(subTypeName, true, out TextureType subType))
                 {
                     Log($"Unknown sub-texture type for {fileName}. Defaulting to Diffuse.", 3);
@@ -299,7 +327,7 @@ public abstract partial class TextureLoader
                 }
 
                 // Could be diffuse, normal, displacement, or anything.
-                Texture2D texture = Load(fileName);
+                Texture2D texture = Load(fileName, textureFolders);
 
                 // If material groups doesn't contain a material with the base name.
                 //  Effectively creates a new material group using the base name as a diffuse.
@@ -403,10 +431,10 @@ public abstract partial class TextureLoader
 /// </summary>
 public class TextureCategoryConfig
 {
-    /// Asset path dictating overall category.
+    /// Asset path that is checked-over for loading..
     /// <remarks>Make sure that this is assigned as lowercase, or whatever case needed to match folder structure</remarks>
     /// <example>e.g., "I.e. "objects", "items" , etc."</example>
-    public string? AssetPathKey { get; init; }
+    public required string AssetPathKey { get; init; }
 
     /// Does this texture category store complex texture maps?
     /// <value>Stores simple key-value pairs when false, and a <see cref="SKMaterial"/> dictionary when true.</value>

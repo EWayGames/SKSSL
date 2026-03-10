@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using static SKSSL.DustLogger;
 
@@ -84,38 +84,42 @@ public static class Loc
     /// Clears and initializes localization depending on the current assigned language culture.
     /// Localization folder path is optional, which is assigned the default path or vice versa depending on nullability.
     /// </summary>
-    /// <param name="localePath">Directory Path of the localization folder, which contains sub-folders based on language culture.</param>
-    public static void Load(string? localePath = null)
+    /// <param name="localeDirectory">Directory Path of the localization folder, which contains sub-folders based on language culture.</param>
+    public static void Load([NotNull] string? localeDirectory = null)
     {
         // Loading localizations should be clear on program init.
         //Localizations.Clear();
 
         // Cautious handling that permits lazy initialization.
-        switch (localePath)
+        localeDirectory = localeDirectory switch
         {
             // If null, then use default localization.
-            case null:
-                localePath = StaticGameLoader.FOLDER_LOCALIZATION;
-                break;
-            // Override default localization folder in case a new one was provided. 
-            default:
-                StaticGameLoader.FOLDER_LOCALIZATION = localePath;
-                break;
-        }
+            null => StaticGameLoader.FOLDER_LOCALIZATION,
+            _ => localeDirectory
+        };
 
         // Get user's current language culture.
         string language = CultureInfo.CurrentCulture.Name; // e.g., "en-US", "de-DE"
 
         // Attempt to use requested language folder
-        string languageFolder = Path.Combine(localePath, language);
+        string languageFolder = Path.Combine(localeDirectory, language);
 
         // Fall back to default if missing
         if (!Directory.Exists(languageFolder))
         {
-            Debug.WriteLine(
-                $"Localization folder for \"{language}\" does not exist! Using default \"{defaultLanguage}\" instead.",
-                nameof(Loc));
-            languageFolder = Path.Combine(localePath, defaultLanguage);
+            Log(
+                $"Localization folder for \"{language}\" does not exist! Using default \"{defaultLanguage}\" instead.\n" +
+                $"{localeDirectory}",
+                LOG.FILE_WARNING);
+            languageFolder = Path.Combine(localeDirectory, defaultLanguage);
+        }
+
+        // If it still doesn't exist after it was defaulted, then something is wrong, and this directory
+        //  should be ignored.
+        if (!Directory.Exists(languageFolder))
+        {
+            Log($"Localization folder for \"{language}\" does not exist, either! See filepath above!", LOG.FILE_ERROR);
+            return;
         }
 
         // Get all localization files and load them.

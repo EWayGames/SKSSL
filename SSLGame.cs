@@ -115,9 +115,6 @@ public abstract class SSLGame : Game
         // Add game services to override method here.
     }
 
-    // WARN: I have no idea how to do networking. This needs work. Set False as Default, for now.
-    public bool IsNetworkSupported { get; set; } = false;
-
     /// Title of game window.
     public string Title { get; set; }
 
@@ -140,6 +137,8 @@ public abstract class SSLGame : Game
         return graphicsDeviceManager;
     }
 
+    internal IEnumerable<GameContentDirectory> GameContentDirectories = [];
+
     /// <summary>
     /// For custom <see cref="StaticGameLoader"/>s, you MUST initialize them before the base.Initialize() an inheritance
     /// level above this class.
@@ -153,48 +152,10 @@ public abstract class SSLGame : Game
 
         // Initialize all static paths, which the developer must have defined!
         StaticGameLoader.Initialize(StaticPaths);
-
-        // Below handles the Initialization (/preloading) of all game data.
-        // Also includes mods. This is a trick that will come in handy later~
-        // TODO: Implement load order.
-        List<string> workingDirectories = [];
-        var allDirectories = StaticGameLoader.GetAllGameDirectories();
-        foreach (var directory in allDirectories)
-        {
-            string texturesFolder = Path.Combine(directory, "textures");
-
-            // If there is no textures folder, don't load it!
-            if (!Directory.Exists(texturesFolder))
-                continue;
-
-            workingDirectories.Add(texturesFolder);
-        }
-
-        // Must be after Hard-coded assets, or there will be problems.
-        TextureLoader.Initialize(
-            Content,
-            GraphicsDevice,
-            // Get directory, get all folders within it, and feed as list. These are mods!
-            workingDirectories);
-
+        GameContentDirectories = StaticGameLoader.GetAllGameDirectories();
 
         // Continue
         base.Initialize();
-    }
-
-    /// <inheritdoc />
-    protected override void LoadContent()
-    {
-        base.LoadContent();
-        PostLoad();
-    }
-
-    /// <summary>
-    /// Custom user-defined load operation. After most LoadContent() has been loaded, but before Update calls.
-    /// </summary>
-    protected virtual void PostLoad()
-    {
-        // After game data and additional base content is loaded, then initiate post-load.
     }
 
     /// Quits the game.

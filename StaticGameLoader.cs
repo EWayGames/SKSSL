@@ -3,6 +3,9 @@ using Microsoft.Xna.Framework.Content;
 
 namespace SKSSL;
 
+/// <summary>
+/// File path handling.
+/// </summary>
 public static class StaticGameLoader
 {
     private static readonly Dictionary<string, string> GAME_PATHS = new();
@@ -50,19 +53,19 @@ public static class StaticGameLoader
     /// Retrieves an asset from the content pipeline manually using a provided filepath.
     /// </summary>
     /// <param name="contentManager"></param>
-    /// <param name="path"></param>
+    /// <param name="path_s"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static T GetPipelineAsset<T>(ContentManager contentManager, params string[] path)
+    public static T GetPipelineAsset<T>(ContentManager contentManager, params string[] path_s)
     {
-        string assetPath = Path.Combine(path);
+        string assetPath = Path.Combine(path_s);
         return contentManager.Load<T>(assetPath);
     }
 
     /// <returns>Dedicated path to game files.</returns>
     public static string GPath(params string[] path)
     {
-        var dynamicPath = GetPath("FOLDER_GAME");
+        var dynamicPath = GetStaticPath("FOLDER_GAME");
         return string.IsNullOrEmpty(dynamicPath)
             ? Path.Combine(new[] { DEFAULT_FOLDER_GAME }.Concat(path).ToArray())
             : dynamicPath;
@@ -72,21 +75,13 @@ public static class StaticGameLoader
     /// <seealso cref="GPath"/>
     public static string MPath(params string[] path)
     {
-        var dynamicPath = GetPath("FOLDER_MODS");
+        var dynamicPath = GetStaticPath("FOLDER_MODS");
         return string.IsNullOrEmpty(dynamicPath)
             ? Path.Combine(new[] { DEFAULT_FOLDER_MODS }.Concat(path).ToArray())
             : dynamicPath;
     }
 
-    public static string Proj(params string[] path)
-    {
-        var dynamicPath = GetPath("PROJECT_DIRECTORY");
-        return string.IsNullOrEmpty(dynamicPath)
-            ? Path.Combine(new[] { PROJECT_DIRECTORY }.Concat(path).ToArray())
-            : dynamicPath;
-    }
-
-    private static string? GetPath(string id)
+    private static string? GetStaticPath(string id)
     {
         GAME_PATHS.TryGetValue(id, out var result);
         return result;
@@ -102,29 +97,39 @@ public static class StaticGameLoader
     /// Retrieves all directories in the game, including modded.
     /// </summary>
     /// <returns></returns>
-    public static IEnumerable<string> GetAllGameDirectories()
+    public static IEnumerable<GameContentDirectory> GetAllGameDirectories()
     {
         var game = GPath();
         var mods = Directory.GetDirectories(MPath());
         var all = mods.Prepend(game);
-        return all;
+
+        List<GameContentDirectory> result = [];
+        foreach (var directory in all)
+        {
+            var gcd = new GameContentDirectory(directory);
+            result.Add(gcd);
+        }
+
+        return result;
     }
 
-    /// <summary>
-    /// Initializes the game's two primary directories.
-    /// </summary>
+    /// Initializes the game's static paths.
     public static void Initialize(params (string id, string path)[] paths)
     {
         // Loop over every tuple and add the provided path to GAME_PATHS. Invalid paths are the programmer's problem.
-        foreach ((string id, string path) path in paths) GAME_PATHS[path.id] = path.path;
+        foreach ((string id, string path) path in paths)
+        {
+            GAME_PATHS[path.id] = path.path;
+        }
     }
 
+    /// Called on game load.
     public delegate void GameLoadAction(string basePath);
 
-    // Store: name (for logging), pathConstant (e.g. FOLDER_RACES), and the loader
+    /// Store: name (for logging), pathConstant (e.g. FOLDER_RACES), and the loader
     private static readonly List<(string Name, string PathConstant, GameLoadAction Loader)> _loaders = [];
 
-    // Public read-only view (optional, for debugging)
+    /// Public read-only view (optional, for debugging)
     public static IReadOnlyList<(string Name, string PathConstant, GameLoadAction Loader)> Loaders =>
         _loaders.AsReadOnly();
 
@@ -160,7 +165,8 @@ public static class StaticGameLoader
             {
                 string fullPath = pather(pathConstant);
                 loader(fullPath);
-                DustLogger.Log($"Loaded {name} from: {fullPath}");
+                // TODO: Replace this w. game content system. The pather is worthless now.
+                DustLogger.Log($"Loaded {name} from: {Path.GetFileName(fullPath)}");
             }
             catch (Exception ex)
             {
@@ -195,4 +201,53 @@ public static class StaticGameLoader
             DustLogger.Log($"Triggering Cleanup method for class {loader.Name}");
         }
     }
+}
+
+/// <summary>
+/// A content directory containing game prototype, texture, and localization data.
+/// </summary>
+public record GameContentDirectory
+{
+    /// Directory that which game content shall be read.
+    public readonly string ContentDirectory;
+
+    #region Internal Folder Access Fields
+
+    /// <returns>Path to localization folder, or null if not found.</returns>
+    public string? LocalizationFolder
+    {
+        get
+        {
+            string dir = Path.Combine(ContentDirectory, "localization");
+            return !Directory.Exists(dir) ? null : dir;
+        }
+    }
+
+    /// <returns>Path to internal textures, or null if not found.</returns>
+    public string? TexturesFolder
+    {
+        get
+        {
+            string dir = Path.Combine(ContentDirectory, "textures");
+            return !Directory.Exists(dir) ? null : dir;
+        }
+    }
+
+    #endregion
+
+    /// TODO: Implement load order.
+    private static int loadOrderCounter = 0;
+
+    /// 
+    public int LoadOrder;
+
+    /// Creates instance of Game Directory Wrapper.
+    public GameContentDirectory(string contentDirectory)
+    {
+        ContentDirectory = contentDirectory;
+        LoadOrder = loadOrderCounter++;
+    }
+
+    /// <inheritdoc />
+    public override string ToString() => ContentDirectory;
 }

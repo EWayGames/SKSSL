@@ -9,19 +9,30 @@ namespace SKSSL.ECS;
 /// Primary Entity-Component system controller present in any given world. Contains static <see cref="EntityContext"/> 
 public class ECSController
 {
+    /// Boolean check to ensure an ECS controller is not initialized more than once.
     public bool Initialized { get; private set; } = false;
 
+    /// Registry of all component instances and definitions.
     public readonly ComponentRegistry ComponentRegistry;
+
+    /// Manager of all active entities in this ECS instance.
     public readonly EntityManager EntityManager;
+    
+    /// Manager of all active systems in this ECS instance.
     private readonly SystemManager _systemManager;
+    
+    /// Reverse-reference to the world this ECS inhabits.
     private readonly IWorld _world;
 
+    /// <summary>
+    /// Constructor instantiating an ECS controller unto a world as reference parent.
+    /// </summary>
     public ECSController(IWorld world)
     {
         _world = world;
         _systemManager = new SystemManager();
         ComponentRegistry = new ComponentRegistry();
-        EntityManager = new EntityManager(ref ComponentRegistry, _world, true);
+        EntityManager = new EntityManager(ref ComponentRegistry, _world);
     }
 
     /// <summary>

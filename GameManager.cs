@@ -8,7 +8,6 @@ public static class GameManager
     public static SSLGame Game { get; private set; } = null!;
     public static string Title => Game.Title;
     public static float AspectRatio => Game.GraphicsDevice.Viewport.AspectRatio;
-    public static bool IsNetworkSupported => Game.IsNetworkSupported;
 
     public static void Exit()
     {
@@ -19,11 +18,12 @@ public static class GameManager
     }
     public static void ResetGame() => Game.ResetGame();
 
+    /// Run the game instance.
     public static void Run<T>() where T : SSLGame, new()
     {
         // Safely run without running-the-gun.
         using T type = new();
         Game = type;
-        type.Run();
+        Game.Run();
     }
 }
