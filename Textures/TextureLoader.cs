@@ -87,12 +87,8 @@ public abstract partial class TextureLoader
 
     private static bool IsInitialized { get; set; } = false;
 
-
-    /// <param name="alternativeLoader">Class to load static instance by using mere instantiation.</param>
-    public TextureLoader(TextureLoader? alternativeLoader = null)
-    {
-        _instance = alternativeLoader ?? new BlankTextureLoader();
-    }
+    /// Default static assignation of instance of a texture loader.
+    public TextureLoader() => _instance = this;
 
     /// <summary>
     /// Initializes texture loaded. An alternative version of the loaded with a custom implement for
