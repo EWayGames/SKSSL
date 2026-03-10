@@ -7,7 +7,6 @@ using MonoGameGum;
 using SKSSL.ECS;
 using SKSSL.Localization;
 using SKSSL.Scenes;
-using SKSSL.Textures;
 using static SKSSL.DustLogger;
 
 // ReSharper disable VirtualMemberCallInConstructor
@@ -92,7 +91,6 @@ public abstract class SSLGame : Game
         Window.ClientSizeChanged += HandleClientSizeChanged;
         _graphicsManager = HandleGraphicsDesignManager(new GraphicsDeviceManager(this));
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        SceneManager = new SceneManager(_graphicsManager, _spriteBatch);
         currentScreenGue.UpdateLayout(); // UI Behaviour when dragged
 
         if (string.IsNullOrEmpty(gumFile))
@@ -103,6 +101,14 @@ public abstract class SSLGame : Game
         var services = new ServiceCollection();
         LoadServices(services);
         GameServices = services.BuildServiceProvider();
+        
+        // Initialize all static paths, which the developer must have defined!
+        GameContentDirectories = StaticGameLoader.GetAllGameDirectories();
+        
+        // Load Static Game Content
+        Log("Loading static paths...");
+        StaticGameLoader.Initialize(StaticPaths);
+        StaticGameLoader.Load(path => StaticGameLoader.GPath(path));
     }
 
     /// <summary>
@@ -114,7 +120,7 @@ public abstract class SSLGame : Game
     {
         // Add game services to override method here.
     }
-
+    
     /// Title of game window.
     public string Title { get; set; }
 
@@ -137,7 +143,7 @@ public abstract class SSLGame : Game
         return graphicsDeviceManager;
     }
 
-    internal IEnumerable<GameContentDirectory> GameContentDirectories = [];
+    internal readonly IEnumerable<GameContentDirectory> GameContentDirectories = [];
 
     /// <summary>
     /// For custom <see cref="StaticGameLoader"/>s, you MUST initialize them before the base.Initialize() an inheritance
@@ -148,11 +154,7 @@ public abstract class SSLGame : Game
         // Initialize Gum UI Handling (Some projects may choose not to utilize Gum)
         GumProjectSave? gumSave = null;
         if (!string.IsNullOrEmpty(GumFile)) gumSave = Gum.Initialize(this, GumFile);
-        SceneManager.Initialize(gumSave); // Initialize Scene Manager
-
-        // Initialize all static paths, which the developer must have defined!
-        StaticGameLoader.Initialize(StaticPaths);
-        GameContentDirectories = StaticGameLoader.GetAllGameDirectories();
+        SceneManager = new SceneManager(_graphicsManager, _spriteBatch, gumSave);
 
         // Continue
         base.Initialize();

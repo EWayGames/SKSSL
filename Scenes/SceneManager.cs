@@ -25,7 +25,7 @@ public class SceneManager
 
     protected BaseScene? _currentScene;
     
-    public SceneManager(GraphicsDeviceManager graphics, SpriteBatch gameMainSpriteBatch)
+    public SceneManager(GraphicsDeviceManager graphics, SpriteBatch gameMainSpriteBatch, GumProjectSave? gumSave)
     {
         _gameMainSpriteBatch = gameMainSpriteBatch;
         _graphicsManager = graphics;
@@ -65,15 +65,15 @@ public class SceneManager
     /// <summary>
     /// Switches scene to new scene based on provided scene type.
     /// </summary>
-    /// <typeparam name="BS"></typeparam>
+    /// <typeparam name="TScene"></typeparam>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public void SwitchScene<BS>() where BS : BaseScene, new()
+    public void SwitchScene<TScene>() where TScene : BaseScene, new()
     {
-        if (typeof(BS).BaseType != typeof(BaseScene))
+        if (typeof(TScene).BaseType != typeof(BaseScene))
             throw new TypeLoadException("Attempted to load scene type that does not derive from BaseScene.");
 
         // Force empty constructor of new scene. Scenes aren't instantiated and stored elsewhere, they're created here.
-        var newScene = new BS();
+        var newScene = new TScene();
 
         MediaPlayer.Stop(); // Stop The Music
         ClearScreens(); // Clear old screens.

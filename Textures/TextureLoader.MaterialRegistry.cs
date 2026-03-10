@@ -52,7 +52,10 @@ public abstract partial class TextureLoader
         /// <summary>
         /// Lookup by name (only for debugging/tools)
         /// </summary>
-        public static int GetId(string name) => NameToId.GetValueOrDefault(name, -1);
+        public static int GetId(string name)
+        {
+            return NameToId.GetValueOrDefault(name, -1);
+        }
 
         /// <summary>
         /// Overload for <see cref="GetMaterial(int)"/> that attempts to try-get value.

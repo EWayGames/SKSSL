@@ -35,7 +35,7 @@ public readonly struct EntityContext
         }
 
         EntityManager = ec.Value.EntityManager;
-        Components = new ComponentRegistry();
+        Components = ec.Value.Components;
     }
 
     public EntityContext(ECSController ecs)

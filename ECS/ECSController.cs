@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using SKSSL.Scenes;
 using static SKSSL.DustLogger;
@@ -17,10 +18,10 @@ public class ECSController
 
     /// Manager of all active entities in this ECS instance.
     public readonly EntityManager EntityManager;
-    
+
     /// Manager of all active systems in this ECS instance.
     private readonly SystemManager _systemManager;
-    
+
     /// Reverse-reference to the world this ECS inhabits.
     private readonly IWorld _world;
 

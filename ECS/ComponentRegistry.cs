@@ -16,7 +16,6 @@ namespace SKSSL.ECS;
 /// </summary>
 /// <remarks>This list is instantiated. It gets pretty complicated, but is essentially used to store component type data.</remarks>
 /// <typeparam name="T">Type of components being stored in this particular list.</typeparam>
-/// <seealso cref="List"/>
 public class ComponentArray<T> : IComponentArray where T : struct, ISKComponent
 {
     /// <summary>
@@ -120,18 +119,17 @@ public class ComponentRegistry
 
     #endregion
 
-    private readonly Dictionary<Type, int> _typeToId = new();
-    private readonly Dictionary<int, Type> _idToType = new();
-    private readonly Dictionary<string, Type> _registeredComponents = new();
+    private static readonly Dictionary<Type, int> _typeToId = new();
+    private static readonly Dictionary<int, Type> _idToType = new();
+    private static readonly Dictionary<string, Type> _registeredComponents = new();
 
     /// All registered component class-types contained in the system.
-    public IReadOnlyDictionary<string, Type> RegisteredComponentTypesDictionary => _registeredComponents;
+    public static IReadOnlyDictionary<string, Type> RegisteredComponentTypesDictionary => _registeredComponents;
 
     /// <summary>
     /// Dictionary of all active components.
     /// </summary>
-    private static readonly ConcurrentDictionary<Type, object>
-        _activeComponentArrays = new(); // Type -> ComponentArray<T>
+    private readonly ConcurrentDictionary<Type, object> _activeComponentArrays = new(); // Type -> ComponentArray<T>
 
     private static int _nextTypeId = 0;
     private static bool Initialized { get; set; } = false;
@@ -147,7 +145,7 @@ public class ComponentRegistry
     #region Component Registration and Assembly Checks
 
     /// Uses reflection to get all defined components in the (relevant) assemblies, and initializes them.
-    public ComponentRegistry()
+    public static void Initialize()
     {
         if (Initialized) return;
         Initialized = true;
@@ -295,7 +293,7 @@ public class ComponentRegistry
         => (ComponentArray<T>)GetOrCreateComponentArray(typeof(T));
 
     /// <summary>
-    /// Gets or creates the ComponentArray<T> for the given component type.
+    /// Gets or creates the ComponentArray&lt;T&gt; for the given component type.
     /// Called only once per component type.
     /// </summary>
     public object GetOrCreateComponentArray(Type componentType)
@@ -340,7 +338,7 @@ public class ComponentRegistry
         return id;
     }
 
-    /// <inheritdoc cref="GetComponentTypeId(type)"/>
+    /// <inheritdoc cref="GetComponentTypeId"/>
     private int GetComponentTypeId<T>() => GetComponentTypeId(typeof(T));
 
     /// <summary>
@@ -349,7 +347,7 @@ public class ComponentRegistry
     /// </summary>
     /// <param name="type">A class-type definition hopefully implementing <see cref="ISKComponent"/>.</param>
     /// <returns>Integer ID of (what should be) a Type implementing <see cref="ISKComponent"/>.</returns>
-    private int GetOrRegister(Type type)
+    private static int GetOrRegister(Type type)
     {
         if (_typeToId.TryGetValue(type, out int id))
             return id;

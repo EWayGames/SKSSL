@@ -17,14 +17,16 @@ public partial class EntityManager
 {
     private static readonly IDIterator _nextId = new();
     private readonly List<SKEntity> _allEntities = [];
-    private static ComponentRegistry _componentRegistry = null!;
+    private readonly ComponentRegistry _componentRegistry;
     private readonly IWorld _world;
+    private static bool _isInitialized = false;
 
     /// <inheritdoc cref="EntityManager"/>
-    public EntityManager(ref ComponentRegistry componentRegistry, IWorld world)
+    public EntityManager(ref ComponentRegistry componentRegistry, IWorld world, bool isInitialized = false)
     {
         _componentRegistry = componentRegistry;
         _world = world;
+        _isInitialized = isInitialized;
     }
 
     /// Get all Active entities present in the game.
@@ -170,11 +172,7 @@ public partial class EntityManager
 
     private static readonly Dictionary<string, AEntityCommon> _definitions = new();
 
-    /// <summary>
-    /// Registers the yaml data of an entity of provided type into the ECS.
-    /// </summary>
-    /// <param name="yaml"></param>
-    /// <typeparam name="T"></typeparam>
+    /// <inheritdoc cref="RegisterEntity{T, EntityYaml}"/>
     public static void RegisterEntity<T>(EntityYaml yaml) where T : AEntityCommon =>
         RegisterEntity<T, EntityYaml>(yaml);
 
@@ -195,6 +193,12 @@ public partial class EntityManager
         where T : AEntityCommon
         where Y : EntityYaml
     {
+        if (!_isInitialized)
+        {
+            Log($"Attempted to register {yaml.Type} entity without initializing Entity Manager!", LOG.SYSTEM_WARNING);
+            return;
+        }
+
         Type derivedType = typeof(T);
 
         // Register raw entity
@@ -223,6 +227,12 @@ public partial class EntityManager
     /// <exception cref="YamlEmitterException">Thrown when ReferenceId / Handle not provided in YAML.</exception>
     public static void RegisterTemplate<TYaml>(TYaml yaml, Type derivedType) where TYaml : EntityYaml
     {
+        if (!_isInitialized)
+        {
+            Log($"Attempted to register {yaml.Type} entity without initializing Entity Manager!", LOG.SYSTEM_WARNING);
+            return;
+        }
+
         // Build components
         var components = BuildComponentsFromEntityYaml(yaml);
 
@@ -289,7 +299,7 @@ public partial class EntityManager
 
         foreach (ComponentYaml yamlComponent in yaml.Components)
         {
-            if (!_componentRegistry.RegisteredComponentTypesDictionary
+            if (!ComponentRegistry.RegisteredComponentTypesDictionary
                     .TryGetValue(yamlComponent.Type.Replace("Component", string.Empty), out Type? componentType))
             {
                 Log($"Unknown component type: {yamlComponent.Type}", LOG.FILE_WARNING);

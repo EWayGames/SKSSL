@@ -42,6 +42,10 @@ public enum TextureType : byte
 /// Default implementation
 public class BlankTextureLoader : TextureLoader
 {
+    public BlankTextureLoader(ContentManager contentManager, GraphicsDevice graphicsDevice) : base(contentManager, graphicsDevice)
+    {
+    }
+
     /// <inheritdoc />
     protected override void InitializeRegistries() =>
         throw new NotImplementedException(
@@ -61,7 +65,7 @@ public class BlankTextureLoader : TextureLoader
 public abstract partial class TextureLoader
 {
     /// Initially default implementation. Permits one static instance per program.
-    private static TextureLoader _instance = new BlankTextureLoader();
+    private static TextureLoader _instance = null!;
 
     /// Allow override (e.g., for mods or tests)
     public static TextureLoader Instance
@@ -87,34 +91,29 @@ public abstract partial class TextureLoader
     private static bool IsInitialized { get; set; } = false;
 
     /// Default static assignation of instance of a texture loader.
-    public TextureLoader() => _instance = this;
+    public TextureLoader(ContentManager contentManager, GraphicsDevice graphicsDevice)
+    {
+        // Load Custom Registries.
+        _instance = this;
+        _monoGameContent = contentManager ?? throw new ArgumentNullException(nameof(contentManager));
+        _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
+    }
 
     /// <summary>
     /// Initializes texture loaded. An alternative version of the loaded with a custom implement for
     /// <br/><br/>
     /// It is IMPERATIVE that this be loaded before the base.Initialize() of the game's Initialize() method.
     /// </summary>
-    /// <param name="contentManager">Monogame content manager for "Vanilla' game content.</param>
-    /// <param name="graphicsDevice">Game's graphic device for rendering.</param>
     /// <param name="gameContentDirectories"></param>
     /// <exception cref="ArgumentNullException"></exception>
-    public static void Initialize(
-        ContentManager contentManager,
-        GraphicsDevice graphicsDevice,
-        IEnumerable<GameContentDirectory> gameContentDirectories)
+    public static void Initialize(IEnumerable<GameContentDirectory> gameContentDirectories)
     {
         // If the texture loader has already been initialized by a "surface-level" class override,
         //  then that override is the one that shall be used and whatever is needed has already been initialized.
         if (IsInitialized)
             return;
-
-        // Load Custom Registries.
-        _instance.InitializeRegistries();
-
-        _monoGameContent = contentManager ?? throw new ArgumentNullException(nameof(contentManager));
-        _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
         IsInitialized = true;
-
+        _instance.InitializeRegistries();
         CompleteTextureInit(gameContentDirectories);
     }
 
@@ -326,6 +325,8 @@ public abstract partial class TextureLoader
                     subType = TextureType.DIFFUSE;
                 }
 
+                // ERR: Textures are failing to load here. Files are being searched twice-fold.
+                //  Once here, and another on the load-call.
                 // Could be diffuse, normal, displacement, or anything.
                 Texture2D texture = Load(fileName, textureFolders);
 
