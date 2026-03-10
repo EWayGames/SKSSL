@@ -117,6 +117,8 @@ public abstract class SSLGame : Game
 
     // WARN: I have no idea how to do networking. This needs work. Set False as Default, for now.
     public bool IsNetworkSupported { get; set; } = false;
+    
+    /// Title of game window.
     public string Title { get; set; }
 
     /// <summary>
