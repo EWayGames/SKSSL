@@ -42,28 +42,27 @@ public enum TextureType : byte
 // Default implementation
 public class BlankTextureLoader : TextureLoader
 {
-    protected override void CustomInitializeRegistries() =>
+    protected override void InitializeRegistries() =>
         throw new NotImplementedException(
             "Developer(s) MUST implement custom Registries Initialization, as registries may vary between projects.");
-
-    protected override void CustomOptionalLoad(string input)
-    {
-    }
 }
 
 /// <summary>
 /// Generic texture loader for all game asset categories (objects, items, UI, etc.).
 /// Supports multi-texture maps (diffuse + normal + etc.) and automatic error texture fallback.
 /// <br/><br/>
-/// <see cref="CustomInitializeRegistries"/> MUST be filled-out per-implementation based on the
+/// <see cref="InitializeRegistries"/> MUST be filled-out per-implementation based on the
 /// developer requirements / layout of the project.
+/// Allows the developer to pre-initialize a custom loader for the game, assuming it is on the surface-level of
+/// game initialization and before base.Initialize() is called in the game's Initialize() method.
+/// <see cref="TextureLoader"/> instance may be provided to override the <see cref="BlankTextureLoader"/>.
 /// </summary>
 public abstract partial class TextureLoader
 {
-    // Default implementation
+    /// Initially default implementation. Permits one static instance per program.
     private static TextureLoader _instance = new BlankTextureLoader();
 
-    // Allow override (e.g., for mods or tests)
+    /// Allow override (e.g., for mods or tests)
     public static TextureLoader Instance
     {
         get => _instance;
@@ -88,11 +87,7 @@ public abstract partial class TextureLoader
 
     private static bool IsInitialized { get; set; } = false;
 
-    /// <summary>
-    /// Allows the developer to pre-initialize a custom loader for the game, assuming it is on the surface-level of
-    /// game initialization and before base.Initialize() is called in the game's Initialize() method.
-    /// <see cref="TextureLoader"/> instance may be provided to override the <see cref="BlankTextureLoader"/>.
-    /// </summary>
+
     /// <param name="alternativeLoader"></param>
     public static void PreInitializeLoader(TextureLoader? alternativeLoader = null)
     {
@@ -116,7 +111,7 @@ public abstract partial class TextureLoader
             return;
 
         // Load Custom Registries.
-        _instance.CustomInitializeRegistries();
+        _instance.InitializeRegistries();
 
         _modFolders = modFolders;
         _vanillaContent = vanillaContent ?? throw new ArgumentNullException(nameof(vanillaContent));
@@ -183,18 +178,12 @@ public abstract partial class TextureLoader
     #endregion
 
     /// <summary>
-    /// Custom method for initializing dedicated registries. Absolutely required per-project.
+    /// Custom method for initializing dedicated registries. Overload required.
     /// </summary>
-    protected abstract void CustomInitializeRegistries();
+    /// <remarks>Registries are the dedicated names to the topmost folders containing textures.</remarks>
+    protected abstract void InitializeRegistries();
 
-    /// <summary>
-    /// Custom method for loading. This is additional optional logic that the developer may choose to implement.
-    /// Though all instantiated inheritors of <see cref="TextureLoader"/> require this, the developer is NOT
-    /// required to add any code.
-    /// </summary>
-    protected abstract void CustomOptionalLoad(string input);
-
-    // Generic storage: category → texture name → texture object
+   // Generic storage: category → texture name → texture object
     private static readonly
         ConcurrentDictionary<string, Dictionary<string, Texture2D>> _simpleTextures = new();
 
@@ -236,7 +225,6 @@ public abstract partial class TextureLoader
     public static void LoadAll(string currentDirectory)
     {
         _currentDirectory = currentDirectory;
-        _instance.CustomOptionalLoad(currentDirectory);
         foreach ((string categoryName, TextureCategoryConfig config) in _categories)
             LoadCategory(categoryName, config);
     }
@@ -426,7 +414,12 @@ public class TextureCategoryConfig
 
     /// Does this texture category store complex texture maps?
     /// <value>Stores simple key-value pairs when false, and a <see cref="SKMaterial"/> dictionary when true.</value>
-    public bool IsMultiTextureMap { get; init; }
+    /// <remarks>Example layout:<br/>
+    /// game ➡<br/>
+    /// .textures ➡<br/>
+    /// ..test ➡<br/>
+    /// ...test.png, test_normal.png, etc.</remarks>
+    public bool IsMultiTextureMap { get; init; } = false;
 
     /// In-line function call to transform string tuple (key, value), returning and assigning a resulting string value. 
     public Func<string, string, string>? KeyTransform { get; init; }
