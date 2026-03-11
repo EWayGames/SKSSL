@@ -43,6 +43,10 @@ public static class StaticGameLoader
     /// Returns enumerated files from a specific folder path respectful to the program's executable.
     /// Will attempt to use the Application Context's Base Directory as its root if a directory is not provided.
     /// </summary>
+    /// <remarks>
+    /// Directory is optional, as it will use the game's base application directory instead if
+    /// not provided.
+    /// </remarks>
     public static IEnumerable<string> GetGameFiles(string? directory = null, params string[] path_s)
     {
         string fullPath = Path.Combine(directory ?? AppContext.BaseDirectory, Path.Combine(path_s));
@@ -201,53 +205,4 @@ public static class StaticGameLoader
             DustLogger.Log($"Triggering Cleanup method for class {loader.Name}");
         }
     }
-}
-
-/// <summary>
-/// A content directory containing game prototype, texture, and localization data.
-/// </summary>
-public record GameContentDirectory
-{
-    /// Directory that which game content shall be read.
-    public readonly string ContentDirectory;
-
-    #region Internal Folder Access Fields
-
-    /// <returns>Path to localization folder, or null if not found.</returns>
-    public string? LocalizationFolder
-    {
-        get
-        {
-            string dir = Path.Combine(ContentDirectory, "localization");
-            return !Directory.Exists(dir) ? null : dir;
-        }
-    }
-
-    /// <returns>Path to internal textures, or null if not found.</returns>
-    public string? TexturesFolder
-    {
-        get
-        {
-            string dir = Path.Combine(ContentDirectory, "textures");
-            return !Directory.Exists(dir) ? null : dir;
-        }
-    }
-
-    #endregion
-
-    /// TODO: Implement load order.
-    private static int loadOrderCounter = 0;
-
-    /// 
-    public int LoadOrder;
-
-    /// Creates instance of Game Directory Wrapper.
-    public GameContentDirectory(string contentDirectory)
-    {
-        ContentDirectory = contentDirectory;
-        LoadOrder = loadOrderCounter++;
-    }
-
-    /// <inheritdoc />
-    public override string ToString() => ContentDirectory;
 }
