@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using static SKSSL.DustLogger; // I like my DustLogger. I will use it everywhere.
 using Type = System.Type; // For reflection purposes.
 
@@ -177,8 +178,11 @@ public class ComponentRegistry
         // Logging
         Log($"Registered {componentCount} components in {stopwatch.ElapsedMilliseconds}ms");
         Log("Registered types:");
+        // Print all registered components in a nice list. 
+        StringBuilder compSb = new();
         foreach (Type type in _registeredComponents.Values)
-            Log($"  {type.Name} -> ID {GetOrRegister(type)}");
+            compSb.AppendLine($"  {type.Name} -> ID {GetOrRegister(type)}");
+        Log(compSb.ToString());
 
         return;
 
