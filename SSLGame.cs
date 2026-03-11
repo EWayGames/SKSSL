@@ -28,7 +28,11 @@ namespace SKSSL;
 public abstract class SSLGame : Game
 {
     /// Ultimate toggle to use ECS service. Enable this at project initialization.
-    public static bool UseECS = false;
+    /// To use, add the following to the game class inheriting SSLGame:
+    /// <code>
+    /// static MyGameClass() => UseECS = true;
+    /// </code>
+    internal static bool UseECS = false;
     
     /// General context of the game dictated here.
     public static SceneManager SceneManager = null!;
@@ -116,7 +120,6 @@ public abstract class SSLGame : Game
         
         // Display ECS status. This constructor is called after inheritors.
         Log($"ECS status: {(UseECS ? "on" : "off")}");
-
         if (UseECS)
         {
             // Initializing component registry before anything else. 
