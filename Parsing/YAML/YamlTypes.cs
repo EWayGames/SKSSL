@@ -29,6 +29,15 @@ namespace SKSSL.YAML;
 [YamlObject]
 public partial record BaseYamlEntry
 {
+    /// <summary>
+    /// Internal categorization of this yaml entry. Split into three parts:<br/>
+    /// 1. Directory (dictated by the folder where this was found)<br/>
+    /// 2. Type (from explicit type stated in file)<br/>
+    /// 3. Reference ID (also provided in-file)<br/>
+    /// </summary>
+    /// <returns>"key_<see cref="Type"/>:<see cref="ReferenceId"/>"</returns>
+    public string GetUniqueInternalRef(string key) => $"{key}_{Type}:{ReferenceId}";
+
     /// Explicit type definition for this entry.
     public string Type { get; set; }
 
