@@ -41,7 +41,8 @@ public partial record BaseYamlEntry
     /// </summary>
     /// <returns>"<see cref="Key"/>_<see cref="Type"/>:<see cref="ReferenceId"/>"</returns>
     /// <remarks>A replacement key can be used to override this internal ref. get() call.</remarks>
-    public string GetUniqueInternalRef(string? key = null) => $"{(!string.IsNullOrEmpty(key ?? null) ? key : Key) }_{Type}:{ReferenceId}";
+    public string GetUniqueInternalRef(string? key = null)
+        => $"{(!string.IsNullOrEmpty(key ?? null) ? key : Key) }_{Type}:{ReferenceId}";
 
     /// Explicit type definition for this entry.
     public string Type { get; set; }
