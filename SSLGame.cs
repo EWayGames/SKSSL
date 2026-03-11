@@ -143,7 +143,7 @@ public abstract class SSLGame : Game
         return graphicsDeviceManager;
     }
 
-    internal readonly IEnumerable<GameContentDirectory> GameContentDirectories = [];
+    internal readonly IEnumerable<GameContentDirectory> GameContentDirectories;
 
     /// <summary>
     /// For custom <see cref="StaticGameLoader"/>s, you MUST initialize them before the base.Initialize() an inheritance
