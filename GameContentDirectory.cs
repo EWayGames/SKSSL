@@ -5,6 +5,9 @@ namespace SKSSL;
 /// </summary>
 public record GameContentDirectory
 {
+    /// Name of the overall directory represented.. Used for sorting and classification.
+    public readonly string DirectoryTitle;
+    
     /// Directory that which game content shall be read.
     public readonly string ContentDirectory;
 
@@ -35,6 +38,7 @@ public record GameContentDirectory
     public GameContentDirectory(string contentDirectory)
     {
         ContentDirectory = contentDirectory;
+        DirectoryTitle = Path.GetFileName(contentDirectory);
         LoadOrder = loadOrderCounter++;
     }
 
