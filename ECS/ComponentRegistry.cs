@@ -181,7 +181,7 @@ public class ComponentRegistry
         // Print all registered components in a nice list. 
         StringBuilder compSb = new();
         foreach (Type type in _registeredComponents.Values)
-            compSb.AppendLine($"  {type.Name} -> ID {GetOrRegister(type)}");
+            compSb.AppendLine($"  {type.Name} -> ID {GetOrRegister(type)}\n");
         Log(compSb.ToString());
 
         return;
