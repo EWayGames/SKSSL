@@ -262,8 +262,8 @@ public abstract partial class TextureLoader
         }
 
         // All hope as failed. Time to return the error texture instead.
-        Log($"Failed to find valid path for texture cat.-key-pair: [{category}:{key}] — using error texture.",
-            LOG.FILE_ERROR);
+        Log($"Failed to find valid path for texture category-key pair: [{category}:{key}] — using error texture.",
+            LOG.FILE_WARNING);
         return HardcodedTextures.GetErrorTexture();
     }
 

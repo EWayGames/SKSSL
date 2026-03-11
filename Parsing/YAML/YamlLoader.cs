@@ -414,12 +414,14 @@ public static partial class YamlLoader
         // For every IYamlBlock that happens to have a valid type defined within it...
         foreach (IYamlBlock block in yamlBlocks)
         {
+            // Skip blocks whose text begin with '#', because this is a comment. Comments are ignored!
+            if (block.Text.StartsWith('#')) continue;
             if (block.Type == null)
             {
                 // Short-circuit. Type is resolved during block parsing.
                 // IYamlBlock contains the list of expected types.
                 Log(
-                    $"{(string.IsNullOrWhiteSpace(block.Tag) ? "blank" : block.Tag)} tag is invalid on line {block.Index} " +
+                    $"{(string.IsNullOrWhiteSpace(block.Tag) ? "missing" : block.Tag)} tag is invalid on line {block.Index} " +
                     $"in file {block.File}", LOG.FILE_ERROR);
                 continue;
             }
