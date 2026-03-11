@@ -28,7 +28,7 @@ public abstract partial class TextureLoader
         {
             if (NameToId.TryGetValue(name, out int existingId))
                 return existingId;
-
+            
             if (MaterialCount >= MaxMaterials)
                 throw new InvalidOperationException($"Exceeded maximum material count ({MaxMaterials})");
 
@@ -64,17 +64,14 @@ public abstract partial class TextureLoader
         /// <returns>Material by reference id, or <see cref="DefaultErrorMaterial"/></returns>
         /// <remarks>Typically reference is "folder_..._folder_texture"</remarks>
         /// <example>GetMaterial("gneiss_rock");</example>
-        public static SKMaterial GetMaterial(string reference)
-            => NameToId.TryGetValue(reference, out int id) ? Materials[id] : DefaultErrorMaterial;
+        internal static SKMaterial GetMaterial(string reference)
+        {
+            return NameToId.TryGetValue(reference, out int id) ? Materials[id] : DefaultErrorMaterial;
+        }
 
         /// <summary>
         /// Default material with error and null texture mappings.
         /// </summary>
-        private static readonly SKMaterial DefaultErrorMaterial = new()
-        {
-            Diffuse = HardcodedTextures.GetErrorTexture(),
-            Normal = HardcodedTextures.GetErrorTexture(),
-            // Emissive, Displacement, and the rest can stay null.
-        };
+        private static readonly SKMaterial DefaultErrorMaterial = SKMaterial.Error(HardcodedTextures.GetErrorTexture());
     }
 }
