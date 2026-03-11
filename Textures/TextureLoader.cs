@@ -353,7 +353,7 @@ public abstract partial class TextureLoader
                 }
 
                 // Could be diffuse, normal, displacement, or anything.
-                Texture2D texture = Load(fileName, config.AssetPathKey, config.IsMultiTextureMap, file);
+                Texture2D texture = Load(fileName, config.AssetPathKey, true, file);
 
                 // Changes current key texture entry main key, such as "folder_test_object" without suffix.
                 //  Because it aligns to the folder, every key will (should) be unique.

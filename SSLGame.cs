@@ -27,6 +27,9 @@ namespace SKSSL;
 /// </summary>
 public abstract class SSLGame : Game
 {
+    /// Ultimate toggle to use ECS service. Enable this at project initialization.
+    public static bool UseECS = false;
+    
     /// General context of the game dictated here.
     public static SceneManager SceneManager = null!;
 
@@ -104,6 +107,9 @@ public abstract class SSLGame : Game
         
         // Initialize all static paths, which the developer must have defined!
         GameContentDirectories = StaticGameLoader.GetAllGameDirectories();
+        
+        // Display ECS status. This constructor is called after inheritors.
+        Log($"ECS status: {(UseECS ? "on" : "off")}");
         
         // Load Static Game Content
         Log("Loading static paths...");
