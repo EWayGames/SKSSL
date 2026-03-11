@@ -108,10 +108,13 @@ public static partial class YamlLoader
     /// <param name="directory">Directory path to load.</param>
     /// <typeparam name="T">Entry type in files</typeparam>
     [Obsolete("Use the alternative non-generic LoadDirectory() instead.")]
-    public static IEnumerable<T> LoadDirectory<T>(string directory)
+    public static IEnumerable<T> LoadDirectory<T>(GameContentDirectory directory)
     {
         // Loop over every YAML file.
-        var files = Directory.GetFiles(directory, searchPattern: YamlFileExtension, SearchOption.AllDirectories);
+        var files = Directory.GetFiles(
+            path: directory.ContentDirectory,
+            searchPattern: YamlFileExtension,
+            SearchOption.AllDirectories);
         foreach (var file in files)
         {
             string expectedTypeName = typeof(T).Name;
@@ -125,7 +128,7 @@ public static partial class YamlLoader
             // .*                   -> any characters after (we don't care)
             var regex = new Regex(
                 @".*?type\s*:\s*(Base)?([A-Za-z0-9_]+)(Yaml)?.*",
-                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                options: RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
             bool typeFound = false;
             using var reader = new StreamReader(file);
@@ -154,8 +157,7 @@ public static partial class YamlLoader
     /// Searches a directory using provided type definitions and file patterns. Directory defaults to application's if
     /// not provided.
     /// </summary>
-    public static Dictionary<Type, List<object>> LoadDirectory(Type[] types, string directory = "",
-        params string[] patterns)
+    public static Dictionary<Type, List<object>> LoadDirectory(Type[] types, string directory, params string[] patterns)
     {
         // Get all yaml files.
         var files = GetFiles(patterns, directory);
