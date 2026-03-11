@@ -189,18 +189,18 @@ public abstract partial class TextureLoader
     /// Assumes the folders within the TextureLoader are all texture folders.
     /// </summary>
     /// <param name="key">Name of the provided asset without extension. (e.g. "Textures/PlayerSprite")</param>
-    /// <param name="config">Dedicated category.</param>
+    /// <param name="category">Dedicated category.</param>
     /// <param name="path">Path to asset.</param>
     /// <returns>Texture asset or Default Error Texture, instead.</returns>
-    public static Texture2D Load(string key, TextureCategoryConfig? config = null, string? path = null)
+    public static Texture2D Load(string key, string? category = null, bool isMulti = false, string? path = null)
     {
         // Attempting to retrieve a Texture2D.
         // Using the key and category, check if texture already exists in memory.
         // If the category provided is a valid (non-null) one, then it should be checked.
-        if (config is not null)
+        if (category is not null)
         {
             // Textures :: (category -> [key, texture])
-            if (_textures.TryGetValue(config.AssetPathKey, out var dictionary) &&
+            if (_textures.TryGetValue(category, out var dictionary) &&
                 dictionary.TryGetValue(key, out Texture2D? dictionaryTexture))
                 return dictionaryTexture;
         }
@@ -231,8 +231,8 @@ public abstract partial class TextureLoader
             Texture2D? streamTexture = Texture2D.FromStream(_graphicsDevice, stream);
 
             // If the category is provided, then load this texture into memory as if it were cached.
-            if (config is not null && !config.IsMultiTextureMap)
-                _textures[config.AssetPathKey][key] = streamTexture;
+            if (category is not null && !isMulti)
+                _textures[category][key] = streamTexture;
             // TODO: Add handling if category is null. Automatically add category based on folder parent.
 
             stream.Close(); // Stop memory leaks with this one simple trick!
@@ -247,8 +247,8 @@ public abstract partial class TextureLoader
         {
             var streamTexture = _monoGameContent.Load<Texture2D>(key);
 
-            if (config is not null && !config.IsMultiTextureMap)
-                _textures[config.AssetPathKey][key] = streamTexture;
+            if (category is not null && !isMulti)
+                _textures[category][key] = streamTexture;
             // TODO: Add handling if category is null. Automatically add category based on folder parent.
 
             return streamTexture;
@@ -262,7 +262,7 @@ public abstract partial class TextureLoader
         }
 
         // All hope as failed. Time to return the error texture instead.
-        Log($"Failed to find valid path for texture cat.-key-pair: [{config}:{key}] — using error texture.",
+        Log($"Failed to find valid path for texture cat.-key-pair: [{category}:{key}] — using error texture.",
             LOG.FILE_ERROR);
         return HardcodedTextures.GetErrorTexture();
     }
@@ -310,7 +310,7 @@ public abstract partial class TextureLoader
             string key = config.KeyTransform?.Invoke(fileName, file) ?? fileName.ToLower();
 
             // Error Reporting & Texture is automatically handled in the Load() call.
-            Load(key, config, file);
+            Load(key, config.AssetPathKey, config.IsMultiTextureMap, file);
         }
     }
 
@@ -353,7 +353,7 @@ public abstract partial class TextureLoader
                 }
 
                 // Could be diffuse, normal, displacement, or anything.
-                Texture2D texture = Load(fileName, config, file);
+                Texture2D texture = Load(fileName, config.AssetPathKey, config.IsMultiTextureMap, file);
 
                 // Changes current key texture entry main key, such as "folder_test_object" without suffix.
                 //  Because it aligns to the folder, every key will (should) be unique.
