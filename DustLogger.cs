@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
-using Microsoft.VisualStudio.TestPlatform.TestHost;
 
 namespace SKSSL;
 

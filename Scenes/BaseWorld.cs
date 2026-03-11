@@ -27,13 +27,16 @@ public abstract class BaseWorld : IWorld
     public RenderableSpace? Space { get; protected set; }
     protected bool IsInitialized { get; private set; }
 
-    /// Most worlds use ECS — this is opt-out instead of opt-in
-    protected virtual bool UsesECS => false;
+    /// Most worlds use ECS — this depends on overall dictation. If ECS is enabled,
+    /// then a world can be forcefully disconnected per its definition. 
+    /// <value>SSLGame.<see cref="SSLGame.UseECS"/></value>
+    protected virtual bool UsesECS => SSLGame.UseECS;
     
     /// Overridable toggle to use Raw Entities or Entity Templates in ECS.
     protected virtual bool UseECSRawEntities => true;
 
-    public ECSController? ECS { get; private set; }
+    /// ECS controller unique to this world instance. Left null of no ECS controller.
+    public ECSController? ECS { get; private set; } = null;
 
     /// Assign Rendered space field with provided space definition.
     public void SetSpace(RenderableSpace worldSpace) => Space = worldSpace;
@@ -53,8 +56,7 @@ public abstract class BaseWorld : IWorld
         IsInitialized = true;
 
         // Enable ECS if toggled-on.
-        if (UsesECS)
-            ECS?.Initialize();
+        ECS?.Initialize();
 
         // Initialize WorldSpace assuming graphics provided + exception.
         if (graphics != null)
