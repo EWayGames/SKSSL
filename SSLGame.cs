@@ -42,6 +42,12 @@ public abstract class SSLGame : Game
     /// <returns>Scene Manager's Current World's Entity Context.</returns>
     public static EntityContext? ECS()
     {
+        if (!UseECS)
+        {
+            Log("Failed to get Entity Context because ECS is not enabled.", LOG.SYSTEM_ERROR);
+            return null;
+        }
+        
         if (SceneManager.CurrentWorld is not BaseWorld world)
         {
             Log("Failed to get Entity Context from current (null) world in Scene Manager!", LOG.SYSTEM_WARNING);
@@ -110,9 +116,16 @@ public abstract class SSLGame : Game
         
         // Display ECS status. This constructor is called after inheritors.
         Log($"ECS status: {(UseECS ? "on" : "off")}");
+
+        if (UseECS)
+        {
+            // Initializing component registry before anything else. 
+            Log("Initializing components.");
+            ComponentRegistry.Initialize();
+        }
         
         // Load Static Game Content
-        Log("Loading static paths...");
+        Log("Initializing static paths.");
         StaticGameLoader.Initialize(StaticPaths);
         StaticGameLoader.Load(path => StaticGameLoader.GPath(path));
     }
