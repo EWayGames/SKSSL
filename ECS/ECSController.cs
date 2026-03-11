@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using SKSSL.Scenes;
 using static SKSSL.DustLogger;

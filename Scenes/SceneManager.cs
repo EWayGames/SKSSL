@@ -5,7 +5,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Media;
 using MonoGameGum;
-using SKSSL.ECS;
 
 namespace SKSSL.Scenes;
 
