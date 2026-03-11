@@ -116,7 +116,9 @@ public abstract class SSLGame : Game
         GameServices = services.BuildServiceProvider();
         
         // Initialize all static paths, which the developer must have defined!
-        GameContentDirectories = StaticGameLoader.GetAllGameDirectories();
+        // Includes load-order implementation. Higher values override lower values.
+        var gameDirectories = StaticGameLoader.GetAllGameDirectories();
+        GameContentDirectories = gameDirectories.OrderBy(d => d.LoadOrder).ToList();
         
         // Display ECS status. This constructor is called after inheritors.
         Log($"ECS status: {(UseECS ? "on" : "off")}");
