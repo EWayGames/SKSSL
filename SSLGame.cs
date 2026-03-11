@@ -117,6 +117,9 @@ public abstract class SSLGame : Game
         
         // Initialize all static paths, which the developer must have defined!
         // Includes load-order implementation. Higher values override lower values.
+        // TODO: Add a way to change load order priorities in game directories. Likely requires a file? Master file?
+        //  A file per-game folder means version mismatches per file change that breaks every update.
+        //  Ergo, a master file may be the best solution.
         var gameDirectories = StaticGameLoader.GetAllGameDirectories();
         GameContentDirectories = gameDirectories.OrderBy(d => d.LoadOrder).ToList();
         
