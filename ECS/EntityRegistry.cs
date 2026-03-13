@@ -125,7 +125,6 @@ public abstract class EntityRegistry
             output = template;
         }
 
-
         RegisterDefinition(output);
     }
 
@@ -189,7 +188,8 @@ public abstract class EntityRegistry
     /// <remarks>
     /// Automatically registers definitions as a "source:handle" arrangement.
     /// </remarks>
-    private static void RegisterDefinition(AEntityCommon definition) => Definitions[$"{definition.Source}:{definition.Handle}"] = definition;
+    private static void RegisterDefinition(AEntityCommon definition)
+        => Definitions[$"{definition.Source}:{definition.Handle}"] = definition;
 
     /// <summary>
     /// Safe[r] TryGet method to retrieve an Entity Definition *OR* Template using a reference id.
