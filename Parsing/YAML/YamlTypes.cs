@@ -46,9 +46,9 @@ public partial record BaseYamlEntry
     /// Explicit type definition for this entry.
     public string Type { get; set; }
 
-    /// Searchable, indexable ID.
+    /// Searchable, indexable ID. Virtual for possible nullability change in child classes.
     [YamlMember(name: "id")]
-    public string ReferenceId { get; set; }
+    public virtual string ReferenceId { get; set; }
     
     /// Non-localized name key.
     public virtual string? Name { get; set; }
