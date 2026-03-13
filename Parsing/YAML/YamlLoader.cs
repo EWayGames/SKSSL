@@ -174,7 +174,11 @@ public static partial class YamlLoader
             // Merging the file's conglomerate with our super conglomerate.
             var output = LoadFile(types, file);
             foreach ((Type type, var yamlData) in output)
+            {
+                // Tag each yaml entry with source.
+                yamlData.ForEach(yamlEntry => ((BaseYamlEntry)yamlEntry).Key = Path.GetFileName(directory));
                 conglomerate[type] = conglomerate[type].Concat(yamlData).ToList();
+            }
         }
 
         return conglomerate;

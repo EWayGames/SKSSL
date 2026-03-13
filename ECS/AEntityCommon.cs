@@ -16,6 +16,9 @@ namespace SKSSL.ECS;
 [YamlObjectUnion("!SKEntity", typeof(SKEntity))]
 public abstract partial record AEntityCommon
 {
+    [YamlIgnore]
+    public string Source { get; set; }
+    
     /// <summary>
     /// For direct raw-serialization of entities. Completely unused if prioritizing yaml templates.
     /// </summary>
