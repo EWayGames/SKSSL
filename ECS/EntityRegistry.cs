@@ -96,7 +96,7 @@ public abstract class EntityRegistry
                 throw new YamlEmitterException("Entity created was not of expected type!");
 
             // Tag 'em.
-            entity.Source = yaml.Key;
+            entity.Source = yaml.Source;
             output = entity;
         }
         // Templates are constructed and the yaml is passed-through.
@@ -121,7 +121,7 @@ public abstract class EntityRegistry
                 throw new YamlEmitterException("Invalid template!");
 
             // Tag 'em.
-            template.Source = yaml.Key;
+            template.Source = yaml.Source;
             output = template;
         }
 
