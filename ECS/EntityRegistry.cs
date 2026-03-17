@@ -195,11 +195,11 @@ public abstract class EntityRegistry
     /// Safe[r] TryGet method to retrieve an Entity Definition *OR* Template using a reference id.
     /// </summary>
     /// <returns>True if a template was found. False if one was not. The output is also Null if one was not found.</returns>
-    public static bool TryGetDefinition<T>(string referenceId, out T? definition) where T : AEntityCommon
+    public static bool TryGetDefinition<T>(string handle, out T? definition) where T : AEntityCommon
     {
-        var gotValue = EntityManager.Definitions.TryGetValue(referenceId, out AEntityCommon? _);
+        var gotValue = EntityManager.Definitions.TryGetValue(handle, out AEntityCommon? _);
 
-        if (EntityManager.Definitions[referenceId] is T typed)
+        if (EntityManager.Definitions[handle] is T typed)
         {
             definition = typed;
             return true;

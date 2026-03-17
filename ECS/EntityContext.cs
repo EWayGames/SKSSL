@@ -61,16 +61,16 @@ public readonly struct EntityContext
 
     /// <seealso cref="EntityManager"/>
     /// <seealso cref="EntityManager.Spawn"/>
-    public SKEntity? SpawnEntity(string referenceId)
+    public SKEntity? SpawnEntity(string handle)
     {
         SKEntity? spawnedEntity = null;
         try
         {
-            spawnedEntity = EntityManager.Spawn(referenceId);
+            spawnedEntity = EntityManager.Spawn(handle);
         }
         catch (Exception e)
         {
-            Log($"{nameof(EntityContext)}.{nameof(SpawnEntity)} call failed to spawn {referenceId}: {e.Message}");
+            Log($"{nameof(EntityContext)}.{nameof(SpawnEntity)} call failed to spawn {handle}: {e.Message}");
         }
 
         return spawnedEntity;
