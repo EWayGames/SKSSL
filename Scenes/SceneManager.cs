@@ -71,11 +71,13 @@ public class SceneManager
         if (typeof(TScene).BaseType != typeof(BaseScene))
             throw new TypeLoadException("Attempted to load scene type that does not derive from BaseScene.");
 
+        // Clear everything before creating new scene.
+        MediaPlayer.Stop(); // Stop The Music
+        ClearScreens(); // Clear old screens.
+        
         // Force empty constructor of new scene. Scenes aren't instantiated and stored elsewhere, they're created here.
         var newScene = new TScene();
 
-        MediaPlayer.Stop(); // Stop The Music
-        ClearScreens(); // Clear old screens.
         _currentScene?.UnloadContent(); // UniqueUnloadContent the current scene
 
         _currentScene = newScene; // Switch to the new scene

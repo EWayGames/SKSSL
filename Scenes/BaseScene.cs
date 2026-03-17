@@ -42,11 +42,10 @@ public abstract class BaseScene
         GameWorld?.Initialize(manager); // GameWorld has its own spritebatch.
     }
 
-    /// <summary>
     /// The screens and UI elements that are being loaded in this scene.
-    /// </summary>
     public abstract void LoadContent();
 
+    /// Calls destructive actions against the game world and additional special developer-provided unload calls.
     public void UnloadContent()
     {
         GameWorld?.Destroy();
