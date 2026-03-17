@@ -58,8 +58,8 @@ public abstract class BaseScene
     }
 
     /// Per-scene Update instructions.
-    public abstract void Update(GameTime gameTime);
+    public virtual void Update(GameTime gameTime) => GameWorld?.Update(gameTime);
 
     /// Per-scene Draw instructions.
-    public abstract void Draw(GameTime gameTime);
+    public virtual void Draw(GameTime gameTime) => GameWorld?.Draw(gameTime);
 }
