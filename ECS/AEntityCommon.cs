@@ -56,7 +56,7 @@ public abstract partial record AEntityCommon
     protected AEntityCommon(EntityYaml yaml, IReadOnlyDictionary<Type, object> components)
     {
         // ReSharper disable VirtualMemberCallInConstructor
-        Handle = yaml.ReferenceId;
+        Handle = yaml.Handle;
         
         // Name and description may be absent / null, so handle them here.
         NameKey = yaml.Name ?? "unknown";

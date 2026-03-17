@@ -34,7 +34,7 @@ public abstract class EntityRegistry
     {
         if (!SSLGame.UseECS)
         {
-            Log($"Attempted to register {yaml.Type} Entity {yaml.ReferenceId} without initializing Entity Manager!",
+            Log($"Attempted to register {yaml.Type} Entity {yaml.Handle} without initializing Entity Manager!",
                 LOG.SYSTEM_WARNING);
             return;
         }
@@ -74,7 +74,7 @@ public abstract class EntityRegistry
     {
         if (!SSLGame.UseECS)
         {
-            Log($"Called Register for {yaml.Type} Entity {yaml.ReferenceId} without initializing Entity Manager!",
+            Log($"Called Register for {yaml.Type} Entity {yaml.Handle} without initializing Entity Manager!",
                 LOG.SYSTEM_WARNING);
             return;
         }

@@ -38,17 +38,17 @@ public partial record BaseYamlEntry
     /// 1. Directory (dictated by the folder where this was found)<br/>
     /// 2. Reference ID (also provided in-file)
     /// </summary>
-    /// <returns>"<see cref="Source"/>:<see cref="ReferenceId"/>"</returns>
+    /// <returns>"<see cref="Source"/>:<see cref="Handle"/>"</returns>
     /// <remarks>A replacement key can be used to override this internal ref. get() call.</remarks>
     public string GetUniqueInternalRef(string? key = null)
-        => $"{(!string.IsNullOrEmpty(key ?? null) ? key : Source) }:{ReferenceId}";
+        => $"{(!string.IsNullOrEmpty(key ?? null) ? key : Source) }:{Handle}";
 
     /// Explicit type definition for this entry.
     public string Type { get; set; }
 
     /// Searchable, indexable ID. Virtual for possible nullability change in child classes.
     [YamlMember(name: "id")]
-    public virtual string ReferenceId { get; set; }
+    public virtual string Handle { get; set; }
     
     /// Non-localized name key.
     public virtual string? Name { get; set; }
