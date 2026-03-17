@@ -72,6 +72,7 @@ public abstract class BaseWorld : IWorld
         }
     }
 
+    /// <inheritdoc cref="IWorld.LoadContent"/>
     public virtual void LoadContent()
     {
     }
