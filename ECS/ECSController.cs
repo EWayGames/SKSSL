@@ -42,7 +42,7 @@ public class ECSController
     {
         if (Initialized)
         {
-            Log("ECSController already initialized!");
+            Log("ECSController already initialized!", LOG.GENERAL_WARNING);
             return;
         }
 

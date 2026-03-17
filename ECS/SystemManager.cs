@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.Xna.Framework;
 using SKSSL.Scenes;
 using static SKSSL.DustLogger;
+// ReSharper disable PossibleMultipleEnumeration
 
 // ReSharper disable RedundantAttributeUsageProperty
 
@@ -22,6 +23,7 @@ public class SystemManager
     /// <remarks>Called by <see cref="BaseWorld"/>.Initialize()</remarks>
     public void RegisterAll()
     {
+        Log("...reading system assemblies...");
         var systemTypes = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(a => a.GetTypes())
             .Where(t => t.IsClass && !t.IsAbstract &&
@@ -30,8 +32,9 @@ public class SystemManager
             {
                 var attr = (RegisterSystemAttribute)t.GetCustomAttributes(typeof(RegisterSystemAttribute), false)[0];
                 return attr.Order;
-            });
+            }).ToList();
 
+        Log($"...loading systems from {systemTypes.Count} types...");
         foreach (Type type in systemTypes)
         {
             // Systems no longer have WORLD constructor due to accessed global context.
@@ -41,7 +44,7 @@ public class SystemManager
             //                                  $"System {type.Name} missing (World world) constructor");
 
             ConstructorInfo constructor = type.GetConstructor([])!;
-            
+
             //var system = constructor.Invoke([world]);
             var system = constructor.Invoke([]);
 
@@ -56,8 +59,7 @@ public class SystemManager
             }
         }
 
-        Log($"Auto-registered {_updateSystems.Count + _drawSystems.Count} systems",
-            LOG.INFORMATIONAL_PRINT);
+        Log($"Completed registration of {_updateSystems.Count + _drawSystems.Count} Systems.", LOG.INFORMATIONAL_PRINT);
     }
 
     /// <summary>

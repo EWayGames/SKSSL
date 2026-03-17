@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using SKSSL.ECS;
+using static SKSSL.DustLogger;
 
 // ReSharper disable PublicConstructorInAbstractClass
 
@@ -57,7 +58,12 @@ public abstract class BaseWorld : IWorld
     public virtual void Initialize(GraphicsDeviceManager graphics)
     {
         _graphics = graphics;
-        ECS?.Initialize();
+
+        if (ECS != null)
+        {
+            Log("...initializing ECS...");
+            ECS?.Initialize();
+        }
     }
 
     /// <inheritdoc cref="IWorld.Update"/>

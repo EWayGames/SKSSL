@@ -2,6 +2,7 @@ using Gum.Forms.Controls;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGameGum;
+using static SKSSL.DustLogger;
 
 // ReSharper disable VirtualMemberNeverOverridden.Global
 
@@ -43,7 +44,11 @@ public abstract class BaseScene
         _graphicsManager = manager;
         GameWorld = world;
 
-        GameWorld?.Initialize(manager); // GameWorld has its own spritebatch.
+        if (GameWorld != null)
+        {
+            Log("...initializing world...");
+            GameWorld.Initialize(manager); // GameWorld has its own spritebatch.
+        }
     }
 
     /// The screens and UI elements that are being loaded in this scene.
