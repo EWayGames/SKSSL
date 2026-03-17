@@ -52,7 +52,11 @@ public abstract class BaseScene
     }
 
     /// The screens and UI elements that are being loaded in this scene.
-    public virtual void LoadContent() => _Menus.ForEach(element => element.AddToRoot());
+    public virtual void LoadContent()
+    {
+        _Menus.ForEach(element => element.AddToRoot());
+        GameWorld?.LoadContent();
+    }
 
     /// Calls destructive actions against the game world and additional special developer-provided unload calls.
     public virtual void UnloadContent() => GameWorld?.Destroy();

@@ -15,10 +15,16 @@ public interface IWorld
 {
     /// Initializes the Game World.
     void Initialize(GraphicsDeviceManager graphics);
+
+    /// LoadContent call to load additional content after Initialize is called.
+    void LoadContent();
+
     /// Update calls made into the game world.
     void Update(GameTime gameTime);
+
     /// Draw calls made into the game world.
     void Draw(GameTime gameTime);
+
     /// Actions taken before the world is destroyed. Saving measures, deletions, etc.
     void Destroy();
 }
@@ -39,7 +45,7 @@ public abstract class BaseWorld : IWorld
     /// then a world can be forcefully disconnected per its definition. 
     /// <value>SSLGame.<see cref="SSLGame.UseECS"/></value>
     protected virtual bool UsesECS => SSLGame.UseECS;
-    
+
     internal GraphicsDeviceManager _graphics { get; private set; } = null!;
 
     /// ECS controller unique to this world instance. Left null of no ECS controller.
@@ -53,7 +59,7 @@ public abstract class BaseWorld : IWorld
         if (!UsesECS) return;
         ECS = new ECSController(this);
     }
-    
+
     /// Calls Spacial Initializations as base class method.
     public virtual void Initialize(GraphicsDeviceManager graphics)
     {
@@ -64,6 +70,10 @@ public abstract class BaseWorld : IWorld
             Log("...initializing ECS...");
             ECS?.Initialize();
         }
+    }
+
+    public virtual void LoadContent()
+    {
     }
 
     /// <inheritdoc cref="IWorld.Update"/>

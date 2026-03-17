@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.Xna.Framework;
 using SKSSL.Scenes;
 using static SKSSL.DustLogger;
+
 // ReSharper disable PossibleMultipleEnumeration
 
 // ReSharper disable RedundantAttributeUsageProperty
@@ -79,8 +80,10 @@ public class SystemManager
             _drawSystems.Add(draw);
     }
 
-    // For manual registration
+    /// For manual registration.
     public void Add(IUpdateSystem system) => _updateSystems.Add(system);
+
+    /// For manual registration.
     public void Add(IDrawSystem system) => _drawSystems.Add(system);
 
     public void Update(GameTime dt)
