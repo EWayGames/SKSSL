@@ -1,3 +1,5 @@
+using static SKSSL.DustLogger;
+
 namespace SKSSL.Textures;
 
 public abstract partial class TextureLoader
@@ -28,7 +30,7 @@ public abstract partial class TextureLoader
         {
             if (NameToId.TryGetValue(name, out int existingId))
                 return existingId;
-            
+
             if (MaterialCount >= MaxMaterials)
                 throw new InvalidOperationException($"Exceeded maximum material count ({MaxMaterials})");
 
@@ -54,7 +56,11 @@ public abstract partial class TextureLoader
         /// </summary>
         public static int GetId(string name)
         {
-            return NameToId.GetValueOrDefault(name, -1);
+            var value = NameToId.GetValueOrDefault(name, -1);
+            if (value != -1)
+                return value;
+            Log($"Failed to find valid material id for \"{name}\".", LOG.FILE_WARNING);
+            return value;
         }
 
         /// <summary>
@@ -64,10 +70,7 @@ public abstract partial class TextureLoader
         /// <returns>Material by reference id, or <see cref="DefaultErrorMaterial"/></returns>
         /// <remarks>Typically reference is "folder_..._folder_texture"</remarks>
         /// <example>GetMaterial("gneiss_rock");</example>
-        internal static SKMaterial GetMaterial(string reference)
-        {
-            return NameToId.TryGetValue(reference, out int id) ? Materials[id] : DefaultErrorMaterial;
-        }
+        public static SKMaterial GetMaterial(string reference) => GetMaterial(GetId(reference));
 
         /// <summary>
         /// Default material with error and null texture mappings.
