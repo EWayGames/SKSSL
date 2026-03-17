@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using Gum.DataTypes;
-using Gum.Forms.Controls;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Media;
@@ -11,7 +10,8 @@ namespace SKSSL.Scenes;
 
 public class SceneManager
 {
-    protected GumProjectSave? _gumProjectSave;
+    /// Active Gum UI project save for UI handling.
+    protected readonly GumProjectSave? _gumProjectSave;
 
     private readonly SpriteBatch _gameMainSpriteBatch;
     private readonly GraphicsDeviceManager _graphicsManager;
@@ -23,6 +23,7 @@ public class SceneManager
     /// </summary>
     protected internal IWorld? CurrentWorld;
 
+    /// Active in-use game scene. Class-type specific.
     protected BaseScene? _currentScene;
 
     public SceneManager(GraphicsDeviceManager graphics, SpriteBatch gameMainSpriteBatch, GumProjectSave? gumSave)
@@ -30,6 +31,7 @@ public class SceneManager
         _gameMainSpriteBatch = gameMainSpriteBatch;
         _graphicsManager = graphics;
         _currentScene = null;
+        _gumProjectSave = gumSave;
     }
 
     /// <summary>
@@ -39,27 +41,6 @@ public class SceneManager
     {
         if (GumService.Default.Root.Children != null)
             GumService.Default.Root.Children.Clear();
-    }
-
-    public void Initialize(GumProjectSave? gumProjectSave)
-    {
-        _gumProjectSave = gumProjectSave;
-    }
-
-    // WARN: This might not actually be needed? If scene switching is as I think it is, then all of this is automated. 
-    [Obsolete]
-    public static void LoadScreen<T>() where T : new()
-    {
-        if (typeof(T).BaseType != typeof(FrameworkElement))
-            return;
-
-        ClearScreens();
-
-        T screen = new();
-        if (screen is FrameworkElement frameworkElement)
-            frameworkElement.AddToRoot();
-        else
-            throw new InvalidOperationException("The screen didn't cast correctly on load.");
     }
 
     /// <summary>
@@ -102,8 +83,9 @@ public class SceneManager
         Log($"Scene load complete by {stopwatch.ElapsedMilliseconds}ms");
     }
     
-    /// Calls Draw Methods on Current Scene, which innately has an update call on the world.
+    /// Calls Draw Methods on Current Scene, which innately sends a draw call on the world.
     public void Draw(GameTime gameTime) => _currentScene?.Draw(gameTime);
 
+    /// Calls Update Methods on Current Scene, which innately sends an update call on the world.
     public void Update(GameTime gameTime) => _currentScene?.Update(gameTime);
 }
