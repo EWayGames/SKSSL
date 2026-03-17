@@ -22,7 +22,8 @@ public abstract class BaseScene
     /// Graphics management passed-down from the game.
     protected GraphicsDeviceManager _graphicsManager = null!;
 
-    /// List of UI elements this scene possesses.
+    /// List of UI elements this scene possesses. Used by Gum as a simple list of Element references in memory.
+    // ReSharper disable once CollectionNeverUpdated.Global
     protected readonly List<FrameworkElement> _Menus = [];
 
     /// <summary>
