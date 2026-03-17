@@ -59,7 +59,7 @@ public abstract partial class TextureLoader
             var value = NameToId.GetValueOrDefault(name, -1);
             if (value != -1)
                 return value;
-            Log($"Failed to find valid material id for \"{name}\".", LOG.FILE_WARNING);
+            Log($"Failed to return valid material id for [{name}]. Using Error Material instead.", LOG.FILE_WARNING);
             return value;
         }
 
