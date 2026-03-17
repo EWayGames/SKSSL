@@ -95,15 +95,14 @@ public class SceneManager
         _currentScene.LoadContent(); // Load the new scene content
     }
 
+    /// Calls Draw Methods on Current Scene, which innately has an update call on the world.
     public void Draw(GameTime gameTime)
     {
-        CurrentWorld?.Draw(gameTime);
         _currentScene?.Draw(gameTime);
     }
 
     public void Update(GameTime gameTime)
     {
-        CurrentWorld?.Update(gameTime);
         _currentScene?.Update(gameTime);
     }
 }
