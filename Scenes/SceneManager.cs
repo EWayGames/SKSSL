@@ -67,13 +67,13 @@ public class SceneManager
     /// </summary>
     /// <typeparam name="TScene"></typeparam>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public void SwitchScene<TScene>() where TScene : BaseScene, new()
-    {
-        Log($"Switching to {nameof(TScene)} Scene.");
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew(); // Timing the load.
+    public void SwitchScene<TScene>() where TScene : BaseScene, new() => SwitchScene(new TScene());
 
-        if (typeof(TScene).BaseType != typeof(BaseScene))
-            throw new TypeLoadException("Attempted to load scene type that does not derive from BaseScene.");
+    /// <inheritdoc cref="SwitchScene{TScene}"/> Utilizes instance instead of generic type.
+    public void SwitchScene(BaseScene scene)
+    {
+        Log($"Switching to {nameof(scene)} Scene.");
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew(); // Timing the load.
 
         Log("...clearing screens...");
         // Clear everything before creating new scene.
@@ -85,15 +85,11 @@ public class SceneManager
         Log("...unloading previous scene...");
         _currentScene?.UnloadContent(); // UniqueUnloadContent the current scene
 
-        Log($"...creating new {nameof(TScene)} scene...");
-        var newScene = new TScene();
-        _currentScene = newScene; // Switch to the new scene
+        Log($"...creating new scene...");
+        _currentScene = scene; // Switch to the new scene
 
         // Allow scenes to override current world.
-        if (_currentScene.GameWorld != null)
-        {
-            CurrentWorld = _currentScene.GameWorld;
-        }
+        if (_currentScene.GameWorld != null) CurrentWorld = _currentScene.GameWorld;
 
         // Initialize the Scene
         Log("...initializing scene...");
@@ -105,7 +101,7 @@ public class SceneManager
         stopwatch.Stop(); // Stop the timer.
         Log($"Scene load complete by {stopwatch.ElapsedMilliseconds}ms");
     }
-
+    
     /// Calls Draw Methods on Current Scene, which innately has an update call on the world.
     public void Draw(GameTime gameTime) => _currentScene?.Draw(gameTime);
 
