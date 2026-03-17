@@ -7,6 +7,7 @@ using MonoGameGum;
 using SKSSL.ECS;
 using SKSSL.Localization;
 using SKSSL.Scenes;
+using SKSSL.Utilities;
 using static SKSSL.DustLogger;
 
 // ReSharper disable VirtualMemberCallInConstructor
@@ -36,6 +37,14 @@ public abstract class SSLGame : Game
     
     /// General context of the game dictated here.
     public static SceneManager SceneManager = null!;
+    
+    /// Static-instanced access for the Content Manager belonging to the active game instance.
+    public static readonly RegistryProvider<ContentManagerRegistry> ContentManagerRegistry;
+
+    static SSLGame()
+    {
+        ContentManagerRegistry = new RegistryProvider<ContentManagerRegistry>();
+    }
 
     /// <remarks>
     /// In order to Spawn, Remove, or generally interact with entities in an ECS, a context is required. This context
@@ -136,6 +145,10 @@ public abstract class SSLGame : Game
         Log("Initializing static paths.");
         StaticGameLoader.Initialize(StaticPaths);
         StaticGameLoader.Load(path => StaticGameLoader.GPath(path));
+        
+        // Assign static-access content manager.
+        if (ContentManagerRegistry.Registry != null)
+            ContentManagerRegistry.Registry.ContentManager = Content;
     }
 
     /// <summary>

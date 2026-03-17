@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using SKSSL.ECS;
 using static SKSSL.DustLogger;
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 
 // ReSharper disable PublicConstructorInAbstractClass
 
@@ -71,6 +72,7 @@ public abstract class BaseWorld : IWorld
             ECS?.Initialize();
         }
     }
+
 
     /// <inheritdoc cref="IWorld.LoadContent"/>
     public virtual void LoadContent()

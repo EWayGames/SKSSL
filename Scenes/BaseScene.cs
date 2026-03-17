@@ -39,7 +39,10 @@ public abstract class BaseScene
     /// <summary>
     /// Initializes game world in this scene.
     /// </summary>
-    public void Initialize(GraphicsDeviceManager manager, SpriteBatch gameSpriteBatch, ref IWorld? world)
+    public void Initialize(
+        GraphicsDeviceManager manager,
+        SpriteBatch gameSpriteBatch,
+        ref IWorld? world)
     {
         _spriteBatch = gameSpriteBatch;
         _graphicsManager = manager;

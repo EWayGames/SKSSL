@@ -7,7 +7,7 @@ namespace SKSSL;
 public class RegistryProvider<T> : IServiceProvider where T : class, new()
 {
     /// <summary>
-    /// 
+    /// Active registry used.
     /// </summary>
     public T? Registry { get; private set; }
 
