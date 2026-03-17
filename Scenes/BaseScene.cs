@@ -29,6 +29,9 @@ public abstract class BaseScene
     /// </remarks>
     public IWorld? GameWorld;
 
+    /// <summary>
+    /// Initializes game world in this scene.
+    /// </summary>
     public void Initialize(GraphicsDeviceManager manager, SpriteBatch gameSpriteBatch, GumProjectSave? gumProjectSave, ref IWorld? world)
     {
         _spriteBatch = gameSpriteBatch;
