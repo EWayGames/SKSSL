@@ -38,6 +38,8 @@ public abstract class BaseWorld : IWorld
     /// then a world can be forcefully disconnected per its definition. 
     /// <value>SSLGame.<see cref="SSLGame.UseECS"/></value>
     protected virtual bool UsesECS => SSLGame.UseECS;
+    
+    internal GraphicsDeviceManager _graphics { get; private set; } = null!;
 
     /// ECS controller unique to this world instance. Left null of no ECS controller.
     public ECSController? ECS { get; private set; } = null;
@@ -50,10 +52,13 @@ public abstract class BaseWorld : IWorld
         if (!UsesECS) return;
         ECS = new ECSController(this);
     }
-
     
     /// Calls Spacial Initializations as base class method.
-    public virtual void Initialize(GraphicsDeviceManager? graphics) => ECS?.Initialize();
+    public virtual void Initialize(GraphicsDeviceManager graphics)
+    {
+        _graphics = graphics;
+        ECS?.Initialize();
+    }
 
     /// <inheritdoc cref="IWorld.Update"/>
     public virtual void Update(GameTime gameTime) => ECS?.Update(gameTime);
