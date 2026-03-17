@@ -33,3 +33,18 @@ public abstract class RenderableSpace
     /// Overwritten Destroy() call for data-clearing.
     public abstract void Destroy();
 }
+
+/// Blank world space to act as a default. Should NOT be used, but instead replaced.
+[Obsolete("Create a custom RenderableSpace instead.")]
+public class BlankWorldSpace : RenderableSpace
+{
+    public override void Draw(GameTime gameTime) => _graphics.GraphicsDevice.Clear(Color.Purple);
+
+    public override void Update(GameTime gameTime)
+    {
+    }
+
+    public override void Destroy()
+    {
+    }
+}

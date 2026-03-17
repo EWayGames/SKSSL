@@ -11,7 +11,7 @@ namespace SKSSL.Scenes;
 /// </summary>
 public interface IWorld
 {
-    RenderableSpace? Space { get; }
+    RenderableSpace Space { get; }
     void Initialize(GraphicsDeviceManager graphics);
     void Update(GameTime gameTime);
     void Draw(GameTime gameTime);
@@ -24,43 +24,46 @@ public interface IWorld
 /// </summary>
 public abstract class BaseWorld : IWorld
 {
-    public RenderableSpace? Space { get; protected set; }
+#pragma warning disable CS0618 // Type or member is obsolete
+    public RenderableSpace Space { get; private set; } = new BlankWorldSpace();
     protected bool IsInitialized { get; private set; }
 
     /// Most worlds use ECS — this depends on overall dictation. If ECS is enabled,
     /// then a world can be forcefully disconnected per its definition. 
     /// <value>SSLGame.<see cref="SSLGame.UseECS"/></value>
     protected virtual bool UsesECS => SSLGame.UseECS;
-    
-    /// Overridable toggle to use Raw Entities or Entity Templates in ECS.
-    protected virtual bool UseECSRawEntities => true;
 
     /// ECS controller unique to this world instance. Left null of no ECS controller.
     public ECSController? ECS { get; private set; } = null;
 
     /// Assign Rendered space field with provided space definition.
-    public void SetSpace(RenderableSpace worldSpace) => Space = worldSpace;
+    public void SetSpace(RenderableSpace worldSpace)
+    {
+        Space.Destroy();
+        Space = worldSpace;
+    }
 
+    /// Calls ECS Init() (if enabled)
     protected BaseWorld()
     {
         // ReSharper disable once VirtualMemberCallInConstructor
-        if (UsesECS)
-            ECS = new ECSController(this);
+        // Enable ECS if toggled-on.
+        if (!UsesECS) return;
+        ECS = new ECSController(this);
+        ECS.Initialize();
     }
+
     
-    /// Calls ECS Init() (if enabled) and Spacial Initialization.
+    /// Calls Spacial Initializations as base class method.
     public virtual void Initialize(GraphicsDeviceManager? graphics)
     {
         // Avoid re-initializing what already has been initialized.
         if (IsInitialized) return;
         IsInitialized = true;
 
-        // Enable ECS if toggled-on.
-        ECS?.Initialize();
-
         // Initialize WorldSpace assuming graphics provided + exception.
         if (graphics != null)
-            Space?.Initialize(graphics);
+            Space.Initialize(graphics);
         else if (Space == null && graphics != null)
             throw new NullReferenceException("Attempted to initialize WorldSpace with null GraphicsDeviceManager");
     }
@@ -68,54 +71,21 @@ public abstract class BaseWorld : IWorld
     public virtual void Update(GameTime gameTime)
     {
         ECS?.Update(gameTime);
-        Space?.Update(gameTime);
+        Space.Update(gameTime);
     }
 
     public virtual void Draw(GameTime gameTime)
     {
         ECS?.Draw(gameTime);
-        Space?.Draw(gameTime);
+        Space.Draw(gameTime);
     }
 
     public virtual void Destroy()
     {
         ECS?.Destroy();
-        Space?.Destroy();
-        Space = null;
+        Space.Destroy();
         ECS = null;
         IsInitialized = false;
     }
-}
-
-/// <summary>
-/// Strongly generic-typed version of BaseWorld — inherit this for concrete world definitions.
-/// </summary>
-public abstract class BaseWorld<TSpace> : BaseWorld
-    where TSpace : RenderableSpace, new()
-{
-    // Strongly-typed access for derived classes
-    public new TSpace? WorldSpace
-    {
-        get => Space as TSpace;
-        protected set => Space = value;
-    }
-
-    protected BaseWorld()
-    {
-        // Guaranteed non-null after construction
-        WorldSpace = new TSpace();
-    }
-
-    // ReSharper disable RedundantOverriddenMember
-
-    #region Virtual Basic Methods
-
-    public override void Initialize(GraphicsDeviceManager? graphics) => base.Initialize(graphics);
-    public override void Update(GameTime gameTime) => base.Update(gameTime);
-
-    public override void Draw(GameTime gameTime) => base.Draw(gameTime);
-
-    public override void Destroy() => base.Destroy();
-
-    #endregion
+#pragma warning restore CS0618 // Type or member is obsolete
 }
