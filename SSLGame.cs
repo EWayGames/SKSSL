@@ -2,6 +2,7 @@ using Gum.DataTypes;
 using Gum.Wireframe;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGameGum;
 using SKSSL.ECS;
@@ -9,6 +10,7 @@ using SKSSL.Localization;
 using SKSSL.Scenes;
 using SKSSL.Utilities;
 using static SKSSL.DustLogger;
+// ReSharper disable NotAccessedField.Global
 
 // ReSharper disable VirtualMemberCallInConstructor
 // ReSharper disable NotAccessedField.Local
@@ -39,12 +41,7 @@ public abstract class SSLGame : Game
     public static SceneManager SceneManager = null!;
     
     /// Static-instanced access for the Content Manager belonging to the active game instance.
-    public static readonly RegistryProvider<ContentManagerRegistry> ContentManagerRegistry;
-
-    static SSLGame()
-    {
-        ContentManagerRegistry = new RegistryProvider<ContentManagerRegistry>();
-    }
+    public static ContentManager GameContent = null!;
 
     /// <remarks>
     /// In order to Spawn, Remove, or generally interact with entities in an ECS, a context is required. This context
@@ -81,7 +78,7 @@ public abstract class SSLGame : Game
     internal readonly SpriteBatch _spriteBatch;
 
     private static GumService Gum => GumService.Default;
-    private readonly InteractiveGue currentScreenGue = new();
+    private readonly InteractiveGue _currentScreenGue = new();
 
     /// Registries and services belonging to the game.
     private readonly IServiceProvider GameServices;
@@ -113,7 +110,7 @@ public abstract class SSLGame : Game
         Window.ClientSizeChanged += HandleClientSizeChanged;
         _graphicsManager = HandleGraphicsDesignManager(new GraphicsDeviceManager(this));
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        currentScreenGue.UpdateLayout(); // UI Behaviour when dragged
+        _currentScreenGue.UpdateLayout(); // UI Behaviour when dragged
 
         if (string.IsNullOrEmpty(gumFile))
             Log($"Provided gum project file is empty! {title}, {nameof(SSLGame)}", 3);
@@ -124,6 +121,9 @@ public abstract class SSLGame : Game
         LoadServices(services);
         GameServices = services.BuildServiceProvider();
         
+        // Assign static-access content manager.
+        GameContent = Content;
+
         // Initialize all static paths, which the developer must have defined!
         // Includes load-order implementation. Higher values override lower values.
         // TODO: Add a way to change load order priorities in game directories. Likely requires a file? Master file?
@@ -145,10 +145,6 @@ public abstract class SSLGame : Game
         Log("Initializing static paths.");
         StaticGameLoader.Initialize(StaticPaths);
         StaticGameLoader.Load(path => StaticGameLoader.GPath(path));
-        
-        // Assign static-access content manager.
-        if (ContentManagerRegistry.Registry != null)
-            ContentManagerRegistry.Registry.ContentManager = Content;
     }
 
     /// <summary>
@@ -183,6 +179,7 @@ public abstract class SSLGame : Game
         return graphicsDeviceManager;
     }
 
+    /// All content directories contained in the game folder. (E.g. game, mods ➡ etc.)
     internal readonly IEnumerable<GameContentDirectory> GameContentDirectories;
 
     /// <summary>
