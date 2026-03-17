@@ -89,7 +89,7 @@ public abstract class SSLGame : Game
     /// Example: "Gum/SolKom.gumx"
     /// </code>
     /// </summary>
-    public static string GumFile = "CHANGE_ME"; // Example: 
+    public static string GumFile = "CHANGE_ME";
 
     /// <summary>
     /// Constructor for SSLGame.

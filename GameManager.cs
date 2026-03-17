@@ -5,10 +5,16 @@ namespace SKSSL;
 /// </summary>
 public static class GameManager
 {
+    /// Topmost game instance reverse-accessible from lower ends of the call-chain.
     public static SSLGame Game { get; private set; } = null!;
+    
+    /// Title of game window.
     public static string Title => Game.Title;
+    
+    /// Aspect ratio to render the game.
     public static float AspectRatio => Game.GraphicsDevice.Viewport.AspectRatio;
 
+    /// Force game closure.
     public static void Exit()
     {
         // Safely exit without suicidal tendencies.
@@ -16,6 +22,8 @@ public static class GameManager
         game.Quit();
         game.Exit();
     }
+    
+    /// Force game status reset.
     public static void ResetGame() => Game.ResetGame();
 
     /// Run the game instance.
