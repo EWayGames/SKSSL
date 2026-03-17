@@ -1,7 +1,8 @@
-using Gum.DataTypes;
 using Gum.Forms.Controls;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MonoGameGum;
+
 // ReSharper disable VirtualMemberNeverOverridden.Global
 
 namespace SKSSL.Scenes;
@@ -16,12 +17,9 @@ public abstract class BaseScene
 {
     /// Dedicated scene spritebatch for screen rendering.
     protected SpriteBatch _spriteBatch = null!;
-    
+
     /// Graphics management passed-down from the game.
     protected GraphicsDeviceManager _graphicsManager = null!;
-    
-    /// Save-data for gum UI project.
-    internal GumProjectSave? _gumProjectSave;
 
     /// List of UI elements this scene possesses.
     protected readonly List<FrameworkElement> _Menus = [];
@@ -39,18 +37,17 @@ public abstract class BaseScene
     /// <summary>
     /// Initializes game world in this scene.
     /// </summary>
-    public void Initialize(GraphicsDeviceManager manager, SpriteBatch gameSpriteBatch, GumProjectSave? gumProjectSave, ref IWorld? world)
+    public void Initialize(GraphicsDeviceManager manager, SpriteBatch gameSpriteBatch, ref IWorld? world)
     {
         _spriteBatch = gameSpriteBatch;
         _graphicsManager = manager;
-        _gumProjectSave = gumProjectSave;
         GameWorld = world;
 
         GameWorld?.Initialize(manager); // GameWorld has its own spritebatch.
     }
 
     /// The screens and UI elements that are being loaded in this scene.
-    public abstract void LoadContent();
+    public virtual void LoadContent() => _Menus.ForEach(element => element.AddToRoot());
 
     /// Calls destructive actions against the game world and additional special developer-provided unload calls.
     public virtual void UnloadContent() => GameWorld?.Destroy();

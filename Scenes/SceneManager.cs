@@ -9,7 +9,14 @@ using static SKSSL.DustLogger;
 namespace SKSSL.Scenes;
 
 /// Manages all screen content in an SKSSL-derived Game, whether it be Menus or active scenes. Not necessarily for
-/// theatrical scene management.
+/// theatrical scene management. See below for adding GUM UI Overlays.
+/// <code>
+/// -constructor-
+/// {
+///     var menu = new MyMenu();
+///     _Menus.Add(menu)
+/// }
+/// </code>
 public class SceneManager
 {
     /// Active Gum UI project save for UI handling.
@@ -76,7 +83,7 @@ public class SceneManager
 
         // Initialize the Scene
         Log("...initializing scene...");
-        _currentScene.Initialize(_graphicsManager, _gameMainSpriteBatch, _gumProjectSave, ref CurrentWorld);
+        _currentScene.Initialize(_graphicsManager, _gameMainSpriteBatch, ref CurrentWorld);
 
         Log("...loading additional scene content...");
         _currentScene.LoadContent(); // Load the new scene content
