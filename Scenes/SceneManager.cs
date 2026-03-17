@@ -53,7 +53,7 @@ public class SceneManager
     /// <inheritdoc cref="SwitchScene{TScene}"/> Utilizes instance instead of generic type.
     public void SwitchScene(BaseScene scene)
     {
-        Log($"Switching to {nameof(scene)} Scene.");
+        Log($"Switching to {nameof(scene.GetType)} Scene.");
         var stopwatch = System.Diagnostics.Stopwatch.StartNew(); // Timing the load.
 
         Log("...clearing screens...");
