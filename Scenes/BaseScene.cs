@@ -5,6 +5,12 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace SKSSL.Scenes;
 
+/// <summary>
+/// An instanced scene used by the <see cref="SceneManager"/> to track the active game state.
+/// </summary>
+/// <remarks>
+/// A Main Menu versus active Gameplay interfaces are good examples of Scenes. Not to be confused with the theatrical.
+/// </remarks>
 public abstract class BaseScene
 {
     /// Dedicated scene spritebatch for screen rendering.
