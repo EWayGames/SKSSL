@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Media;
 using MonoGameGum;
+using static SKSSL.DustLogger;
 
 namespace SKSSL.Scenes;
 
@@ -23,7 +24,7 @@ public class SceneManager
     protected internal IWorld? CurrentWorld;
 
     protected BaseScene? _currentScene;
-    
+
     public SceneManager(GraphicsDeviceManager graphics, SpriteBatch gameMainSpriteBatch, GumProjectSave? gumSave)
     {
         _gameMainSpriteBatch = gameMainSpriteBatch;
@@ -68,41 +69,45 @@ public class SceneManager
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public void SwitchScene<TScene>() where TScene : BaseScene, new()
     {
+        Log($"Switching to {nameof(TScene)} Scene.");
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew(); // Timing the load.
+
         if (typeof(TScene).BaseType != typeof(BaseScene))
             throw new TypeLoadException("Attempted to load scene type that does not derive from BaseScene.");
 
+        Log("...clearing screens...");
         // Clear everything before creating new scene.
         MediaPlayer.Stop(); // Stop The Music
         ClearScreens(); // Clear old screens.
-        
-        // Force empty constructor of new scene. Scenes aren't instantiated and stored elsewhere, they're created here.
-        var newScene = new TScene();
 
+        // Force empty constructor of new scene. Scenes aren't instantiated and stored elsewhere, they're created here.
+
+        Log("...unloading previous scene...");
         _currentScene?.UnloadContent(); // UniqueUnloadContent the current scene
 
+        Log($"...creating new {nameof(TScene)} scene...");
+        var newScene = new TScene();
         _currentScene = newScene; // Switch to the new scene
 
         // Allow scenes to override current world.
         if (_currentScene.GameWorld != null)
         {
-            CurrentWorld?.Destroy();
             CurrentWorld = _currentScene.GameWorld;
         }
 
         // Initialize the Scene
+        Log("...initializing scene...");
         _currentScene.Initialize(_graphicsManager, _gameMainSpriteBatch, _gumProjectSave, ref CurrentWorld);
 
+        Log("...loading additional scene content...");
         _currentScene.LoadContent(); // Load the new scene content
+
+        stopwatch.Stop(); // Stop the timer.
+        Log($"Scene load complete by {stopwatch.ElapsedMilliseconds}ms");
     }
 
     /// Calls Draw Methods on Current Scene, which innately has an update call on the world.
-    public void Draw(GameTime gameTime)
-    {
-        _currentScene?.Draw(gameTime);
-    }
+    public void Draw(GameTime gameTime) => _currentScene?.Draw(gameTime);
 
-    public void Update(GameTime gameTime)
-    {
-        _currentScene?.Update(gameTime);
-    }
+    public void Update(GameTime gameTime) => _currentScene?.Update(gameTime);
 }
