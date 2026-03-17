@@ -2,6 +2,7 @@ using Gum.DataTypes;
 using Gum.Forms.Controls;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+// ReSharper disable VirtualMemberNeverOverridden.Global
 
 namespace SKSSL.Scenes;
 
@@ -52,16 +53,7 @@ public abstract class BaseScene
     public abstract void LoadContent();
 
     /// Calls destructive actions against the game world and additional special developer-provided unload calls.
-    public void UnloadContent()
-    {
-        GameWorld?.Destroy();
-        SpecialUnload();
-    }
-
-    /// Special overridable unloading instructions should they be required.
-    protected virtual void SpecialUnload()
-    {
-    }
+    public virtual void UnloadContent() => GameWorld?.Destroy();
 
     /// Per-scene Update instructions.
     public virtual void Update(GameTime gameTime) => GameWorld?.Update(gameTime);
