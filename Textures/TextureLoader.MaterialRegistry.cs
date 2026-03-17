@@ -43,6 +43,9 @@ public abstract partial class TextureLoader
 
         /// <summary>
         /// Fast access by ID — used heavily at runtime.
+        /// <returns>
+        /// <see cref="SKMaterial"/> instance, which will be the Default Error Material if the id is &lt;0.
+        /// </returns>
         /// <remarks>
         /// If id &lt; 0, or id &gt; Material Count, use Default Error Material.
         /// Otherwise, utilize Materials[id] entry.
@@ -52,16 +55,10 @@ public abstract partial class TextureLoader
             => id < 0 || id >= MaterialCount ? DefaultErrorMaterial : Materials[id];
 
         /// <summary>
-        /// Lookup by name (only for debugging/tools)
+        /// Lookup by name (mainly for debugging/tools).
         /// </summary>
-        public static int GetId(string name)
-        {
-            var value = NameToId.GetValueOrDefault(name, -1);
-            if (value != -1)
-                return value;
-            Log($"Failed to return valid material id for [{name}]. Using Error Material instead.", LOG.FILE_WARNING);
-            return value;
-        }
+        /// <returns>Material ID of referenced material name, or -1 if one was not found.</returns>
+        public static int GetId(string name) => NameToId.GetValueOrDefault(name, -1);
 
         /// <summary>
         /// Overload for <see cref="GetMaterial(int)"/> that attempts to try-get value.
