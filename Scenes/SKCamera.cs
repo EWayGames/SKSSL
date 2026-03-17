@@ -1,7 +1,9 @@
 using Microsoft.Xna.Framework;
+using RenderingLibrary;
+
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
-namespace SKSSL.Space;
+namespace SKSSL.Scenes;
 
 /// Three-Dimensional Camera For Use in a 3D Space
 public class SK3DCamera
@@ -18,7 +20,7 @@ public class SK3DCamera
     /// Camera's view matrix.
     public Matrix View { get; private set; }
 
-    /// World matrix.
+    /// World position of this camera.
     public Matrix World { get; private set; }
 
     /// Is this camera focused around a single point?
