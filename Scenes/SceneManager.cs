@@ -35,6 +35,7 @@ public class SceneManager
     /// Active in-use game scene. Class-type specific.
     protected BaseScene? _currentScene;
 
+    /// Constructor for Scene Manager used by <see cref="SSLGame"/> to manage active game scenes.
     public SceneManager(GraphicsDeviceManager graphics, SpriteBatch gameMainSpriteBatch, GumProjectSave? gumSave)
     {
         _gameMainSpriteBatch = gameMainSpriteBatch;
