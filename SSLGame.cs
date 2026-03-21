@@ -8,7 +8,6 @@ using MonoGameGum;
 using SKSSL.ECS;
 using SKSSL.Localization;
 using SKSSL.Scenes;
-using SKSSL.Utilities;
 using static SKSSL.DustLogger;
 // ReSharper disable NotAccessedField.Global
 
