@@ -27,9 +27,9 @@ public class IDIterator(int InitialId = 0, int Maximum = -1)
     public int Iterate()
     {
         int nextId = ID++;
-        if (Maximum != -1 && ID > Maximum)
-            throw new IndexOutOfRangeException("Iterator exceeds maximum value on iterate call!");
-        return nextId;
+        return Maximum != -1 && ID > Maximum
+            ? throw new IndexOutOfRangeException("Iterator exceeds maximum value on iterate call!")
+            : nextId;
     }
 
     /// <inheritdoc cref="System.Object.ToString"/>
