@@ -36,7 +36,12 @@ public class SceneManager : DrawableGameComponent
     protected BaseScene? _currentScene;
 
     /// Constructor for Scene Manager used by <see cref="SSLGame"/> to manage active game scenes.
-    public SceneManager(Game game, GraphicsDeviceManager graphics, SpriteBatch gameMainSpriteBatch, GumProjectSave? gumSave) : base(game)
+    public SceneManager(
+        Game game,
+        GraphicsDeviceManager graphics,
+        SpriteBatch gameMainSpriteBatch,
+        GumProjectSave? gumSave)
+        : base(game)
     {
         _gameMainSpriteBatch = gameMainSpriteBatch;
         _graphicsManager = graphics;
@@ -94,8 +99,8 @@ public class SceneManager : DrawableGameComponent
     }
     
     /// Calls Draw Methods on Current Scene, which innately sends a draw call on the world.
-    public void Draw(GameTime gameTime) => _currentScene?.Draw(gameTime);
+    public override void Draw(GameTime gameTime) => _currentScene?.Draw(gameTime);
 
     /// Calls Update Methods on Current Scene, which innately sends an update call on the world.
-    public void Update(GameTime gameTime) => _currentScene?.Update(gameTime);
+    public override void Update(GameTime gameTime) => _currentScene?.Update(gameTime);
 }
