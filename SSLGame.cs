@@ -11,6 +11,7 @@ using SKSSL.Scenes;
 using static SKSSL.DustLogger;
 // ReSharper disable ConvertToConstant.Global
 // ReSharper disable CollectionNeverQueried.Global
+// ReSharper disable FieldCanBeMadeReadOnly.Global
 
 // ReSharper disable NotAccessedField.Global
 
