@@ -43,8 +43,7 @@ public enum TextureType : byte
 public class BlankTextureLoader : TextureLoader
 {
     /// <inheritdoc />
-    public BlankTextureLoader(ContentManager contentManager, GraphicsDevice graphicsDevice) : base(contentManager,
-        graphicsDevice)
+    public BlankTextureLoader(GraphicsDevice graphicsDevice) : base(graphicsDevice)
     {
     }
 
@@ -78,11 +77,6 @@ public abstract partial class TextureLoader
 
     private static GraphicsDevice _graphicsDevice { get; set; } = null!;
 
-    /// <summary>
-    /// Reference to Monogame's content manager for "base game" content.
-    /// </summary>
-    private static ContentManager _monoGameContent = null!;
-
     /// Generic storage: category → (texture name → texture object). These are textures actively being used in memory.
     private static readonly ConcurrentDictionary<string, Dictionary<string, Texture2D>> _textures = new();
 
@@ -93,11 +87,10 @@ public abstract partial class TextureLoader
     private static bool IsInitialized { get; set; } = false;
 
     /// Default static assignation of instance of a texture loader.
-    public TextureLoader(ContentManager contentManager, GraphicsDevice graphicsDevice)
+    public TextureLoader(GraphicsDevice graphicsDevice)
     {
         // Load Custom Registries.
         _instance = this;
-        _monoGameContent = contentManager ?? throw new ArgumentNullException(nameof(contentManager));
         _graphicsDevice = graphicsDevice ?? throw new ArgumentNullException(nameof(graphicsDevice));
     }
 
@@ -190,7 +183,8 @@ public abstract partial class TextureLoader
     /// </summary>
     /// <param name="key">Name of the provided asset without extension. (e.g. "Textures/PlayerSprite")</param>
     /// <param name="category">Dedicated category.</param>
-    /// <param name="path">Path to asset.</param>
+    /// <param name="isMulti">Is the texture expected to be a material? Toggles local texture caching.</param>
+    /// <param name="path">Path to asset. Nullable for external calls.</param>
     /// <returns>Texture asset or Default Error Texture, instead.</returns>
     public static Texture2D Load(string key, string? category = null, bool isMulti = false, string? path = null)
     {
@@ -208,13 +202,13 @@ public abstract partial class TextureLoader
         else
         {
             // Get texture by brute force.
-            Texture2D? bruteForcedTexture = _textures.Values
+            Texture2D? bruteDictionaryTexture = _textures.Values
                 .SelectMany(d => d)
                 .Where(kvp => kvp.Key == key)
                 .Select(kvp => kvp.Value)
                 .FirstOrDefault();
-            if (bruteForcedTexture is not null)
-                return bruteForcedTexture;
+            if (bruteDictionaryTexture is not null)
+                return bruteDictionaryTexture;
         }
 
         // TODO: Add support for naming prototypes / textures with <asset_name>_<mod_name> support.
@@ -224,7 +218,7 @@ public abstract partial class TextureLoader
         //  loaded by the filepath, and stored appropriately using the key.
         // Assuming the file exists, attempting to load it directly with more brute force than ever before is the next
         //  best option.
-        if (File.Exists(path))
+        if (path != null && File.Exists(path))
         {
             // Read the path directly.
             using FileStream stream = File.OpenRead(path);
@@ -243,23 +237,29 @@ public abstract partial class TextureLoader
         //  and the program inches towards an Error texture. To avoid this, a last-ditch attempt to use Monogame's
         //  content builder is made. This is surrounded in a Try-Catch because the vanilla pipeline load fails if no
         //  '.xnb' file exists in the system.
-        try
-        {
-            var streamTexture = _monoGameContent.Load<Texture2D>(key);
 
-            if (category is not null && !isMulti)
-                _textures[category][key] = streamTexture;
-            // TODO: Add handling if category is null. Automatically add category based on folder parent.
+        // Attempt to use all content managers to retrieve an asset, expecting an exception on every manager that
+        //  fails to contain the desired key.
+        foreach (ContentManager contentManager in SSLGame.ContentManagers)
+        {
+            try
+            {
+                var contentTexture = contentManager.Load<Texture2D>(key);
 
-            return streamTexture;
+                if (category is not null && !isMulti)
+                    _textures[category][key] = contentTexture;
+                // TODO: Add handling if category is null. Automatically add category based on folder parent.
+                return contentTexture;
+            }
+            catch (ContentLoadException)
+            {
+            }
+            catch (Exception)
+            {
+                // Expected if no vanilla asset  
+            }
         }
-        catch (ContentLoadException)
-        {
-        }
-        catch (Exception)
-        {
-            // Expected if no vanilla asset  
-        }
+
 
         // All hope as failed. Time to return the error texture instead.
         Log($"Failed to find valid path for texture category-key pair: [{category}:{key}] — using error texture.",
@@ -365,7 +365,6 @@ public abstract partial class TextureLoader
                 //  Items with multiple '_' underscores are fine, as all it cares about is the final one.
                 if (!materialGroups.TryGetValue(currentKey, out SKMaterial? currentMap))
                 {
-
                     // Override current map.
                     currentMap = new SKMaterial();
                     materialGroups[currentKey] = currentMap;

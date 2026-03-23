@@ -9,6 +9,8 @@ using SKSSL.ECS;
 using SKSSL.Localization;
 using SKSSL.Scenes;
 using static SKSSL.DustLogger;
+// ReSharper disable ConvertToConstant.Global
+// ReSharper disable CollectionNeverQueried.Global
 
 // ReSharper disable NotAccessedField.Global
 
@@ -35,7 +37,7 @@ public abstract class SSLGame : Game
     /// <code>
     /// static MyGameClass() => UseECS = true;
     /// </code>
-    internal static bool UseECS = false;
+    internal static readonly bool UseECS = false;
 
     /// General context of the game dictated here.
     public static SceneManager SceneManager = null!;
@@ -96,7 +98,6 @@ public abstract class SSLGame : Game
     /// </code>
     /// </summary>
     public static string GumFile = "CHANGE_ME";
-
 
     /// <summary>
     /// Constructor for SSLGame.
