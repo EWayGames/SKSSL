@@ -33,6 +33,9 @@ namespace SKSSL;
 /// </summary>
 public abstract class SSLGame : Game
 {
+    /// Total time played for this game session.
+    public static DateTime GameplayTime;
+
     /// Ultimate toggle to use ECS service. Enable this at project initialization.
     /// To use, add the following to the game class inheriting SSLGame:
     /// <code>
@@ -221,6 +224,7 @@ public abstract class SSLGame : Game
     /// <inheritdoc />
     protected override void Update(GameTime gameTime)
     {
+        GameplayTime = GameplayTime.AddSeconds(gameTime.ElapsedGameTime.TotalSeconds);
         base.Update(gameTime);
         Gum.Update(gameTime); // Update Gum UI after game update.
     }
