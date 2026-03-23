@@ -105,8 +105,8 @@ public abstract class SSLGame : Game
     /// </summary>
     /// <param name="title">Title of the game window.</param>
     /// <param name="gumFile">Gum Interface File</param>
-    /// <param name="otherContentManagers">Additional content managers belonging to attached libraries.</param>
-    protected SSLGame(string title, string gumFile = "", params ContentManager[] otherContentManagers)
+    /// <param name="contents">Additional content managers belonging to attached libraries.</param>
+    protected SSLGame(string title, string gumFile = "", params ContentManager[] contents)
     {
         Title = title;
         Content.RootDirectory = "Content";
@@ -117,7 +117,7 @@ public abstract class SSLGame : Game
         _currentScreenGue.UpdateLayout(); // UI Behaviour when dragged
 
         if (string.IsNullOrEmpty(gumFile))
-            Log($"Provided gum project file is empty! {title}, {nameof(SSLGame)}", 3);
+            Log($"Provided gum project file is empty! {title}, {nameof(SSLGame)}", LOG.SYSTEM_WARNING);
         else
             GumFile = gumFile;
 
@@ -127,7 +127,7 @@ public abstract class SSLGame : Game
 
         // Assign static-access content managers.
         ContentManagers.Add(Content);
-        ContentManagers.AddRange(otherContentManagers);
+        ContentManagers.AddRange(contents);
 
         // Initialize all static paths, which the developer must have defined!
         // Includes load-order implementation. Higher values override lower values.
@@ -196,8 +196,9 @@ public abstract class SSLGame : Game
         // Initialize Gum UI Handling (Some projects may choose not to utilize Gum)
         GumProjectSave? gumSave = null;
         if (!string.IsNullOrEmpty(GumFile)) gumSave = Gum.Initialize(this, GumFile);
-        SceneManager = new SceneManager(_graphicsManager, _spriteBatch, gumSave);
-
+        SceneManager = new SceneManager(this, _graphicsManager, _spriteBatch, gumSave);
+        Components.Add(SceneManager);
+        
         // Continue
         base.Initialize();
     }
@@ -213,7 +214,6 @@ public abstract class SSLGame : Game
     /// <inheritdoc />
     protected override void Draw(GameTime gameTime)
     {
-        SceneManager.Draw(gameTime);
         Gum.Draw();
         base.Draw(gameTime);
     }
@@ -221,7 +221,6 @@ public abstract class SSLGame : Game
     /// <inheritdoc />
     protected override void Update(GameTime gameTime)
     {
-        SceneManager.Update(gameTime);
         Gum.Update(gameTime);
         base.Update(gameTime);
     }
