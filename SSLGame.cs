@@ -214,14 +214,14 @@ public abstract class SSLGame : Game
     /// <inheritdoc />
     protected override void Draw(GameTime gameTime)
     {
-        Gum.Draw();
         base.Draw(gameTime);
+        Gum.Draw(); // Draw Gum UI after game draw.
     }
 
     /// <inheritdoc />
     protected override void Update(GameTime gameTime)
     {
-        Gum.Update(gameTime);
         base.Update(gameTime);
+        Gum.Update(gameTime); // Update Gum UI after game update.
     }
 }
