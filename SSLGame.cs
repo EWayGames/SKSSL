@@ -37,7 +37,7 @@ public abstract class SSLGame : Game
     /// <code>
     /// static MyGameClass() => UseECS = true;
     /// </code>
-    internal static readonly bool UseECS = false;
+    internal static bool UseECS = false;
 
     /// General context of the game dictated here.
     public static SceneManager SceneManager = null!;
