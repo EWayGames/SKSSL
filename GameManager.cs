@@ -19,12 +19,12 @@ public static class GameManager
     {
         // Safely exit without suicidal tendencies.
         SSLGame game = Game;
-        game.Quit();
+        SSLGame.Quit();
         game.Exit();
     }
     
     /// Force game status reset.
-    public static void ResetGame() => Game.ResetGame();
+    public static void ResetGame() => SSLGame.ResetGame();
 
     /// Run the game instance.
     public static void Run<T>() where T : SSLGame, new()

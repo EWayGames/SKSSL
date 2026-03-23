@@ -9,6 +9,7 @@ using SKSSL.ECS;
 using SKSSL.Localization;
 using SKSSL.Scenes;
 using static SKSSL.DustLogger;
+
 // ReSharper disable NotAccessedField.Global
 
 // ReSharper disable VirtualMemberCallInConstructor
@@ -35,12 +36,12 @@ public abstract class SSLGame : Game
     /// static MyGameClass() => UseECS = true;
     /// </code>
     internal static bool UseECS = false;
-    
+
     /// General context of the game dictated here.
     public static SceneManager SceneManager = null!;
-    
+
     /// Static-instanced access for the Content Manager belonging to the active game instance.
-    public static ContentManager GameContent = null!;
+    public static readonly List<ContentManager> ContentManagers = [];
 
     /// <remarks>
     /// In order to Spawn, Remove, or generally interact with entities in an ECS, a context is required. This context
@@ -56,7 +57,7 @@ public abstract class SSLGame : Game
             Log("Failed to get Entity Context because ECS is not enabled.", LOG.SYSTEM_ERROR);
             return null;
         }
-        
+
         if (SceneManager.CurrentWorld is not BaseWorld world)
         {
             Log("Failed to get Entity Context from current (null) world in Scene Manager!", LOG.SYSTEM_WARNING);
@@ -96,12 +97,14 @@ public abstract class SSLGame : Game
     /// </summary>
     public static string GumFile = "CHANGE_ME";
 
+
     /// <summary>
     /// Constructor for SSLGame.
     /// </summary>
     /// <param name="title">Title of the game window.</param>
     /// <param name="gumFile">Gum Interface File</param>
-    protected SSLGame(string title, string gumFile = "")
+    /// <param name="otherContentManagers">Additional content managers belonging to attached libraries.</param>
+    protected SSLGame(string title, string gumFile = "", params ContentManager[] otherContentManagers)
     {
         Title = title;
         Content.RootDirectory = "Content";
@@ -119,9 +122,10 @@ public abstract class SSLGame : Game
         var services = new ServiceCollection();
         LoadServices(services);
         GameServices = services.BuildServiceProvider();
-        
-        // Assign static-access content manager.
-        GameContent = Content;
+
+        // Assign static-access content managers.
+        ContentManagers.Add(Content);
+        ContentManagers.AddRange(otherContentManagers);
 
         // Initialize all static paths, which the developer must have defined!
         // Includes load-order implementation. Higher values override lower values.
@@ -130,7 +134,7 @@ public abstract class SSLGame : Game
         //  Ergo, a master file may be the best solution.
         var gameDirectories = StaticGameLoader.GetAllGameDirectories();
         GameContentDirectories = gameDirectories.OrderBy(d => d.LoadOrder).ToList();
-        
+
         // Display ECS status. This constructor is called after inheritors.
         Log($"ECS status: {(UseECS ? "on" : "off")}");
         if (UseECS)
@@ -139,7 +143,7 @@ public abstract class SSLGame : Game
             Log("Initializing components.");
             ComponentRegistry.Initialize();
         }
-        
+
         // Load Static Game Content
         Log("Initializing static paths.");
         StaticGameLoader.Initialize(StaticPaths);
@@ -155,7 +159,7 @@ public abstract class SSLGame : Game
     {
         // Add game services to override method here.
     }
-    
+
     /// Title of game window.
     public string Title { get; set; }
 
@@ -197,10 +201,11 @@ public abstract class SSLGame : Game
     }
 
     /// Quits the game.
-    public void Quit() => throw new NotImplementedException("Quit is not implemented, really. Let's crash, instead.");
+    public static void Quit() =>
+        throw new NotImplementedException("Quit is not implemented, really. Let's crash, instead.");
 
     /// Resets the game.
-    public void ResetGame() =>
+    public static void ResetGame() =>
         throw new NotImplementedException("ResetGame is not implemented, really. Let's crash, instead.");
 
     /// <inheritdoc />
