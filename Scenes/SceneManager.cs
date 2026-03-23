@@ -17,7 +17,7 @@ namespace SKSSL.Scenes;
 ///     _Menus.Add(menu)
 /// }
 /// </code>
-public class SceneManager
+public class SceneManager : DrawableGameComponent
 {
     /// Active Gum UI project save for UI handling.
     protected readonly GumProjectSave? _gumProjectSave;
@@ -36,7 +36,7 @@ public class SceneManager
     protected BaseScene? _currentScene;
 
     /// Constructor for Scene Manager used by <see cref="SSLGame"/> to manage active game scenes.
-    public SceneManager(GraphicsDeviceManager graphics, SpriteBatch gameMainSpriteBatch, GumProjectSave? gumSave)
+    public SceneManager(Game game, GraphicsDeviceManager graphics, SpriteBatch gameMainSpriteBatch, GumProjectSave? gumSave) : base(game)
     {
         _gameMainSpriteBatch = gameMainSpriteBatch;
         _graphicsManager = graphics;
@@ -94,8 +94,8 @@ public class SceneManager
     }
     
     /// Calls Draw Methods on Current Scene, which innately sends a draw call on the world.
-    public void Draw(GameTime gameTime) => _currentScene?.Draw(gameTime);
+    public override void Draw(GameTime gameTime) => _currentScene?.Draw(gameTime);
 
     /// Calls Update Methods on Current Scene, which innately sends an update call on the world.
-    public void Update(GameTime gameTime) => _currentScene?.Update(gameTime);
+    public override void Update(GameTime gameTime) => _currentScene?.Update(gameTime);
 }

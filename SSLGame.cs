@@ -73,8 +73,8 @@ public abstract class SSLGame : Game
         return entityContext;
     }
 
-    internal readonly GraphicsDeviceManager _graphicsManager;
-    internal readonly SpriteBatch _spriteBatch;
+    private readonly GraphicsDeviceManager _graphicsManager;
+    private readonly SpriteBatch _spriteBatch;
 
     private static GumService Gum => GumService.Default;
     private readonly InteractiveGue _currentScreenGue = new();
@@ -190,7 +190,7 @@ public abstract class SSLGame : Game
         // Initialize Gum UI Handling (Some projects may choose not to utilize Gum)
         GumProjectSave? gumSave = null;
         if (!string.IsNullOrEmpty(GumFile)) gumSave = Gum.Initialize(this, GumFile);
-        SceneManager = new SceneManager(_graphicsManager, _spriteBatch, gumSave);
+        SceneManager = new SceneManager(this, _graphicsManager, _spriteBatch, gumSave);
 
         // Continue
         base.Initialize();
