@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Sin3D._Camera3D;
 using Sin3D._Model3D;
+using static SKSSL.Mathematics.Floats;
 
 namespace Sin3D._Renderer3D;
 
@@ -10,73 +11,80 @@ namespace Sin3D._Renderer3D;
 /// </summary>
 public class Renderer3D
 {
-    GraphicsDevice _graphicsDevice;
+    private readonly GraphicsDevice _graphicsDevice;
 
-    float effectAlpha;
     /// <summary>
     /// The alpha value that will be used in rendering.
     /// </summary>
-    public float EffectAlpha { get => effectAlpha; set {effectAlpha = value;} }
+    public float EffectAlpha { get; set; }
 
-    bool defaultLightingEnabled;
     /// <summary>
     /// Whether or not default lighting is enabled for rendering (overrides all other lighting settings).
     /// </summary>
-    public bool DefaultLightingEnabled { get => defaultLightingEnabled; set {defaultLightingEnabled = value;} }
+    public bool DefaultLightingEnabled { get; set; }
 
-    bool lightingEnabled;
     /// <summary>
     /// Whether or not lighting is enabled for rendering.
     /// </summary>
-    public bool LightingEnabled { get => lightingEnabled; set {lightingEnabled = value;} }
+    public bool LightingEnabled { get; set; }
 
-    Vector3 ambientLightColor;
     /// <summary>
     /// The floating point ambient light color for rendering (lighting must be enabled).
     /// </summary>
-    public Vector3 AmbientLightColor { get => ambientLightColor; set {ambientLightColor = value;} }
+    public Vector3 AmbientLightColor { get; set; }
 
-    DirectionalLightPropertyGroup directionalLight0;
+    private DirectionalLightPropertyGroup directionalLight0;
+
     /// <summary>
     /// The 1st directional light that can be used in rendering (lighting must be enabled).
     /// </summary>
-    public DirectionalLightPropertyGroup DirectionalLight0 { get => directionalLight0; set {directionalLight0 = value;} }
+    public DirectionalLightPropertyGroup DirectionalLight0
+    {
+        get => directionalLight0;
+        set => directionalLight0 = value;
+    }
 
-    DirectionalLightPropertyGroup directionalLight1;
+    private DirectionalLightPropertyGroup directionalLight1;
+
     /// <summary>
     /// The 2nd directional light that can be used in rendering (lighting must be enabled).
     /// </summary>
-    public DirectionalLightPropertyGroup DirectionalLight1 { get => directionalLight1; set {directionalLight1 = value;} }
+    public DirectionalLightPropertyGroup DirectionalLight1
+    {
+        get => directionalLight1;
+        set => directionalLight1 = value;
+    }
 
-    DirectionalLightPropertyGroup directionalLight2;
+    private DirectionalLightPropertyGroup directionalLight2;
+
     /// <summary>
     /// The 3rd directional light that can be used in rendering (lighting must be enabled).
     /// </summary>
-    public DirectionalLightPropertyGroup DirectionalLight2 { get => directionalLight2; set {directionalLight2 = value;} }
+    public DirectionalLightPropertyGroup DirectionalLight2
+    {
+        get => directionalLight2;
+        set => directionalLight2 = value;
+    }
 
-    bool fogEnabled;
     /// <summary>
     /// Whether or not fog is enabled.
     /// </summary>
-    public bool FogEnabled { get => fogEnabled; set {fogEnabled = value;} }
+    public bool FogEnabled { get; set; }
 
-    Vector3 fogColor;
     /// <summary>
     /// The floating point fog color.
     /// </summary>
-    public Vector3 FogColor { get => fogColor; set {fogColor = value;} }
+    public Vector3 FogColor { get; set; }
 
-    float fogStart;
     /// <summary>
     /// The distance that fog rendering will start at.
     /// </summary>
-    public float FogStart { get => fogStart; set {fogStart = value;} }
+    public float FogStart { get; set; }
 
-    float fogEnd;
     /// <summary>
     /// The distance that fog rendering will end at.
     /// </summary>
-    public float FogEnd { get => fogEnd; set {fogEnd = value;} }
+    public float FogEnd { get; set; }
 
     /// <summary>
     /// Creates a new Renderer3D object.
@@ -98,10 +106,10 @@ public class Renderer3D
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
 
         //resetting light fields
-        effectAlpha = 1f;
-        defaultLightingEnabled = false;
-        lightingEnabled = false;
-        ambientLightColor = Vector3.Zero;
+        EffectAlpha = 1f;
+        DefaultLightingEnabled = false;
+        LightingEnabled = false;
+        AmbientLightColor = Vector3.Zero;
 
         //resetting directional light fields
         directionalLight0 = new DirectionalLightPropertyGroup();
@@ -109,10 +117,10 @@ public class Renderer3D
         directionalLight2 = new DirectionalLightPropertyGroup();
 
         //resetting fog fields
-        fogEnabled = false;
-        fogColor = Vector3.Zero;
-        fogStart = 0f;
-        fogEnd = 1f;
+        FogEnabled = false;
+        FogColor = Vector3.Zero;
+        FogStart = 0f;
+        FogEnd = 1f;
     }
 
     /// <summary>
@@ -125,7 +133,7 @@ public class Renderer3D
         //handling transparency
         _graphicsDevice.BlendState = BlendState.Opaque;
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
-        if (effectAlpha != 1f)
+        if (!AreFloatsEqual(EffectAlpha, 1f))
         {
             _graphicsDevice.BlendState = BlendState.AlphaBlend;
             _graphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
@@ -151,15 +159,15 @@ public class Renderer3D
                 }
 
                 //handling effect lighting
-                effect.Alpha = effectAlpha;
-                if (defaultLightingEnabled)
+                effect.Alpha = EffectAlpha;
+                if (DefaultLightingEnabled)
                 {
                     effect.EnableDefaultLighting();
                 }
                 else //if default lighting is not enabled - set up manual lighting
                 {
-                    effect.LightingEnabled = lightingEnabled;
-                    effect.AmbientLightColor = ambientLightColor;
+                    effect.LightingEnabled = LightingEnabled;
+                    effect.AmbientLightColor = AmbientLightColor;
 
                     //handling directional effect lighting (and resetting the directional lights if EnableDefaultLighting() modified them)
                     effect.DirectionalLight0.Enabled = directionalLight0.Enabled;
@@ -171,7 +179,7 @@ public class Renderer3D
                     effect.DirectionalLight1.Direction = directionalLight1.Direction;
                     effect.DirectionalLight1.DiffuseColor = directionalLight1.DiffuseColor;
                     effect.DirectionalLight1.SpecularColor = directionalLight1.SpecularColor;
-                    
+
                     effect.DirectionalLight2.Enabled = directionalLight2.Enabled;
                     effect.DirectionalLight2.Direction = directionalLight2.Direction;
                     effect.DirectionalLight2.DiffuseColor = directionalLight2.DiffuseColor;
@@ -179,46 +187,65 @@ public class Renderer3D
                 }
 
                 //handling effect fog
-                effect.FogEnabled = fogEnabled;
-                effect.FogColor = fogColor;
-                effect.FogStart = fogStart;
-                effect.FogEnd = fogEnd;
+                effect.FogEnabled = FogEnabled;
+                effect.FogColor = FogColor;
+                effect.FogStart = FogStart;
+                effect.FogEnd = FogEnd;
             }
+
             mesh.Draw();
         }
     }
 }
-
-
 
 /// <summary>
 /// A group of properties for a directional light - used to set the DirectionalLight fields of a Renderer3D object.
 /// </summary>
 public struct DirectionalLightPropertyGroup
 {
-    bool enabled;
+    private bool enabled;
+
     /// <summary>
     /// Whether or not the directional light is enabled.
     /// </summary>
-    public bool Enabled { get => enabled; set {enabled = value;} }
+    public bool Enabled
+    {
+        get => enabled;
+        set => enabled = value;
+    }
 
-    Vector3 direction;
+    private Vector3 direction;
+
     /// <summary>
     /// The direction of the directional light.
     /// </summary>
-    public Vector3 Direction { get => direction; set {direction = value;} }
+    public Vector3 Direction
+    {
+        get => direction;
+        set => direction = value;
+    }
 
-    Vector3 diffuseColor;
+    private Vector3 diffuseColor;
+
     /// <summary>
     /// The diffuse color of the directional light.
     /// </summary>
-    public Vector3 DiffuseColor { get => diffuseColor; set {diffuseColor = value;} }
+    public Vector3 DiffuseColor
+    {
+        get => diffuseColor;
+        set => diffuseColor = value;
+    }
 
-    Vector3 specularColor;
+    private Vector3 specularColor;
+
     /// <summary>
     /// The specular color of the directional light.
     /// </summary>
-    public Vector3 SpecularColor { get => specularColor; set {specularColor = value;} }
+    public Vector3 SpecularColor
+    {
+        get => specularColor;
+        set => specularColor = value;
+    }
 
     /// <summary>
     /// Creates a new DirectionalLightPropertyGroup

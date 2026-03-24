@@ -15,5 +15,5 @@ public static class Floats
     /// Get Result For "Is Math.Abs(a-b) less than <see cref="Epsilon"/>?"
     /// </summary>
     /// <returns>Whether the two floating point numbers are equal or not.</returns>
-    public static bool AreFloatsEqual(float a, float b) => Math.Abs(a - b) < Epsilon;
+    public static bool AreFloatsEqual(float a, float b, float ep = Epsilon) => Math.Abs(a - b) < ep;
 }
