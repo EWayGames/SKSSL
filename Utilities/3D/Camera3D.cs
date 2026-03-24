@@ -105,6 +105,19 @@ public class Camera3D
     /// </summary>
     public Matrix ProjectionMatrix => projectionMatrix;
 
+
+    /// <inheritdoc cref="Camera3D"/>
+    /// Defaults nearPlaneDistance to 1f, and converts integer FOV into radians.
+    public Camera3D(
+        Vector3 position,
+        Vector3 rotation,
+        int fov,
+        float farPlaneDist,
+        GraphicsDevice _graphicsDevice)
+        : this(position, rotation, MathHelper.ToRadians(fov), 1f, farPlaneDist, _graphicsDevice)
+    {
+    }
+
     /// <summary>
     /// Creates a new Camera3D object with position, rotation, fov and near/far plane render distance settings.
     /// </summary>
@@ -114,7 +127,12 @@ public class Camera3D
     /// <param name="nearPlaneDist">The initial near plane render distance.</param>
     /// <param name="farPlaneDist">The initial far plane render distance.</param>
     /// <param name="_graphicsDevice">The graphics device, used in creating the projection matrix.</param>
-    public Camera3D(Vector3 position, Vector3 rotation, float fov, float nearPlaneDist, float farPlaneDist,
+    public Camera3D(
+        Vector3 position,
+        Vector3 rotation,
+        float fov,
+        float nearPlaneDist,
+        float farPlaneDist,
         GraphicsDevice _graphicsDevice)
     {
         this.position = position;
@@ -132,14 +150,14 @@ public class Camera3D
         projectionMatrix =
             Matrix.CreatePerspectiveFieldOfView(fov, _graphicsDevice.Viewport.AspectRatio, nearPlaneDist, farPlaneDist);
     }
-    
+
     /// <summary>
     /// Create a Camera that automatically handles the parameters of the main constructor.
     /// </summary>
     /// <param name="graphicsDevice"></param>
     /// <returns>New Camera Instance</returns>
     public static Camera3D Default(GraphicsDevice graphicsDevice)
-        => new(Vector3.Zero, Vector3.Zero, 90, 0, 100, graphicsDevice);
+        => new(Vector3.Zero, Vector3.Zero, 0.9f, 0, 100, graphicsDevice);
 
     /// <summary>
     /// Resets camera's position to (0,0,0)
