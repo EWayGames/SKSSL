@@ -9,12 +9,11 @@ using SKSSL.ECS;
 using SKSSL.Localization;
 using SKSSL.Scenes;
 using static SKSSL.DustLogger;
+
 // ReSharper disable ConvertToConstant.Global
 // ReSharper disable CollectionNeverQueried.Global
 // ReSharper disable FieldCanBeMadeReadOnly.Global
-
 // ReSharper disable NotAccessedField.Global
-
 // ReSharper disable VirtualMemberCallInConstructor
 // ReSharper disable NotAccessedField.Local
 
@@ -33,6 +32,11 @@ namespace SKSSL;
 /// </summary>
 public abstract class SSLGame : Game
 {
+    #region Fields
+
+    /// Title of game window.
+    public string Title { get; set; }
+
     /// Total time played for this game session.
     public static DateTime GameplayTime;
 
@@ -41,13 +45,41 @@ public abstract class SSLGame : Game
     /// <code>
     /// static MyGameClass() => UseECS = true;
     /// </code>
-    internal static bool UseECS = false;
+    public static bool UseECS = false;
 
     /// General context of the game dictated here.
     public static SceneManager SceneManager = null!;
 
     /// Static-instanced access for the Content Manager belonging to the active game instance.
     public static readonly List<ContentManager> ContentManagers = [];
+
+    private readonly GraphicsDeviceManager _graphicsManager;
+    private readonly SpriteBatch _spriteBatch;
+
+    private static GumService Gum => GumService.Default;
+    private readonly InteractiveGue _currentScreenGue = new();
+
+    /// Registries and services belonging to the game.
+    private readonly IServiceProvider GameServices;
+
+    /// <summary>
+    /// An array of Tuple paths assigned to an ID. These are loaded into the game's pather, and should
+    /// NEVER change. General examples include game texture and yaml prototypes folders.
+    /// </summary>
+    protected abstract (string id, string path)[] StaticPaths { get; }
+
+    /// <summary>
+    /// The Project Gum UI file that will dictate how UI is loaded.
+    /// <code>
+    /// Example: "Gum/SolKom.gumx"
+    /// </code>
+    /// </summary>
+    public static string GumFile = "CHANGE_ME";
+
+    /// All content directories contained in the game folder. (E.g. game, mods ➡ etc.)
+    public readonly IEnumerable<GameContentDirectory> GameContentDirectories;
+
+    #endregion
 
     /// <remarks>
     /// In order to Spawn, Remove, or generally interact with entities in an ECS, a context is required. This context
@@ -79,29 +111,6 @@ public abstract class SSLGame : Game
         var entityContext = new EntityContext(world.ECS);
         return entityContext;
     }
-
-    private readonly GraphicsDeviceManager _graphicsManager;
-    private readonly SpriteBatch _spriteBatch;
-
-    private static GumService Gum => GumService.Default;
-    private readonly InteractiveGue _currentScreenGue = new();
-
-    /// Registries and services belonging to the game.
-    private readonly IServiceProvider GameServices;
-
-    /// <summary>
-    /// An array of Tuple paths assigned to an ID. These are loaded into the game's pather, and should
-    /// NEVER change. General examples include game texture and yaml prototypes folders.
-    /// </summary>
-    protected abstract (string id, string path)[] StaticPaths { get; }
-
-    /// <summary>
-    /// The Project Gum UI file that will dictate how UI is loaded.
-    /// <code>
-    /// Example: "Gum/SolKom.gumx"
-    /// </code>
-    /// </summary>
-    public static string GumFile = "CHANGE_ME";
 
     /// <summary>
     /// Constructor for SSLGame.
@@ -165,9 +174,6 @@ public abstract class SSLGame : Game
         // Add game services to override method here.
     }
 
-    /// Title of game window.
-    public string Title { get; set; }
-
     /// <summary>
     /// Accommodates for when the user readjusts the UI dimensions.
     /// </summary>
@@ -187,9 +193,6 @@ public abstract class SSLGame : Game
         return graphicsDeviceManager;
     }
 
-    /// All content directories contained in the game folder. (E.g. game, mods ➡ etc.)
-    internal readonly IEnumerable<GameContentDirectory> GameContentDirectories;
-
     /// <summary>
     /// For custom <see cref="StaticGameLoader"/>s, you MUST initialize them before the base.Initialize() an inheritance
     /// level above this class.
@@ -201,7 +204,7 @@ public abstract class SSLGame : Game
         if (!string.IsNullOrEmpty(GumFile)) gumSave = Gum.Initialize(this, GumFile);
         SceneManager = new SceneManager(this, _graphicsManager, _spriteBatch, gumSave);
         Components.Add(SceneManager);
-        
+
         // Continue
         base.Initialize();
     }
