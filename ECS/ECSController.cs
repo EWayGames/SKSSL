@@ -21,18 +21,14 @@ public class ECSController
     /// Manager of all active systems in this ECS instance.
     private readonly SystemManager _systemManager;
 
-    /// Reverse-reference to the world this ECS inhabits.
-    private readonly IWorld _world;
-
     /// <summary>
     /// Constructor instantiating an ECS controller unto a world as reference parent.
     /// </summary>
     public ECSController(IWorld world)
     {
-        _world = world;
         _systemManager = new SystemManager();
         ComponentRegistry = new ComponentRegistry();
-        EntityManager = new EntityManager(ref ComponentRegistry, _world);
+        EntityManager = new EntityManager(ref ComponentRegistry, world);
     }
 
     /// <summary>

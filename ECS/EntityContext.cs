@@ -38,6 +38,7 @@ public readonly struct EntityContext
         Components = ec.Value.Components;
     }
 
+    /// Wrapper Constructor for a <see cref="ECSController"/>.
     public EntityContext(ECSController ecs)
     {
         EntityManager = ecs.EntityManager;
